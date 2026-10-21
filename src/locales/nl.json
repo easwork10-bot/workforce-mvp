@@ -1,0 +1,299 @@
+{
+  "app": {
+    "name": "Workforce MVP"
+  },
+  "navigation": {
+    "main": {
+      "navigation": "Hoofdnavigatie"
+    },
+    "dashboard": "Dashboard",
+    "shifts": "Shifts",
+    "employees": "Werknemers",
+    "attendance": "Aanwezigheid",
+    "profile": "Profiel",
+    "login": "Inloggen",
+    "logout": "Uitloggen",
+    "admin": "Admin",
+    "supervisor": "Supervisor",
+    "employee": "Medewerker"
+  },
+  "auth": {
+    "login": {
+      "title": "Inloggen",
+      "description": "Voer uw inloggegevens in om toegang te krijgen tot het Workforce Management Systeem",
+      "email": "E-mailadres",
+      "password": "Wachtwoord",
+      "submit": "Inloggen",
+      "error": "Ongeldige inloggegevens",
+      "forgotPassword": "Wachtwoord vergeten?",
+      "showPassword": "Wachtwoord tonen",
+      "hidePassword": "Wachtwoord verbergen",
+      "noAccount": "Nog geen account?",
+      "hasAccount": "Al een account?",
+      "registeredSuccess": "Registratie succesvol! U kunt nu inloggen.",
+      "demoHint": "Demo: gebruik een geregistreerd e-mailadres en wachtwoord"
+    },
+    "register": {
+      "description": "Maak een account aan om toegang te krijgen tot het Workforce Management Systeem",
+      "fullName": "Volledige naam",
+      "confirmPassword": "Wachtwoord bevestigen",
+      "passwordsMismatch": "Wachtwoorden komen niet overeen",
+      "phone": "Telefoonnummer",
+      "phoneHint": "Optioneel, voor contactdoeleinden",
+      "city": "Stad",
+      "cityHint": "Optioneel, uw werkplaats",
+      "language": "Voorkeurstaal",
+      "languageHint": "Deze taal wordt gebruikt in de applicatie",
+      "requirements": {
+        "length": "Minimaal 8 tekens",
+        "uppercase": "Minimaal 1 hoofdletter",
+        "lowercase": "Minimaal 1 kleine letter",
+        "number": "Minimaal 1 cijfer"
+      },
+      "passwordStrength": {
+        "weak": "Zeer zwak",
+        "fair": "Zwak",
+        "good": "Goed",
+        "strong": "Sterk"
+      },
+      "title": "Registreren",
+      "email": "E-mailadres",
+      "password": "Wachtwoord",
+      "showPassword": "Wachtwoord tonen",
+      "hidePassword": "Wachtwoord verbergen"
+    },
+    "forgot": {
+      "password": "Wachtwoord vergeten"
+    },
+    "validation": {
+      "required": "Dit veld is verplicht",
+      "email": "Voer een geldig e-mailadres in",
+      "minLength": "Minimaal {min} tekens",
+      "phone": "Voer een geldig telefoonnummer in"
+    }
+  },
+  "common": {
+    "loading": "Laden...",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "confirm": "Bevestigen",
+    "close": "Sluiten",
+    "back": "Terug",
+    "next": "Volgende",
+    "previous": "Vorige",
+    "search": "Zoeken",
+    "filter": "Filter",
+    "apply": "Toepassen",
+    "reset": "Resetten",
+    "actions": "Acties",
+    "status": "Status",
+    "created": {
+      "at": "Aangemaakt op"
+    },
+    "updated": {
+      "at": "Bijgewerkt op"
+    },
+    "today": "Vandaag",
+    "backToHome": "Terug naar startpagina",
+    "menu": "Menu"
+  },
+  "landing": {
+    "hero": {
+      "badge": "Nieuw: Multi-taal ondersteuning",
+      "title": "Workforce Management\nvoor moderne teams",
+      "description": "Beheer shifts, aanwezigheid en personeel efficiënt. Ontworpen voor traffic control, schoonmaak, logistiek en tijdelijke inhuur.",
+      "cta": {
+        "primary": "Gratis starten",
+        "secondary": "Inloggen"
+      }
+    },
+    "features": {
+      "title": "Alles wat u nodig heeft",
+      "description": "Krachtige tools om uw workforce efficiënt te beheren, van planning tot loonadministratie.",
+      "employees": {
+        "title": "Personeelsbeheer",
+        "desc": "Centraal beheer van medewerkers, rollen, kwalificaties en beschikbaarheid."
+      },
+      "shifts": {
+        "title": "Shift planning",
+        "desc": "Maak shifts aan, wijs toe en beheer roosters met real-time updates."
+      },
+      "attendance": {
+        "title": "Aanwezigheidsregistratie",
+        "desc": "Digitale inklokken met GPS-verificatie en automatische urenberekening."
+      },
+      "compliance": {
+        "title": "Compliance & rapportage",
+        "desc": "Automatische rapportages voor arbeidswetgeving, urenregistratie en loonadministratie."
+      }
+    },
+    "howItWorks": {
+      "title": "Hoe het werkt",
+      "description": "In drie stappen naar een efficiënter werkproces",
+      "step1": {
+        "title": "Account aanmaken",
+        "desc": "Registreer uw organisatie en voeg teamleden toe."
+      },
+      "step2": {
+        "title": "Shifts plannen",
+        "desc": "Maak roosters, wijs taken toe en deel met uw team."
+      },
+      "step3": {
+        "title": "Beheren & analyseren",
+        "desc": "Volg aanwezigheid, genereer rapporten en optimaliseer."
+      }
+    },
+    "cta": {
+      "title": "Klaar om te beginnen?",
+      "description": "Sluit u aan bij honderden bedrijven die al werken met Workforce MVP.",
+      "button": "Gratis account aanmaken",
+      "note": "Geen creditcard vereist · 14 dagen gratis proefperiode · Op elk moment opzegbaar"
+    },
+    "stats": {
+      "companies": "Bedrijven",
+      "employees": "Medewerkers beheerd",
+      "uptime": "Beschikbaarheid",
+      "support": "Ondersteuning"
+    },
+    "footer": {
+      "copyright": "© 2024 Workforce MVP. Alle rechten voorbehouden.",
+      "privacy": "Privacy",
+      "terms": "Voorwaarden",
+      "contact": "Contact"
+    }
+  },
+  "shifts": {
+    "title": "Shifts",
+    "create": "Nieuwe shift",
+    "list": "Overzicht shifts",
+    "details": "Shift details",
+    "job": {
+      "title": "Functietitel"
+    },
+    "work": {
+      "type": "Type werk"
+    },
+    "client": {
+      "project": "Client/Project"
+    },
+    "location": "Locatie",
+    "date": "Datum",
+    "start": {
+      "time": "Starttijd"
+    },
+    "end": {
+      "time": "Eindtijd"
+    },
+    "duration": "Duur",
+    "compensation": "Compensatie",
+    "required": {
+      "workers": "Vereiste werknemers"
+    },
+    "description": "Beschrijving",
+    "apply": "Solliciteren",
+    "my": {
+      "applications": "Mijn sollicitaties",
+      "schedule": "Mijn schema"
+    },
+    "status": {
+      "draft": "Concept",
+      "open": "Open",
+      "active": "Actief",
+      "filled": "Vol",
+      "cancelled": "Geannuleerd",
+      "completed": "Voltooid"
+    },
+    "application": {
+      "applied": "Je hebt gesolliciteerd",
+      "accepted": "Je sollicitatie is geaccepteerd",
+      "rejected": "Je sollicitatie is afgewezen"
+    }
+  },
+  "employees": {
+    "title": "Werknemers",
+    "create": "Nieuwe werknemer",
+    "profile": {
+      "image": "Profielfoto"
+    },
+    "name": "Naam",
+    "email": "E-mail",
+    "phone": "Telefoon",
+    "address": "Adres",
+    "city": "Stad",
+    "postal": {
+      "code": "Postcode"
+    },
+    "work": {
+      "categories": "Werkcategorieën"
+    },
+    "qualifications": "Kwalificaties",
+    "documents": "Documenten",
+    "bank": {
+      "details": "Bankgegevens"
+    },
+    "contact": {
+      "info": "Contactgegevens"
+    }
+  },
+  "attendance": {
+    "title": "Aanwezigheid",
+    "check": {
+      "in": "Inklokken",
+      "out": "Uitklokken"
+    },
+    "record": "Aanwezigheidsregistratie",
+    "hours": {
+      "worked": "Gewerkte uren"
+    },
+    "date": "Datum",
+    "time": "Tijd",
+    "location": "Locatie",
+    "status": {
+      "checked": {
+        "in": "Geklokt in",
+        "out": "Geklokt uit"
+      },
+      "late": "Te laat",
+      "absent": "Afwezig"
+    }
+  },
+  "admin": {
+    "dashboard": "Admin dashboard",
+    "title": "Admin dashboard",
+    "employees": "Werknemers beheren",
+    "shifts": "Shifts beheren",
+    "users": "Gebruikers",
+    "roles": "Rollen",
+    "reports": "Rapporten",
+    "settings": "Instellingen"
+  },
+  "supervisor": {
+    "dashboard": "Supervisor dashboard",
+    "team": "Team overzicht",
+    "attendance": "Aanwezigheid beheren",
+    "shifts": "Shifts beheren"
+  },
+  "employee": {
+    "dashboard": "Medewerker dashboard",
+    "profile": "Mijn profiel",
+    "available": {
+      "shifts": "Beschikbare shifts"
+    },
+    "my": {
+      "schedule": "Mijn schema",
+      "applications": "Mijn sollicitaties",
+      "availability": "Mijn beschikbaarheid"
+    },
+    "availability": "Beschikbaarheid",
+    "submit": {
+      "availability": "Indienen beschikbaarheid"
+    }
+  },
+  "languages": {
+    "nl": "Nederlands",
+    "ar": "العربية",
+    "en": "English"
+  }
+}
