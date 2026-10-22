@@ -8,6 +8,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  check,
   pgEnum,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
@@ -221,20 +222,21 @@ export const notifications = pgTable(
     message: text('message'),
     relatedShiftId: uuid('related_shift_id').references(() => shifts.id, { onDelete: 'set null' }),
     relatedApplicationId: uuid('related_application_id').references(() => shiftApplications.id, { onDelete: 'set null' }),
+    idempotencyKey: text('idempotency_key'),
+    idempotencyPayloadHash: text('idempotency_payload_hash'),
     readAt: timestamp('read_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     recipientIdIdx: index('idx_notifications_recipient_id').on(table.recipientId),
     readAtIdx: index('idx_notifications_read_at').on(table.readAt),
-    // Unique constraint for idempotency: one notification per recipient+type+shift
-    uniqueRecipientTypeShift: uniqueIndex('unique_notification_recipient_type_shift')
-      .on(table.recipientId, table.type, table.relatedShiftId)
-      .where(sql`${table.relatedShiftId} IS NOT NULL`),
-    // Unique constraint for idempotency: one notification per recipient+type+application
-    uniqueRecipientTypeApplication: uniqueIndex('unique_notification_recipient_type_application')
-      .on(table.recipientId, table.type, table.relatedApplicationId)
-      .where(sql`${table.relatedApplicationId} IS NOT NULL`),
+    idempotencyKeyUnique: uniqueIndex('notifications_recipient_idempotency_key_uq')
+      .on(table.recipientId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
+    idempotencyFieldsPaired: check(
+      'notifications_idempotency_fields_ck',
+      sql`(${table.idempotencyKey} IS NULL) = (${table.idempotencyPayloadHash} IS NULL)`
+    ),
   })
 );
 
@@ -242,9 +244,8 @@ export const auditLogs = pgTable(
   'audit_logs',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    actorId: uuid('actor_id')
-      .notNull()
-      .references(() => profiles.id),
+    actorId: uuid('actor_id').references(() => profiles.id),
+    actorType: text('actor_type').$type<'user' | 'system'>().default('user').notNull(),
     action: text('action').notNull(),
     entityType: text('entity_type').notNull(),
     entityId: uuid('entity_id'),
@@ -258,6 +259,10 @@ export const auditLogs = pgTable(
     actorIdIdx: index('idx_audit_logs_actor_id').on(table.actorId),
     entityIdx: index('idx_audit_logs_entity').on(table.entityType, table.entityId),
     createdAtIdx: index('idx_audit_logs_created_at').on(table.createdAt),
+    actorTypeCheck: check(
+      'audit_logs_actor_type_ck',
+      sql`(${table.actorType} = 'user' AND ${table.actorId} IS NOT NULL) OR (${table.actorType} = 'system' AND ${table.actorId} IS NULL)`
+    ),
   })
 );
 

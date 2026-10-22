@@ -2,6 +2,7 @@ import { db } from '..';
 import { shiftAssignments, shifts, profiles, attendanceRecords } from '../schema';
 import { eq, and, desc, count, gte, lte, asc } from 'drizzle-orm';
 import type { ShiftAssignment } from '../schema';
+import { logAuditEvent, type AuditMetadata } from './audit';
 
 /**
  * Get shift assignments with filtering
@@ -130,25 +131,39 @@ export async function getAssignmentsWithDetails({
  */
 export async function confirmAssignment(
   assignmentId: string,
-  _confirmedBy: string
+  confirmedBy: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
 ): Promise<boolean> {
-  const [assignment] = await db
-    .select()
-    .from(shiftAssignments)
-    .where(eq(shiftAssignments.id, assignmentId))
-    .limit(1);
+  return db.transaction(async (tx) => {
+    const [assignment] = await tx
+      .select()
+      .from(shiftAssignments)
+      .where(eq(shiftAssignments.id, assignmentId))
+      .for('update')
+      .limit(1);
 
-  if (!assignment) return false;
+    if (!assignment) return false;
+    if (assignment.status === 'confirmed') return true;
 
-  await db
-    .update(shiftAssignments)
-    .set({
-      status: 'confirmed',
-      confirmedAt: new Date(),
-    })
-    .where(eq(shiftAssignments.id, assignmentId));
+    await tx
+      .update(shiftAssignments)
+      .set({
+        status: 'confirmed',
+        confirmedAt: new Date(),
+      })
+      .where(eq(shiftAssignments.id, assignmentId));
 
-  return true;
+    await logAuditEvent({
+      actorId: confirmedBy,
+      action: 'UPDATE',
+      entityType: 'shift_assignments',
+      entityId: assignment.id,
+      oldValues: { status: assignment.status },
+      newValues: { status: 'confirmed' },
+      ...auditMetadata,
+    }, tx);
+    return true;
+  });
 }
 
 /**

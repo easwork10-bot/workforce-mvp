@@ -5,13 +5,16 @@ import {
   shifts,
   shiftApplications,
   shiftAssignments,
+  notifications,
   attendanceRecords,
+  auditLogs,
 } from '@/lib/db/schema';
 import {
   getAvailableShiftsForEmployee,
   getShiftDetailsForEmployee,
 } from '@/lib/db/queries/shifts';
 import { applyForShiftWithLock, reviewApplication } from '@/lib/db/queries/applications';
+import { getAuditLogs } from '@/lib/db/queries/audit';
 import { employeeCheckIn, employeeCheckOut } from '@/lib/db/queries/attendance';
 import { eq, and, inArray, count } from 'drizzle-orm';
 
@@ -27,6 +30,7 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
 
   beforeAll(async () => {
     // Clean up any existing test data
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -99,6 +103,7 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
 
   afterAll(async () => {
     // Clean up
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -331,6 +336,7 @@ describe('Phase 3 Employee API - Shift Application Concurrency', () => {
   let testShiftId: string;
 
   beforeAll(async () => {
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -365,6 +371,7 @@ describe('Phase 3 Employee API - Shift Application Concurrency', () => {
   });
 
   afterAll(async () => {
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -386,6 +393,14 @@ describe('Phase 3 Employee API - Shift Application Concurrency', () => {
     // Verify both applications exist
     const apps = await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, testShiftId));
     expect(apps.length).toBe(2);
+    expect((await getAuditLogs({
+      actorId: testEmployeeId,
+      entityType: 'shift_applications',
+    })).total).toBe(1);
+    expect((await getAuditLogs({
+      actorId: testEmployeeId2,
+      entityType: 'shift_applications',
+    })).total).toBe(1);
   });
 
   it('should reject duplicate application from SAME user', async () => {
@@ -395,6 +410,10 @@ describe('Phase 3 Employee API - Shift Application Concurrency', () => {
     const r2 = await applyForShiftWithLock(testShiftId, testEmployeeId);
     expect(r2.success).toBe(false);
     expect(r2.message).toContain('al gesolliciteerd');
+    expect((await getAuditLogs({
+      actorId: testEmployeeId,
+      entityType: 'shift_applications',
+    })).total).toBe(1);
   });
 
   it('should reject application when shift at capacity (requiredWorkers)', async () => {
@@ -454,6 +473,7 @@ describe('Phase 3 Employee API - Attendance Check-in/Out', () => {
   let testAssignmentId: string;
 
   beforeAll(async () => {
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -490,6 +510,7 @@ describe('Phase 3 Employee API - Attendance Check-in/Out', () => {
   });
 
   afterAll(async () => {
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -635,6 +656,7 @@ describe('Phase 3 Employee API - Concurrent Approval (Capacity Enforcement)', ()
   let testShiftId: string;
 
   beforeAll(async () => {
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -685,6 +707,7 @@ describe('Phase 3 Employee API - Concurrent Approval (Capacity Enforcement)', ()
   });
 
   afterAll(async () => {
+    await db.delete(auditLogs);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -783,5 +806,169 @@ describe('Phase 3 Employee API - Concurrent Approval (Capacity Enforcement)', ()
         inArray(shiftAssignments.status, ['assigned', 'confirmed'])
       ));
     expect(assignments.length).toBe(2);
+  });
+
+  it('replays the same final decision without changing reviewer or timestamp', async () => {
+    const [application] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.employeeId, testEmployeeIds[0]))
+      .limit(1);
+
+    const first = await reviewApplication(application.id, adminId, 'accepted');
+    expect(first.success).toBe(true);
+
+    const [firstState] = await db.select().from(shiftApplications).where(eq(shiftApplications.id, application.id)).limit(1);
+    const replay = await reviewApplication(application.id, testEmployeeIds[1], 'accepted');
+    const [replayedState] = await db.select().from(shiftApplications).where(eq(shiftApplications.id, application.id)).limit(1);
+
+    expect(replay.success).toBe(true);
+    expect(replay.replayed).toBe(true);
+    expect(replayedState.reviewedBy).toBe(firstState.reviewedBy);
+    expect(replayedState.reviewedAt).toEqual(firstState.reviewedAt);
+
+    const assignments = await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, application.id));
+    const eventNotifications = await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id));
+    expect(assignments).toHaveLength(1);
+    expect(eventNotifications).toHaveLength(1);
+    expect(eventNotifications[0].type).toBe('application_accepted');
+
+    const changedOutcome = await reviewApplication(application.id, adminId, 'rejected');
+    expect(changedOutcome.success).toBe(false);
+    expect(changedOutcome.conflict).toBe(true);
+    expect((await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, application.id))).length).toBe(1);
+    expect((await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id))).length).toBe(1);
+  });
+
+  it('replays rejection without creating an assignment or duplicate notification', async () => {
+    const [application] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.employeeId, testEmployeeIds[1]))
+      .limit(1);
+
+    const first = await reviewApplication(application.id, adminId, 'rejected', 'Not available');
+    expect(first.success).toBe(true);
+    const [firstState] = await db.select().from(shiftApplications).where(eq(shiftApplications.id, application.id)).limit(1);
+
+    const replay = await reviewApplication(application.id, testEmployeeIds[0], 'rejected', 'Not available');
+    const [replayedState] = await db.select().from(shiftApplications).where(eq(shiftApplications.id, application.id)).limit(1);
+    const assignments = await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, application.id));
+    const eventNotifications = await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id));
+
+    expect(replay.success).toBe(true);
+    expect(replay.replayed).toBe(true);
+    expect(replayedState.status).toBe('rejected');
+    expect(replayedState.reviewedBy).toBe(firstState.reviewedBy);
+    expect(replayedState.reviewedAt).toEqual(firstState.reviewedAt);
+    expect(assignments).toHaveLength(0);
+    expect(eventNotifications).toHaveLength(1);
+    expect(eventNotifications[0].type).toBe('application_rejected');
+    expect(eventNotifications[0].message).toContain('Not available');
+
+    const payloadConflict = await reviewApplication(application.id, adminId, 'rejected', 'Different reason');
+    expect(payloadConflict.success).toBe(false);
+    expect(payloadConflict.conflict).toBe(true);
+    expect((await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id))).length).toBe(1);
+  });
+
+  it('serializes competing accept/reject requests to one terminal outcome', async () => {
+    const [application] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.employeeId, testEmployeeIds[0]))
+      .limit(1);
+
+    const results = await Promise.all([
+      reviewApplication(application.id, adminId, 'accepted'),
+      reviewApplication(application.id, testEmployeeIds[1], 'rejected', 'Not available'),
+    ]);
+
+    expect(results.filter((result) => result.success)).toHaveLength(1);
+    expect(results.filter((result) => result.conflict)).toHaveLength(1);
+
+    const [finalApplication] = await db.select().from(shiftApplications).where(eq(shiftApplications.id, application.id)).limit(1);
+    const assignments = await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, application.id));
+    const eventNotifications = await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id));
+
+    expect(['accepted', 'rejected']).toContain(finalApplication.status);
+    expect(assignments).toHaveLength(finalApplication.status === 'accepted' ? 1 : 0);
+    expect(eventNotifications).toHaveLength(1);
+    expect(eventNotifications[0].type).toBe(
+      finalApplication.status === 'accepted' ? 'application_accepted' : 'application_rejected'
+    );
+  });
+
+  it('replays the same terminal outcome without changing review metadata or duplicating effects', async () => {
+    const [application] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.employeeId, testEmployeeIds[0]))
+      .limit(1);
+
+    const first = await reviewApplication(application.id, adminId, 'accepted');
+    expect(first.success).toBe(true);
+
+    const [afterFirstReview] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.id, application.id))
+      .limit(1);
+    const replay = await reviewApplication(application.id, testEmployeeIds[1], 'accepted');
+
+    expect(replay.success).toBe(true);
+    expect(replay.replayed).toBe(true);
+
+    const [afterReplay] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.id, application.id))
+      .limit(1);
+    expect(afterReplay.status).toBe('accepted');
+    expect(afterReplay.reviewedBy).toBe(afterFirstReview.reviewedBy);
+    expect(afterReplay.reviewedAt).toEqual(afterFirstReview.reviewedAt);
+
+    const assignments = await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, application.id));
+    const applicationNotifications = await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id));
+    expect(assignments).toHaveLength(1);
+    expect(applicationNotifications).toHaveLength(1);
+    expect(applicationNotifications[0].type).toBe('application_accepted');
+
+    const changedOutcome = await reviewApplication(application.id, adminId, 'rejected');
+    expect(changedOutcome.success).toBe(false);
+    expect(changedOutcome.conflict).toBe(true);
+    expect((await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, application.id))).length).toBe(1);
+    expect((await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id))).length).toBe(1);
+  });
+
+  it('serializes competing accept/reject decisions into one final state and one notification', async () => {
+    const [application] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.employeeId, testEmployeeIds[0]))
+      .limit(1);
+
+    const results = await Promise.all([
+      reviewApplication(application.id, adminId, 'accepted'),
+      reviewApplication(application.id, testEmployeeIds[1], 'rejected', 'Not available'),
+    ]);
+
+    expect(results.filter((result) => result.success)).toHaveLength(1);
+    expect(results.filter((result) => result.conflict)).toHaveLength(1);
+
+    const [finalApplication] = await db
+      .select()
+      .from(shiftApplications)
+      .where(eq(shiftApplications.id, application.id))
+      .limit(1);
+    const assignments = await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, application.id));
+    const applicationNotifications = await db.select().from(notifications).where(eq(notifications.relatedApplicationId, application.id));
+
+    expect(['accepted', 'rejected']).toContain(finalApplication.status);
+    expect(assignments).toHaveLength(finalApplication.status === 'accepted' ? 1 : 0);
+    expect(applicationNotifications).toHaveLength(1);
+    expect(applicationNotifications[0].type).toBe(
+      finalApplication.status === 'accepted' ? 'application_accepted' : 'application_rejected'
+    );
   });
 });

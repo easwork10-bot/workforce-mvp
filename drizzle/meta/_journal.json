@@ -8,6 +8,27 @@
       "when": 1792517171680,
       "tag": "0000_wild_agent_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792588093979,
+      "tag": "0001_notification_idempotency_expand",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792600553371,
+      "tag": "0002_retire_notification_legacy_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792609989209,
+      "tag": "0003_damp_unus",
+      "breakpoints": true
     }
   ]
 }

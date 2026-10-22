@@ -1,16 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { db } from '@/lib/db';
+import { db, pool } from '@/lib/db';
+import * as schema from '@/lib/db/schema';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import {
   profiles,
   shifts,
   shiftApplications,
   shiftAssignments,
   notifications,
+  auditLogs,
   attendanceRecords,
 } from '@/lib/db/schema';
 import {
   createNotification,
   createNotificationIdempotent,
+  NotificationIdempotencyConflictError,
   getNotifications,
   getUnreadCount,
   markNotificationRead,
@@ -30,6 +34,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
 
   beforeAll(async () => {
     // Clean up any existing test data
+    await db.delete(auditLogs);
     await db.delete(notifications);
     await db.delete(attendanceRecords);
     await db.delete(shiftAssignments);
@@ -79,6 +84,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
 
   afterAll(async () => {
     // Clean up
+    await db.delete(auditLogs);
     await db.delete(notifications);
     await db.delete(shiftAssignments);
     await db.delete(shiftApplications);
@@ -87,6 +93,20 @@ describe('Task 5.1 - Notification Query Layer', () => {
   });
 
   describe('createNotification', () => {
+    it('keeps the legacy null-key insert path usable during expansion', async () => {
+      const created = await createNotification({
+        recipientId: testEmployeeId,
+        type: 'application_received',
+        title: 'Legacy application notification',
+        relatedShiftId: testShiftId,
+        relatedApplicationId: testApplicationId,
+      }, testAdminId);
+
+      expect(created.id).toBeDefined();
+      expect(created.idempotencyKey).toBeNull();
+      expect(created.idempotencyPayloadHash).toBeNull();
+    });
+
     it('should create a notification with all fields', async () => {
       const created = await createNotification({
         recipientId: testEmployeeId,
@@ -94,7 +114,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
         title: 'New shift available',
         message: 'A new shift has been posted',
         relatedShiftId: testShiftId,
-      });
+      }, testAdminId);
 
       expect(created.id).toBeDefined();
       expect(created.recipientId).toBe(testEmployeeId);
@@ -112,7 +132,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
         recipientId: testEmployeeId,
         type: 'application_received',
         title: 'Application received',
-      });
+      }, testAdminId);
 
       expect(created.recipientId).toBe(testEmployeeId);
       expect(created.type).toBe('application_received');
@@ -129,104 +149,201 @@ describe('Task 5.1 - Notification Query Layer', () => {
         title: 'Application accepted',
         message: 'Your application was accepted',
         relatedApplicationId: testApplicationId,
-      });
+      }, testAdminId);
 
       expect(created.relatedApplicationId).toBe(testApplicationId);
     });
   });
 
   describe('createNotificationIdempotent', () => {
-    it('should create a new notification when none exists', async () => {
-      const created = await createNotificationIdempotent({
+    it('creates once and replays the same row for the same event key', async () => {
+      const input = {
         recipientId: testEmployeeId,
         type: 'shift_created',
         title: 'New shift available',
         relatedShiftId: testShiftId,
-      });
+        idempotencyKey: 'test-event:single',
+      } as const;
+      const created = await createNotificationIdempotent(input);
 
-      expect(created).not.toBeNull();
-      expect(created!.title).toBe('New shift available');
-      expect(created!.relatedShiftId).toBe(testShiftId);
+      expect(created.replayed).toBe(false);
+      expect(created.notification.title).toBe('New shift available');
+      expect(created.notification.relatedShiftId).toBe(testShiftId);
+      expect(created.notification.idempotencyPayloadHash).toMatch(/^[a-f0-9]{64}$/);
+
+      const replay = await createNotificationIdempotent(input);
+      expect(replay.replayed).toBe(true);
+      expect(replay.notification.id).toBe(created.notification.id);
     });
 
-    it('should return existing notification on duplicate call (same recipient, type, shift)', async () => {
-      // First call
+    it('deduplicates concurrent calls through separate PostgreSQL connections', async () => {
+      const clients = await Promise.all(Array.from({ length: 8 }, () => pool.connect()));
+      const input = {
+        recipientId: testEmployeeId,
+        type: 'shift_created',
+        title: 'Concurrent shift event',
+        relatedShiftId: testShiftId,
+        idempotencyKey: 'test-event:concurrent',
+      } as const;
+
+      try {
+        const results = await Promise.all(clients.map((client) =>
+          createNotificationIdempotent(input, drizzle(client, { schema }))
+        ));
+
+        expect(new Set(results.map((result) => result.notification.id)).size).toBe(1);
+        expect(results.filter((result) => !result.replayed)).toHaveLength(1);
+        expect(results.filter((result) => result.replayed)).toHaveLength(7);
+      } finally {
+        clients.forEach((client) => client.release());
+      }
+    });
+
+    it('allows different event keys for the same recipient, type, and resource after legacy index retirement', async (context) => {
+      const legacyIndexes = await pool.query(
+        `SELECT indexname FROM pg_indexes
+         WHERE schemaname = 'public'
+           AND indexname IN ($1, $2)`,
+        ['unique_notification_recipient_type_shift', 'unique_notification_recipient_type_application']
+      );
+      if (legacyIndexes.rowCount) context.skip();
+
       const first = await createNotificationIdempotent({
         recipientId: testEmployeeId,
-        type: 'shift_created',
-        title: 'New shift available',
+        type: 'shift_updated',
+        title: 'First distinct shift update',
         relatedShiftId: testShiftId,
+        idempotencyKey: 'test-event:shift-update:1',
       });
 
-      // Second call with same params
       const second = await createNotificationIdempotent({
         recipientId: testEmployeeId,
-        type: 'shift_created',
-        title: 'New shift available',
+        type: 'shift_updated',
+        title: 'Second distinct shift update',
         relatedShiftId: testShiftId,
+        idempotencyKey: 'test-event:shift-update:2',
       });
 
-      expect(second).not.toBeNull();
-      expect(second!.id).toBe(first!.id); // Same ID returned
+      expect(first.replayed).toBe(false);
+      expect(second.replayed).toBe(false);
+      expect(second.notification.id).not.toBe(first.notification.id);
     });
 
-    it('should return existing notification on duplicate call (same recipient, type, application)', async () => {
+    it('scopes event keys by recipient', async () => {
       const first = await createNotificationIdempotent({
         recipientId: testEmployeeId,
         type: 'application_accepted',
         title: 'Application accepted',
         relatedApplicationId: testApplicationId,
-      });
-
-      const second = await createNotificationIdempotent({
-        recipientId: testEmployeeId,
-        type: 'application_accepted',
-        title: 'Application accepted',
-        relatedApplicationId: testApplicationId,
-      });
-
-      expect(second).not.toBeNull();
-      expect(second!.id).toBe(first!.id);
-    });
-
-    it('should create separate notifications for different recipients', async () => {
-      const first = await createNotificationIdempotent({
-        recipientId: testEmployeeId,
-        type: 'shift_created',
-        title: 'New shift available',
-        relatedShiftId: testShiftId,
+        idempotencyKey: 'test-event:shared-key',
       });
 
       const second = await createNotificationIdempotent({
         recipientId: testAdminId,
-        type: 'shift_created',
-        title: 'New shift available',
-        relatedShiftId: testShiftId,
+        type: 'application_accepted',
+        title: 'Application accepted',
+        relatedApplicationId: testApplicationId,
+        idempotencyKey: 'test-event:shared-key',
       });
 
-      expect(first).not.toBeNull();
-      expect(second).not.toBeNull();
-      expect(second!.id).not.toBe(first!.id);
+      expect(second.notification.id).not.toBe(first.notification.id);
     });
 
-    it('should create separate notifications for different types', async () => {
+    it('rejects reuse of an event key with a different immutable payload', async () => {
       const first = await createNotificationIdempotent({
         recipientId: testEmployeeId,
-        type: 'shift_created',
-        title: 'New shift available',
-        relatedShiftId: testShiftId,
+        type: 'application_accepted',
+        title: 'Application accepted',
+        relatedApplicationId: testApplicationId,
+        idempotencyKey: 'test-event:payload-conflict',
       });
 
-      const second = await createNotificationIdempotent({
+      await expect(createNotificationIdempotent({
         recipientId: testEmployeeId,
-        type: 'application_received',
-        title: 'Application received',
-        relatedShiftId: testShiftId,
-      });
+        type: 'application_rejected',
+        title: 'Application rejected',
+        relatedApplicationId: testApplicationId,
+        idempotencyKey: 'test-event:payload-conflict',
+      })).rejects.toBeInstanceOf(NotificationIdempotencyConflictError);
 
-      expect(first).not.toBeNull();
-      expect(second).not.toBeNull();
-      expect(second!.id).not.toBe(first!.id);
+      const [unchanged] = await db.select().from(notifications).where(eq(notifications.id, first.notification.id));
+      expect(unchanged.type).toBe('application_accepted');
+      expect(unchanged.idempotencyPayloadHash).toBe(first.notification.idempotencyPayloadHash);
+    });
+
+    it('does not treat the mutable read timestamp as an event payload change', async () => {
+      const input = {
+        recipientId: testEmployeeId,
+        type: 'shift_created' as const,
+        title: 'Read notification replay',
+        relatedShiftId: testShiftId,
+        idempotencyKey: 'test-event:read-state',
+      };
+      const created = await createNotificationIdempotent(input);
+      await markNotificationRead(created.notification.id, testEmployeeId);
+
+      const replay = await createNotificationIdempotent(input);
+
+      expect(replay.replayed).toBe(true);
+      expect(replay.notification.id).toBe(created.notification.id);
+      expect(replay.notification.readAt).not.toBeNull();
+    });
+
+    it('keeps the null-key legacy writer usable while old indexes remain', async () => {
+      const input = {
+        recipientId: testEmployeeId,
+        type: 'shift_updated' as const,
+        title: 'Legacy shift update',
+        relatedShiftId: testShiftId,
+      };
+      const first = await createNotification(input, testAdminId);
+
+      expect(first.idempotencyKey).toBeNull();
+      expect(first.idempotencyPayloadHash).toBeNull();
+    });
+
+    it('allows repeated null-key rows for the same resource after legacy index retirement', async (context) => {
+      const legacyIndexes = await pool.query(
+        `SELECT indexname FROM pg_indexes
+         WHERE schemaname = 'public'
+           AND indexname IN ($1, $2)`,
+        ['unique_notification_recipient_type_shift', 'unique_notification_recipient_type_application']
+      );
+      if (legacyIndexes.rowCount) context.skip();
+
+      const input = {
+        recipientId: testEmployeeId,
+        type: 'shift_updated' as const,
+        title: 'Repeated legacy shift update',
+        relatedShiftId: testShiftId,
+      };
+      const first = await createNotification(input, testAdminId);
+      const second = await createNotification(input, testAdminId);
+
+      expect(first.idempotencyKey).toBeNull();
+      expect(second.idempotencyKey).toBeNull();
+      expect(first.id).not.toBe(second.id);
+    });
+
+    it('retries successfully after the idempotent insert transaction rolls back', async () => {
+      const input = {
+        recipientId: testEmployeeId,
+        type: 'shift_created' as const,
+        title: 'Retry after rollback',
+        relatedShiftId: testShiftId,
+        idempotencyKey: 'test-event:rollback-retry',
+      };
+
+      await expect(db.transaction(async (tx) => {
+        await createNotificationIdempotent(input, tx);
+        throw new Error('rollback test');
+      })).rejects.toThrow('rollback test');
+
+      const created = await createNotificationIdempotent(input);
+      const replay = await createNotificationIdempotent(input);
+      expect(created.replayed).toBe(false);
+      expect(replay.replayed).toBe(true);
+      expect(replay.notification.id).toBe(created.notification.id);
     });
   });
 
@@ -369,7 +486,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
         title: 'Test',
       }).returning();
 
-      const result = await markNotificationRead(notif.id);
+      const result = await markNotificationRead(notif.id, testEmployeeId);
       expect(result).toBe(true);
 
       const [updated] = await db.select().from(notifications).where(eq(notifications.id, notif.id)).limit(1);
@@ -377,7 +494,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
     });
 
     it('should return false for non-existent notification', async () => {
-      const result = await markNotificationRead('00000000-0000-0000-0000-000000000000');
+      const result = await markNotificationRead('00000000-0000-0000-0000-000000000000', testEmployeeId);
       expect(result).toBe(false);
     });
 
@@ -389,7 +506,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
         readAt: new Date(),
       }).returning();
 
-      const result = await markNotificationRead(notif.id);
+      const result = await markNotificationRead(notif.id, testEmployeeId);
       expect(result).toBe(true); // Still returns true (rowCount > 0)
     });
   });
@@ -427,7 +544,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
         title: 'To delete',
       }).returning();
 
-      const result = await deleteNotification(notif.id);
+      const result = await deleteNotification(notif.id, testEmployeeId);
       expect(result).toBe(true);
 
       const [deleted] = await db.select().from(notifications).where(eq(notifications.id, notif.id)).limit(1);
@@ -435,7 +552,7 @@ describe('Task 5.1 - Notification Query Layer', () => {
     });
 
     it('should return false for non-existent notification', async () => {
-      const result = await deleteNotification('00000000-0000-0000-0000-000000000000');
+      const result = await deleteNotification('00000000-0000-0000-0000-000000000000', testEmployeeId);
       expect(result).toBe(false);
     });
   });

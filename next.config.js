@@ -4,7 +4,8 @@ const withNextIntl = require('next-intl/plugin')('./src/i18n.ts');
 const nextConfig = {
   output: 'standalone',
   experimental: {
-    optimizePackageImports: ['drizzle-orm', 'jose', 'zod']
+    optimizePackageImports: ['drizzle-orm', 'jose', 'zod'],
+    instrumentationHook: true
   },
   typescript: {
     ignoreBuildErrors: false

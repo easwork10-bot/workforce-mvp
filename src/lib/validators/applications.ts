@@ -12,6 +12,16 @@ export const applicationQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 });
 
+export const reviewApplicationSchema = z.object({
+  status: z.enum(['accepted', 'rejected']),
+  rejectionReason: z.string().max(1000).optional(),
+}).strict();
+
+export const applicationIdParamSchema = z.object({
+  id: z.string().uuid('Invalid application ID'),
+});
+
 // Export types
 export type ApplyShiftInput = z.infer<typeof applyShiftSchema>;
 export type ApplicationQueryInput = z.infer<typeof applicationQuerySchema>;
+export type ReviewApplicationInput = z.infer<typeof reviewApplicationSchema>;

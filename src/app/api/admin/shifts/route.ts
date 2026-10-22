@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { profiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { requireCsrf } from '@/lib/middleware/csrf';
+import { getAuditMetadata } from '@/lib/middleware/auditLogger';
 
 /**
  * GET /api/admin/shifts - Get all shifts (admin only)
@@ -91,7 +92,7 @@ async function POST(req: NextRequest): Promise<NextResponse> {
       compensationAmount: validation.data.compensationAmount ? validation.data.compensationAmount.toString() : null,
       createdBy: profile.id,
       status: 'draft', // Start as draft
-    });
+    }, getAuditMetadata(req));
 
     return NextResponse.json({
       shift,

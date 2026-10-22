@@ -16,6 +16,15 @@ import {
 } from '@/lib/middleware/csrf';
 import { NextRequest, NextResponse } from 'next/server';
 
+vi.mock('@/lib/auth/tokens', () => ({
+  verifyTokenFromCookie: vi.fn(),
+}));
+
+vi.mock('@/lib/auth/session', () => ({
+  getSession: vi.fn(),
+  RedisUnavailableError: class extends Error {},
+}));
+
 describe('CSRF Security - Utility Functions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -146,7 +155,7 @@ describe('CSRF Security - Utility Functions', () => {
     const cookieHeader = response.headers.get('set-cookie');
     expect(cookieHeader).toContain('csrf_token');
     expect(cookieHeader).toContain('HttpOnly'); // Cookie IS HttpOnly now
-    expect(cookieHeader).toContain('SameSite=Strict');
+    expect(cookieHeader).toMatch(/SameSite=Strict/i);
     expect(cookieHeader).toContain('Path=/');
     expect(cookieHeader).toContain('Max-Age=900'); // 15 minutes
   });

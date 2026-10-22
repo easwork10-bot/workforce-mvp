@@ -2,6 +2,7 @@ import { db } from '..';
 import { profiles, userRoles, employeeDetails } from '../schema';
 import { eq, and, desc, asc, ilike, or, count } from 'drizzle-orm';
 import type { Profile, EmployeeDetail } from '../schema';
+import { logAuditEvent, type AuditMetadata } from './audit';
 
 /**
  * Get employees with profile and details
@@ -134,36 +135,97 @@ export async function getEmployeeById(id: string): Promise<(Profile & {
  */
 export async function updateEmployee(
   id: string,
+  actorId: string,
   profileData: Partial<Profile>,
   roleData?: 'administrator' | 'supervisor' | 'employee',
-  detailsData?: Partial<EmployeeDetail>
+  detailsData?: Partial<EmployeeDetail>,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
 ): Promise<boolean> {
   return await db.transaction(async (tx) => {
+    const [existingProfile] = await tx
+      .select()
+      .from(profiles)
+      .where(eq(profiles.id, id))
+      .limit(1);
+
+    if (!existingProfile) return false;
+
     // Update profile
     if (Object.keys(profileData).length > 0) {
+      const changedFields = Object.entries(profileData)
+        .filter(([field, value]) => value !== undefined && value !== existingProfile[field as keyof Profile])
+        .map(([field]) => field)
+        .sort();
+
       await tx
         .update(profiles)
         .set({ ...profileData, updatedAt: new Date() })
         .where(eq(profiles.id, id));
+
+      if (changedFields.length > 0) {
+        await logAuditEvent({
+          actorId,
+          action: 'UPDATE',
+          entityType: 'profiles',
+          entityId: id,
+          oldValues: {
+            changedFields,
+            ...(changedFields.includes('accountStatus') ? { accountStatus: existingProfile.accountStatus } : {}),
+          },
+          newValues: {
+            changedFields,
+            ...(changedFields.includes('accountStatus') && profileData.accountStatus
+              ? { accountStatus: profileData.accountStatus }
+              : {}),
+          },
+          ...auditMetadata,
+        }, tx);
+      }
     }
 
     // Update role
     if (roleData) {
-      await tx
+      const [existingRole] = await tx
+        .select()
+        .from(userRoles)
+        .where(and(eq(userRoles.userId, id), eq(userRoles.role, roleData)))
+        .limit(1);
+
+      if (!existingRole) {
+        const [createdRole] = await tx
         .insert(userRoles)
         .values({
           userId: id,
           role: roleData,
         })
-        .onConflictDoUpdate({
-          target: [userRoles.userId, userRoles.role],
-          set: { role: roleData, assignedAt: new Date() },
-        });
+        .returning();
+
+        await logAuditEvent({
+          actorId,
+          action: 'INSERT',
+          entityType: 'user_roles',
+          entityId: createdRole.id,
+          oldValues: null,
+          newValues: { role: roleData },
+          ...auditMetadata,
+        }, tx);
+      }
     }
 
     // Update or insert employee details
     if (detailsData && Object.keys(detailsData).length > 0) {
-      await tx
+      const [existingDetails] = await tx
+        .select()
+        .from(employeeDetails)
+        .where(eq(employeeDetails.profileId, id))
+        .limit(1);
+      const changedFields = Object.entries(detailsData)
+        .filter(([field, value]) => value !== undefined && value !== existingDetails?.[field as keyof EmployeeDetail])
+        .map(([field]) => field)
+        .sort();
+
+      if (changedFields.length > 0) {
+        await tx
         .insert(employeeDetails)
         .values({
           profileId: id,
@@ -173,6 +235,17 @@ export async function updateEmployee(
           target: employeeDetails.profileId,
           set: { ...detailsData, updatedAt: new Date() },
         });
+
+        await logAuditEvent({
+          actorId,
+          action: existingDetails ? 'UPDATE' : 'INSERT',
+          entityType: 'employee_details',
+          entityId: id,
+          oldValues: existingDetails ? { changedFields } : null,
+          newValues: { changedFields },
+          ...auditMetadata,
+        }, tx);
+      }
     }
 
     return true;

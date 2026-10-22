@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { shiftAssignments, attendanceRecords } from '@/lib/db/schema';
 import { eq, and, or, desc } from 'drizzle-orm';
 import { withCsrfAndAuth } from '@/lib/middleware/csrf';
+import { getAuditMetadata } from '@/lib/middleware/auditLogger';
 
 /**
  * POST /api/employee/attendance/check-out - Check out for a shift assignment (employee)
@@ -78,7 +79,7 @@ async function checkOutHandler(req: NextRequest): Promise<NextResponse> {
     }
 
     // Check out using shared service
-    const result = await checkOutCore(shiftAssignmentId, latitude ?? null, longitude ?? null);
+    const result = await checkOutCore(shiftAssignmentId, latitude ?? null, longitude ?? null, userId, getAuditMetadata(req));
 
     if (!result.success) {
       return NextResponse.json(

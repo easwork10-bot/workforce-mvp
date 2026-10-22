@@ -1,0 +1,3 @@
+ALTER TABLE "audit_logs" ALTER COLUMN "actor_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "audit_logs" ADD COLUMN "actor_type" text DEFAULT 'user' NOT NULL;--> statement-breakpoint
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_type_ck" CHECK (("audit_logs"."actor_type" = 'user' AND "audit_logs"."actor_id" IS NOT NULL) OR ("audit_logs"."actor_type" = 'system' AND "audit_logs"."actor_id" IS NULL));

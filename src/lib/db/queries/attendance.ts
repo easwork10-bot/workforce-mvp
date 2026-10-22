@@ -2,6 +2,7 @@ import { db } from '..';
 import { attendanceRecords, shiftAssignments } from '../schema';
 import { eq, and, desc, count, gte, lte, or } from 'drizzle-orm';
 import type { AttendanceRecord } from '../schema';
+import { logAuditEvent, type AuditMetadata } from './audit';
 
 /**
  * Get attendance records with filtering
@@ -61,61 +62,70 @@ export async function upsertAttendance(
   action: 'check_in' | 'check_out',
   latitude: number,
   longitude: number,
-  approvedBy?: string
+  actorId: string,
+  approvedBy?: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
 ): Promise<AttendanceRecord> {
-  const now = new Date();
+  return db.transaction(async (tx) => {
+    const now = new Date();
 
-  if (action === 'check_in') {
-    // Check if already checked in today
-    const existing = await db
-      .select()
-      .from(attendanceRecords)
-      .where(
-        and(
+    if (action === 'check_in') {
+      const existing = await tx
+        .select()
+        .from(attendanceRecords)
+        .where(and(
           eq(attendanceRecords.shiftAssignmentId, assignmentId),
           eq(attendanceRecords.attendanceStatus, 'checked_in')
-        )
-      )
-      .limit(1);
+        ))
+        .for('update')
+        .limit(1);
 
-    if (existing.length > 0) {
-      throw new Error('Already checked in for this assignment');
+      if (existing.length > 0) {
+        throw new Error('Already checked in for this assignment');
+      }
+
+      const [record] = await tx
+        .insert(attendanceRecords)
+        .values({
+          shiftAssignmentId: assignmentId,
+          checkInAt: now,
+          checkInLatitude: latitude.toString(),
+          checkInLongitude: longitude.toString(),
+          attendanceStatus: 'checked_in',
+        })
+        .returning();
+
+      await logAuditEvent({
+        actorId,
+        action: 'INSERT',
+        entityType: 'attendance_records',
+        entityId: record.id,
+        oldValues: null,
+        newValues: { assignmentId, attendanceStatus: 'checked_in' },
+        ...auditMetadata,
+      }, tx);
+      return record;
     }
 
-    const [record] = await db
-      .insert(attendanceRecords)
-      .values({
-        shiftAssignmentId: assignmentId,
-        checkInAt: now,
-        checkInLatitude: latitude.toString(),
-        checkInLongitude: longitude.toString(),
-        attendanceStatus: 'checked_in',
-      })
-      .returning();
-
-    return record;
-  } else {
-    // Check out
-    const [record] = await db
+    const [record] = await tx
       .select()
       .from(attendanceRecords)
-      .where(
-        and(
-          eq(attendanceRecords.shiftAssignmentId, assignmentId),
-          or(
-            eq(attendanceRecords.attendanceStatus, 'checked_in'),
-            eq(attendanceRecords.attendanceStatus, 'late')
-          )
+      .where(and(
+        eq(attendanceRecords.shiftAssignmentId, assignmentId),
+        or(
+          eq(attendanceRecords.attendanceStatus, 'checked_in'),
+          eq(attendanceRecords.attendanceStatus, 'late')
         )
-      )
+      ))
       .orderBy(desc(attendanceRecords.createdAt))
+      .for('update')
       .limit(1);
 
     if (!record) {
       throw new Error('No active check-in record found for this assignment');
     }
 
-    const [updated] = await db
+    const [updated] = await tx
       .update(attendanceRecords)
       .set({
         checkOutAt: now,
@@ -128,8 +138,17 @@ export async function upsertAttendance(
       .where(eq(attendanceRecords.id, record.id))
       .returning();
 
+    await logAuditEvent({
+      actorId,
+      action: 'UPDATE',
+      entityType: 'attendance_records',
+      entityId: updated.id,
+      oldValues: { attendanceStatus: record.attendanceStatus },
+      newValues: { attendanceStatus: 'checked_out' },
+      ...auditMetadata,
+    }, tx);
     return updated;
-  }
+  });
 }
 
 /**
@@ -139,68 +158,86 @@ export async function employeeCheckIn(
   employeeId: string,
   assignmentId: string,
   latitude: number | null,
-  longitude: number | null
+  longitude: number | null,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
 ): Promise<{ success: boolean; message: string; record?: AttendanceRecord }> {
-  // Verify the assignment belongs to this employee
-  const [assignment] = await db
-    .select({
-      id: shiftAssignments.id,
-      employeeId: shiftAssignments.employeeId,
-      shiftId: shiftAssignments.shiftId,
-      status: shiftAssignments.status,
-    })
-    .from(shiftAssignments)
-    .where(and(
-      eq(shiftAssignments.id, assignmentId),
-      eq(shiftAssignments.employeeId, employeeId)
-    ))
-    .limit(1);
+  return db.transaction(async (tx) => {
+    const [assignment] = await tx
+      .select({
+        id: shiftAssignments.id,
+        employeeId: shiftAssignments.employeeId,
+        shiftId: shiftAssignments.shiftId,
+        status: shiftAssignments.status,
+      })
+      .from(shiftAssignments)
+      .where(and(
+        eq(shiftAssignments.id, assignmentId),
+        eq(shiftAssignments.employeeId, employeeId)
+      ))
+      .for('update')
+      .limit(1);
 
-  if (!assignment) {
-    return { success: false, message: 'Dienst niet gevonden of geen toegang' };
-  }
+    if (!assignment) {
+      return { success: false, message: 'Dienst niet gevonden of geen toegang' };
+    }
 
-  if (assignment.status !== 'assigned' && assignment.status !== 'confirmed') {
-    return { success: false, message: 'Kan niet inchecken voor deze dienst' };
-  }
+    if (assignment.status !== 'assigned' && assignment.status !== 'confirmed') {
+      return { success: false, message: 'Kan niet inchecken voor deze dienst' };
+    }
 
-  // Check if already checked in
-  const existing = await db
-    .select()
-    .from(attendanceRecords)
-    .where(
-      and(
+    const existing = await tx
+      .select()
+      .from(attendanceRecords)
+      .where(and(
         eq(attendanceRecords.shiftAssignmentId, assignmentId),
         eq(attendanceRecords.attendanceStatus, 'checked_in')
-      )
-    )
-    .limit(1);
+      ))
+      .limit(1);
 
-  if (existing.length > 0) {
-    return { success: false, message: 'Al ingecheckt voor deze dienst' };
-  }
+    if (existing.length > 0) {
+      return { success: false, message: 'Al ingecheckt voor deze dienst' };
+    }
 
-  const now = new Date();
-  const [record] = await db
-    .insert(attendanceRecords)
-    .values({
-      shiftAssignmentId: assignmentId,
-      checkInAt: now,
-      checkInLatitude: latitude != null ? latitude.toString() : null,
-      checkInLongitude: longitude != null ? longitude.toString() : null,
-      attendanceStatus: 'checked_in',
-    })
-    .returning();
+    const now = new Date();
+    const [record] = await tx
+      .insert(attendanceRecords)
+      .values({
+        shiftAssignmentId: assignmentId,
+        checkInAt: now,
+        checkInLatitude: latitude != null ? latitude.toString() : null,
+        checkInLongitude: longitude != null ? longitude.toString() : null,
+        attendanceStatus: 'checked_in',
+      })
+      .returning();
 
-  // Update assignment status to confirmed if it was just assigned
-  if (assignment.status === 'assigned') {
-    await db
-      .update(shiftAssignments)
-      .set({ status: 'confirmed', confirmedAt: now })
-      .where(eq(shiftAssignments.id, assignmentId));
-  }
+    await logAuditEvent({
+      actorId: employeeId,
+      action: 'INSERT',
+      entityType: 'attendance_records',
+      entityId: record.id,
+      oldValues: null,
+      newValues: { assignmentId, attendanceStatus: 'checked_in' },
+      ...auditMetadata,
+    }, tx);
 
-  return { success: true, message: 'Inchecken succesvol', record };
+    if (assignment.status === 'assigned') {
+      await tx
+        .update(shiftAssignments)
+        .set({ status: 'confirmed', confirmedAt: now })
+        .where(eq(shiftAssignments.id, assignmentId));
+      await logAuditEvent({
+        actorId: employeeId,
+        action: 'UPDATE',
+        entityType: 'shift_assignments',
+        entityId: assignmentId,
+        oldValues: { status: 'assigned' },
+        newValues: { status: 'confirmed' },
+        ...auditMetadata,
+      }, tx);
+    }
+
+    return { success: true, message: 'Inchecken succesvol', record };
+  });
 }
 
 /**
@@ -210,59 +247,65 @@ export async function employeeCheckOut(
   employeeId: string,
   assignmentId: string,
   latitude: number | null,
-  longitude: number | null
+  longitude: number | null,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
 ): Promise<{ success: boolean; message: string; record?: AttendanceRecord }> {
-  // Verify the assignment belongs to this employee
-  const [assignment] = await db
-    .select({
-      id: shiftAssignments.id,
-      employeeId: shiftAssignments.employeeId,
-      shiftId: shiftAssignments.shiftId,
-      status: shiftAssignments.status,
-    })
-    .from(shiftAssignments)
-    .where(and(
-      eq(shiftAssignments.id, assignmentId),
-      eq(shiftAssignments.employeeId, employeeId)
-    ))
-    .limit(1);
+  return db.transaction(async (tx) => {
+    const [assignment] = await tx
+      .select({ id: shiftAssignments.id })
+      .from(shiftAssignments)
+      .where(and(
+        eq(shiftAssignments.id, assignmentId),
+        eq(shiftAssignments.employeeId, employeeId)
+      ))
+      .for('update')
+      .limit(1);
 
-  if (!assignment) {
-    return { success: false, message: 'Dienst niet gevonden of geen toegang' };
-  }
+    if (!assignment) {
+      return { success: false, message: 'Dienst niet gevonden of geen toegang' };
+    }
 
-  // Find active check-in record
-  const [record] = await db
-    .select()
-    .from(attendanceRecords)
-    .where(
-      and(
+    const [record] = await tx
+      .select()
+      .from(attendanceRecords)
+      .where(and(
         eq(attendanceRecords.shiftAssignmentId, assignmentId),
         or(
           eq(attendanceRecords.attendanceStatus, 'checked_in'),
           eq(attendanceRecords.attendanceStatus, 'late')
         )
-      )
-    )
-    .orderBy(desc(attendanceRecords.createdAt))
-    .limit(1);
+      ))
+      .orderBy(desc(attendanceRecords.createdAt))
+      .for('update')
+      .limit(1);
 
-  if (!record) {
-    return { success: false, message: 'Geen actieve inchecken gevonden voor deze dienst' };
-  }
+    if (!record) {
+      return { success: false, message: 'Geen actieve inchecken gevonden voor deze dienst' };
+    }
 
-  const now = new Date();
-  const [updated] = await db
-    .update(attendanceRecords)
-    .set({
-      checkOutAt: now,
-      checkOutLatitude: latitude != null ? latitude.toString() : null,
-      checkOutLongitude: longitude != null ? longitude.toString() : null,
-      attendanceStatus: 'checked_out',
-      approvedAt: now,
-    })
-    .where(eq(attendanceRecords.id, record.id))
-    .returning();
+    const now = new Date();
+    const [updated] = await tx
+      .update(attendanceRecords)
+      .set({
+        checkOutAt: now,
+        checkOutLatitude: latitude != null ? latitude.toString() : null,
+        checkOutLongitude: longitude != null ? longitude.toString() : null,
+        attendanceStatus: 'checked_out',
+        approvedAt: now,
+      })
+      .where(eq(attendanceRecords.id, record.id))
+      .returning();
 
-  return { success: true, message: 'Uitchecken succesvol', record: updated };
+    await logAuditEvent({
+      actorId: employeeId,
+      action: 'UPDATE',
+      entityType: 'attendance_records',
+      entityId: updated.id,
+      oldValues: { attendanceStatus: record.attendanceStatus },
+      newValues: { attendanceStatus: 'checked_out' },
+      ...auditMetadata,
+    }, tx);
+
+    return { success: true, message: 'Uitchecken succesvol', record: updated };
+  });
 }

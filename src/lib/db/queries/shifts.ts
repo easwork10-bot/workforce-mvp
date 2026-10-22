@@ -1,7 +1,15 @@
 import { db } from '..';
-import { shifts, profiles, shiftApplications, shiftAssignments } from '../schema';
-import { eq, and, desc, asc, gte, lte, ilike, count, notInArray, inArray } from 'drizzle-orm';
+import {
+  attendanceRecords,
+  notifications,
+  shifts,
+  profiles,
+  shiftApplications,
+  shiftAssignments,
+} from '../schema';
+import { eq, and, desc, asc, gte, lte, ilike, count, notInArray, inArray, or } from 'drizzle-orm';
 import type { Shift, NewShift } from '../schema';
+import { logAuditEvent, type AuditMetadata } from './audit';
 
 /**
  * Get shifts with pagination, filtering, and sorting
@@ -143,29 +151,214 @@ export async function getShiftById(id: string): Promise<ShiftWithDetails | null>
 /**
  * Create a new shift
  */
-export async function createShift(data: NewShift): Promise<Shift> {
-  const [shift] = await db.insert(shifts).values(data).returning();
-  return shift;
+export async function createShift(
+  data: NewShift,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<Shift> {
+  return db.transaction(async (tx) => {
+    const [shift] = await tx.insert(shifts).values(data).returning();
+    await logAuditEvent({
+      actorId: data.createdBy,
+      action: 'INSERT',
+      entityType: 'shifts',
+      entityId: shift.id,
+      oldValues: null,
+      newValues: { status: shift.status },
+      ...auditMetadata,
+    }, tx);
+    return shift;
+  });
 }
 
 /**
  * Update a shift
  */
-export async function updateShift(id: string, data: Partial<NewShift>): Promise<Shift | null> {
-  const [shift] = await db
-    .update(shifts)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(shifts.id, id))
-    .returning();
-  return shift || null;
+export async function updateShift(
+  id: string,
+  actorId: string,
+  data: Partial<NewShift>,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<Shift | null> {
+  return db.transaction(async (tx) => {
+    const [previous] = await tx
+      .select()
+      .from(shifts)
+      .where(eq(shifts.id, id))
+      .for('update')
+      .limit(1);
+    if (!previous) return null;
+
+    const [shift] = await tx
+      .update(shifts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(shifts.id, id))
+      .returning();
+
+    const changedFields = Object.keys(data).sort();
+    if (changedFields.length > 0) {
+      await logAuditEvent({
+        actorId,
+        action: 'UPDATE',
+        entityType: 'shifts',
+        entityId: id,
+        oldValues: {
+          changedFields,
+          ...(changedFields.includes('status') ? { status: previous.status } : {}),
+        },
+        newValues: {
+          changedFields,
+          ...(changedFields.includes('status') && data.status ? { status: data.status } : {}),
+        },
+        ...auditMetadata,
+      }, tx);
+    }
+    return shift || null;
+  });
 }
 
 /**
  * Delete a shift
  */
-export async function deleteShift(id: string): Promise<boolean> {
-  const result = await db.delete(shifts).where(eq(shifts.id, id));
-  return (result.rowCount ?? 0) > 0;
+export async function deleteShift(
+  id: string,
+  actorId: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [shift] = await tx
+      .select()
+      .from(shifts)
+      .where(eq(shifts.id, id))
+      .for('update')
+      .limit(1);
+    if (!shift) return false;
+
+    const applications = await tx
+      .select({ id: shiftApplications.id, status: shiftApplications.status })
+      .from(shiftApplications)
+      .where(eq(shiftApplications.shiftId, id));
+    const assignments = await tx
+      .select({
+        id: shiftAssignments.id,
+        status: shiftAssignments.status,
+        applicationId: shiftAssignments.applicationId,
+      })
+      .from(shiftAssignments)
+      .where(eq(shiftAssignments.shiftId, id));
+    const assignmentIds = assignments.map((assignment) => assignment.id);
+    const applicationIds = applications.map((application) => application.id);
+    const attendance = assignmentIds.length
+      ? await tx
+          .select({
+            id: attendanceRecords.id,
+            attendanceStatus: attendanceRecords.attendanceStatus,
+          })
+          .from(attendanceRecords)
+          .where(inArray(attendanceRecords.shiftAssignmentId, assignmentIds))
+      : [];
+
+    const notificationConditions = [eq(notifications.relatedShiftId, id)];
+    if (applicationIds.length) {
+      notificationConditions.push(inArray(notifications.relatedApplicationId, applicationIds));
+    }
+    const relatedNotifications = await tx
+      .select({
+        id: notifications.id,
+        relatedShiftId: notifications.relatedShiftId,
+        relatedApplicationId: notifications.relatedApplicationId,
+      })
+      .from(notifications)
+      .where(or(...notificationConditions));
+
+    if (attendance.length) {
+      await tx.delete(attendanceRecords).where(inArray(
+        attendanceRecords.id,
+        attendance.map((record) => record.id)
+      ));
+      for (const record of attendance) {
+        await logAuditEvent({
+          actorId,
+          action: 'DELETE',
+          entityType: 'attendance_records',
+          entityId: record.id,
+          oldValues: { attendanceStatus: record.attendanceStatus },
+          newValues: null,
+          ...auditMetadata,
+        }, tx);
+      }
+    }
+
+    if (assignments.length) {
+      await tx.delete(shiftAssignments).where(inArray(
+        shiftAssignments.id,
+        assignmentIds
+      ));
+      for (const assignment of assignments) {
+        await logAuditEvent({
+          actorId,
+          action: 'DELETE',
+          entityType: 'shift_assignments',
+          entityId: assignment.id,
+          oldValues: {
+            status: assignment.status,
+            applicationId: assignment.applicationId,
+          },
+          newValues: null,
+          ...auditMetadata,
+        }, tx);
+      }
+    }
+
+    if (relatedNotifications.length) {
+      await tx.update(notifications)
+        .set({ relatedShiftId: null, relatedApplicationId: null })
+        .where(inArray(notifications.id, relatedNotifications.map((notification) => notification.id)));
+      for (const notification of relatedNotifications) {
+        await logAuditEvent({
+          actorId,
+          action: 'UPDATE',
+          entityType: 'notifications',
+          entityId: notification.id,
+          oldValues: {
+            relatedShiftId: notification.relatedShiftId,
+            relatedApplicationId: notification.relatedApplicationId,
+          },
+          newValues: { relatedShiftId: null, relatedApplicationId: null },
+          ...auditMetadata,
+        }, tx);
+      }
+    }
+
+    if (applications.length) {
+      await tx.delete(shiftApplications).where(inArray(
+        shiftApplications.id,
+        applicationIds
+      ));
+      for (const application of applications) {
+        await logAuditEvent({
+          actorId,
+          action: 'DELETE',
+          entityType: 'shift_applications',
+          entityId: application.id,
+          oldValues: { status: application.status },
+          newValues: null,
+          ...auditMetadata,
+        }, tx);
+      }
+    }
+
+    await tx.delete(shifts).where(eq(shifts.id, id));
+    await logAuditEvent({
+      actorId,
+      action: 'DELETE',
+      entityType: 'shifts',
+      entityId: id,
+      oldValues: { status: shift.status },
+      newValues: null,
+      ...auditMetadata,
+    }, tx);
+    return true;
+  });
 }
 
 /**

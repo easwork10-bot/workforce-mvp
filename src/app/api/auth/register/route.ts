@@ -3,12 +3,13 @@ import { db } from '@/lib/db';
 import { profiles, userRoles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword } from '@/lib/auth/passwords';
-import { createTokenPair } from '@/lib/auth/tokens';
+import { createTokenPair, hashIp } from '@/lib/auth/tokens';
 import { createSession } from '@/lib/auth/session';
 import { registerSchema } from '@/lib/validators/auth';
 import { checkRateLimit } from '@/lib/auth/session';
 import { decodeJwt } from '@/lib/auth/tokens';
 import { generateCsrfToken, setCsrfCookie } from '@/lib/middleware/csrf';
+import { logAuditEvent } from '@/lib/db/queries/audit';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
@@ -48,27 +49,52 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const passwordHash = await hashPassword(password);
 
     // Create user profile
-    const [profile] = await db
-      .insert(profiles)
-      .values({
-        email,
-        passwordHash,
-        fullName,
-        phone,
-        city,
-        preferredLanguage,
-        accountStatus: 'active',
-      })
-      .returning();
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const profile = await db.transaction(async (tx) => {
+      const [createdProfile] = await tx
+        .insert(profiles)
+        .values({
+          email,
+          passwordHash,
+          fullName,
+          phone,
+          city,
+          preferredLanguage,
+          accountStatus: 'active',
+        })
+        .returning();
 
-    // Assign default employee role
-    await db.insert(userRoles).values({
-      userId: profile.id,
-      role: 'employee',
+      const [role] = await tx.insert(userRoles).values({
+        userId: createdProfile.id,
+        role: 'employee',
+      }).returning();
+
+      await logAuditEvent({
+        actorId: createdProfile.id,
+        action: 'INSERT',
+        entityType: 'profiles',
+        entityId: createdProfile.id,
+        oldValues: null,
+        newValues: { accountStatus: 'active' },
+        ipAddress: hashIp(ip),
+        userAgent,
+      }, tx);
+
+      await logAuditEvent({
+        actorId: createdProfile.id,
+        action: 'INSERT',
+        entityType: 'user_roles',
+        entityId: role.id,
+        oldValues: null,
+        newValues: { role: 'employee' },
+        ipAddress: hashIp(ip),
+        userAgent,
+      }, tx);
+
+      return createdProfile;
     });
 
     // Create initial session
-    const userAgent = req.headers.get('user-agent') || 'unknown';
     const { accessToken, refreshToken } = await createTokenPair(
       profile.id,
       'employee',

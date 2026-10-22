@@ -1,7 +1,72 @@
-import { db, pool } from '..';
+import { createHash } from 'node:crypto';
+import { db } from '..';
 import { notifications } from '../schema';
-import { eq, and, desc, count, isNull, isNotNull } from 'drizzle-orm';
+import { eq, and, desc, count, isNull, isNotNull, sql } from 'drizzle-orm';
 import type { Notification, NewNotification } from '../schema';
+import { logAuditEvent, type AuditMetadata } from './audit';
+
+type NotificationExecutor = Pick<typeof db, 'insert' | 'select'>;
+
+export type IdempotentNotificationResult = {
+  notification: Notification;
+  replayed: boolean;
+};
+
+export class NotificationIdempotencyConflictError extends Error {
+  constructor() {
+    super('Idempotency key was already used with a different notification payload');
+    this.name = 'NotificationIdempotencyConflictError';
+  }
+}
+
+export async function deleteNotificationForRecipient(
+  id: string,
+  recipientId: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [notification] = await tx
+      .select()
+      .from(notifications)
+      .where(and(
+        eq(notifications.id, id),
+        eq(notifications.recipientId, recipientId)
+      ))
+      .for('update')
+      .limit(1);
+    if (!notification) return false;
+
+    await tx.delete(notifications).where(eq(notifications.id, id));
+    await logAuditEvent({
+      actorId: recipientId,
+      action: 'DELETE',
+      entityType: 'notifications',
+      entityId: notification.id,
+      oldValues: { type: notification.type, read: notification.readAt !== null },
+      newValues: null,
+      ...auditMetadata,
+    }, tx);
+    return true;
+  });
+}
+
+type IdempotentNotificationInput = Omit<NewNotification, 'idempotencyKey' | 'idempotencyPayloadHash'> & {
+  idempotencyKey: string;
+};
+type LegacyNotificationInput = Omit<NewNotification, 'idempotencyKey' | 'idempotencyPayloadHash'>;
+
+function hashNotificationPayload(input: IdempotentNotificationInput): string {
+  const payload = {
+    recipientId: input.recipientId,
+    type: input.type,
+    title: input.title,
+    message: input.message ?? null,
+    relatedShiftId: input.relatedShiftId ?? null,
+    relatedApplicationId: input.relatedApplicationId ?? null,
+  };
+
+  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+}
 
 /**
  * Get notifications with filtering
@@ -14,8 +79,8 @@ export async function getNotifications({
   limit = 20,
 }: {
   recipientId?: string;
-  type?: string;
-  isRead?: boolean;
+  type?: Notification['type'];
+  isRead?: boolean | null;
   page?: number;
   limit?: number;
 }): Promise<{ data: Notification[]; total: number }> {
@@ -28,13 +93,13 @@ export async function getNotifications({
   }
 
   if (type) {
-    conditions.push(eq(notifications.type, type as any));
+    conditions.push(eq(notifications.type, type));
   }
 
-  if (isRead) {
-    conditions.push(isNotNull(notifications.readAt));
-  } else {
-    conditions.push(isNull(notifications.readAt));
+  if (isRead !== null) {
+    conditions.push(isRead
+      ? isNotNull(notifications.readAt)
+      : isNull(notifications.readAt));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -48,7 +113,7 @@ export async function getNotifications({
     .select()
     .from(notifications)
     .where(whereClause)
-    .orderBy(desc(notifications.createdAt))
+    .orderBy(desc(notifications.createdAt), desc(notifications.id))
     .limit(limit)
     .offset(offset);
 
@@ -58,139 +123,136 @@ export async function getNotifications({
 /**
  * Mark notification as read
  */
-export async function markNotificationRead(id: string): Promise<boolean> {
-  const result = await db
-    .update(notifications)
-    .set({ readAt: new Date() })
-    .where(eq(notifications.id, id));
+export async function markNotificationRead(
+  id: string,
+  actorId: string,
+  auditMetadata?: AuditMetadata
+): Promise<boolean> {
+  return markNotificationReadForRecipient(id, actorId, auditMetadata);
+}
 
-  return (result.rowCount ?? 0) > 0;
+export async function markNotificationReadForRecipient(
+  id: string,
+  recipientId: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [notification] = await tx
+      .select()
+      .from(notifications)
+      .where(and(
+        eq(notifications.id, id),
+        eq(notifications.recipientId, recipientId)
+      ))
+      .for('update')
+      .limit(1);
+    if (!notification) return false;
+    if (notification.readAt) return true;
+
+    const readAt = new Date();
+    await tx
+      .update(notifications)
+      .set({ readAt })
+      .where(eq(notifications.id, id));
+    await logAuditEvent({
+      actorId: recipientId,
+      action: 'UPDATE',
+      entityType: 'notifications',
+      entityId: notification.id,
+      oldValues: { read: false },
+      newValues: { read: true },
+      ...auditMetadata,
+    }, tx);
+    return true;
+  });
 }
 
 /**
  * Delete notification
  */
-export async function deleteNotification(id: string): Promise<boolean> {
-  const result = await db.delete(notifications).where(eq(notifications.id, id));
-  return (result.rowCount ?? 0) > 0;
+export async function deleteNotification(
+  id: string,
+  actorId: string,
+  auditMetadata?: AuditMetadata
+): Promise<boolean> {
+  return deleteNotificationForRecipient(id, actorId, auditMetadata);
 }
 
 /**
  * Create a new notification
  * Only intended for trusted server-side workflows (application review, shift reminders, admin actions)
  */
-export async function createNotification(input: NewNotification): Promise<Notification> {
-  const [created] = await db
-    .insert(notifications)
-    .values(input)
-    .returning();
-  return created;
+export async function createNotification(
+  input: LegacyNotificationInput,
+  actorId: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<Notification> {
+  return db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(notifications)
+      .values(input)
+      .returning();
+    await logAuditEvent({
+      actorId,
+      action: 'INSERT',
+      entityType: 'notifications',
+      entityId: created.id,
+      oldValues: null,
+      newValues: {
+        type: created.type,
+        relatedShiftId: created.relatedShiftId,
+        relatedApplicationId: created.relatedApplicationId,
+      },
+      ...auditMetadata,
+    }, tx);
+    return created;
+  });
 }
 
-/**
- * Create a notification with database-enforced idempotency
- * Uses PostgreSQL ON CONFLICT DO NOTHING with partial unique indexes
- * to atomically insert or return existing row
- * Guarantees exactly-one per (recipientId, type, relatedShiftId) or (recipientId, type, relatedApplicationId)
- */
-export async function createNotificationIdempotent(input: NewNotification): Promise<Notification> {
-  // Use raw SQL with ON CONFLICT for partial unique indexes
-  if (input.relatedShiftId) {
-    const query = `
-      INSERT INTO notifications (id, recipient_id, type, title, message, related_shift_id, related_application_id, read_at, created_at)
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW())
-      ON CONFLICT (recipient_id, type, related_shift_id) WHERE related_shift_id IS NOT NULL
-      DO NOTHING
-      RETURNING *
-    `;
-    const values = [
-      input.recipientId,
-      input.type,
-      input.title,
-      input.message,
-      input.relatedShiftId,
-      input.relatedApplicationId,
-      input.readAt,
-    ];
-    const result = await pool.query(query, values);
-    if (result.rows.length > 0) {
-      const row = result.rows[0];
-      return {
-        id: row.id,
-        recipientId: row.recipient_id,
-        type: row.type,
-        title: row.title,
-        message: row.message,
-        relatedShiftId: row.related_shift_id,
-        relatedApplicationId: row.related_application_id,
-        readAt: row.read_at,
-        createdAt: row.created_at,
-      } as Notification;
-    }
-
-    // Conflict occurred - fetch the existing row
-    const [existing] = await db
-      .select()
-      .from(notifications)
-      .where(and(
-        eq(notifications.recipientId, input.recipientId),
-        eq(notifications.type, input.type),
-        eq(notifications.relatedShiftId, input.relatedShiftId)
-      ))
-      .limit(1);
-
-    if (existing) return existing;
+/** Create or replay a notification by a stable, recipient-scoped event key. */
+export async function createNotificationIdempotent(
+  input: IdempotentNotificationInput,
+  executor: NotificationExecutor = db
+): Promise<IdempotentNotificationResult> {
+  if (!input.idempotencyKey.trim()) {
+    throw new Error('Idempotency key must not be empty');
   }
 
-  if (input.relatedApplicationId) {
-    const query = `
-      INSERT INTO notifications (id, recipient_id, type, title, message, related_shift_id, related_application_id, read_at, created_at)
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW())
-      ON CONFLICT (recipient_id, type, related_application_id) WHERE related_application_id IS NOT NULL
-      DO NOTHING
-      RETURNING *
-    `;
-    const values = [
-      input.recipientId,
-      input.type,
-      input.title,
-      input.message,
-      input.relatedShiftId,
-      input.relatedApplicationId,
-      input.readAt,
-    ];
-    const result = await pool.query(query, values);
-    if (result.rows.length > 0) {
-      const row = result.rows[0];
-      return {
-        id: row.id,
-        recipientId: row.recipient_id,
-        type: row.type,
-        title: row.title,
-        message: row.message,
-        relatedShiftId: row.related_shift_id,
-        relatedApplicationId: row.related_application_id,
-        readAt: row.read_at,
-        createdAt: row.created_at,
-      } as Notification;
-    }
+  const payloadHash = hashNotificationPayload(input);
+  const [created] = await executor
+    .insert(notifications)
+    .values({
+      ...input,
+      idempotencyPayloadHash: payloadHash,
+    })
+    .onConflictDoNothing({
+      target: [notifications.recipientId, notifications.idempotencyKey],
+      where: sql`${notifications.idempotencyKey} IS NOT NULL`,
+    })
+    .returning();
 
-    // Conflict occurred - fetch the existing row
-    const [existing] = await db
-      .select()
-      .from(notifications)
-      .where(and(
-        eq(notifications.recipientId, input.recipientId),
-        eq(notifications.type, input.type),
-        eq(notifications.relatedApplicationId, input.relatedApplicationId)
-      ))
-      .limit(1);
-
-    if (existing) return existing;
+  if (created) {
+    return { notification: created, replayed: false };
   }
 
-  // No related shift or application - fall back to simple insert (no idempotency constraint for this case)
-  return createNotification(input);
+  const [existing] = await executor
+    .select()
+    .from(notifications)
+    .where(and(
+      eq(notifications.recipientId, input.recipientId),
+      eq(notifications.idempotencyKey, input.idempotencyKey)
+    ))
+    .limit(1);
+
+  if (!existing) {
+    throw new Error('Notification insert conflicted but no matching event was found');
+  }
+
+  if (existing.idempotencyPayloadHash !== payloadHash) {
+    throw new NotificationIdempotencyConflictError();
+  }
+
+  return { notification: existing, replayed: true };
 }
 
 /**
@@ -210,13 +272,39 @@ export async function getUnreadCount(recipientId: string): Promise<number> {
 /**
  * Mark all notifications as read for a recipient
  */
-export async function markAllNotificationsRead(recipientId: string): Promise<number> {
-  const result = await db
-    .update(notifications)
-    .set({ readAt: new Date() })
-    .where(and(
-      eq(notifications.recipientId, recipientId),
-      isNull(notifications.readAt)
-    ));
-  return result.rowCount ?? 0;
+export async function markAllNotificationsRead(
+  recipientId: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<number> {
+  return db.transaction(async (tx) => {
+    const unread = await tx
+      .select({ id: notifications.id })
+      .from(notifications)
+      .where(and(
+        eq(notifications.recipientId, recipientId),
+        isNull(notifications.readAt)
+      ))
+      .for('update');
+    if (unread.length === 0) return 0;
+
+    await tx
+      .update(notifications)
+      .set({ readAt: new Date() })
+      .where(and(
+        eq(notifications.recipientId, recipientId),
+        isNull(notifications.readAt)
+      ));
+    for (const notification of unread) {
+      await logAuditEvent({
+        actorId: recipientId,
+        action: 'UPDATE',
+        entityType: 'notifications',
+        entityId: notification.id,
+        oldValues: { read: false },
+        newValues: { read: true },
+        ...auditMetadata,
+      }, tx);
+    }
+    return unread.length;
+  });
 }

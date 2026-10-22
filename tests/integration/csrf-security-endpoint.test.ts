@@ -6,6 +6,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCsrfToken, signCsrfToken } from '@/lib/middleware/csrf';
 
+vi.mock('@/lib/auth/passwords', () => ({
+  hashPassword: vi.fn(),
+  verifyPassword: vi.fn(),
+}));
+
 // Mock auth dependencies
 vi.mock('@/lib/auth/tokens', () => ({
   verifyTokenFromCookie: vi.fn(),
@@ -13,7 +18,7 @@ vi.mock('@/lib/auth/tokens', () => ({
   hashToken: vi.fn(),
   hashIp: vi.fn(),
   generateOpaqueToken: vi.fn(),
-  decodeJwt: vi.fn(),
+  decodeJwt: vi.fn(() => ({ jti: 'test-jti' })),
 }));
 
 vi.mock('@/lib/auth/session', () => ({
@@ -32,6 +37,16 @@ vi.mock('@/lib/db', () => ({
     insert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({
+      select: vi.fn(),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ id: 'new-user' }]),
+        })),
+      })),
+      update: vi.fn(),
+      delete: vi.fn(),
+    })),
   },
 }));
 
@@ -160,7 +175,7 @@ describe('CSRF Security - Endpoint Tests', () => {
     const { POST } = await import('@/app/api/auth/login/route');
     const req = createReq('POST', 'http://localhost:3000/api/auth/login', {
       'content-type': 'application/json',
-    }, { email: 'test@test.com', password: 'password123' });
+    }, { email: 'test@test.com', password: 'Workforce-Test-Only-Password-2026!' });
 
     const res = await POST(req);
     const setCookie = res.headers.get('set-cookie');
@@ -195,7 +210,7 @@ describe('CSRF Security - Endpoint Tests', () => {
     const { POST } = await import('@/app/api/auth/register/route');
     const req = createReq('POST', 'http://localhost:3000/api/auth/register', {
       'content-type': 'application/json',
-    }, { email: 'test@test.com', password: 'password123', fullName: 'Test User', preferredLanguage: 'nl' });
+    }, { email: 'test@test.com', password: 'Workforce-Test-Only-Password-2026!', fullName: 'Test User', preferredLanguage: 'nl' });
 
     const res = await POST(req);
     const setCookie = res.headers.get('set-cookie');
@@ -292,7 +307,7 @@ describe('CSRF Security - Endpoint Tests', () => {
       'content-type': 'application/json',
       cookie: `access_token=valid; csrf_token=${signedToken}`,
       'x-csrf-token': signedToken,
-    }, { shiftAssignmentId: 'assignment-b' });
+    }, { shiftAssignmentId: '00000000-0000-0000-0000-000000000001' });
 
     const res = await POST(req);
     expect(res.status).toBe(400);

@@ -3,6 +3,7 @@ import { applyForShiftWithLock } from '@/lib/db/queries/applications';
 import { applyShiftSchema } from '@/lib/validators/applications';
 import { requireRole } from '@/lib/middleware/requireRole';
 import { withCsrfAndAuth } from '@/lib/middleware/csrf';
+import { getAuditMetadata } from '@/lib/middleware/auditLogger';
 
 /**
  * POST /api/employee/shifts/[id]/apply - Apply for a shift with concurrency lock
@@ -31,7 +32,7 @@ async function applyShiftHandler(
     }
 
     // Apply with Redis lock for concurrency protection
-    const result = await applyForShiftWithLock(validation.data.shiftId, userId);
+    const result = await applyForShiftWithLock(validation.data.shiftId, userId, getAuditMetadata(req));
 
     if (!result.success) {
       return NextResponse.json(

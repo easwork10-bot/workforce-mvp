@@ -1,8 +1,17 @@
 import { db } from '..';
-import { shiftApplications, shifts, profiles, shiftAssignments, notifications } from '../schema';
+import { shiftApplications, shifts, profiles, shiftAssignments } from '../schema';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import type { ShiftApplication } from '../schema';
 import { getRedis } from '../../auth/session';
+import {
+  createNotificationIdempotent,
+  NotificationIdempotencyConflictError,
+} from './notifications';
+import { logAuditEvent, type AuditMetadata } from './audit';
+
+export type ReviewApplicationResult =
+  | { success: true; message: string; replayed?: boolean }
+  | { success: false; message: string; conflict?: boolean; internalError?: boolean };
 
 /**
  * Get shift applications with filtering
@@ -89,28 +98,43 @@ export async function reviewApplication(
   applicationId: string,
   reviewerId: string,
   status: 'accepted' | 'rejected',
-  rejectionReason?: string
-): Promise<{ success: boolean; message: string }> {
+  rejectionReason?: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
+): Promise<ReviewApplicationResult> {
   return await db.transaction(async (tx) => {
-    // Get application details
+    // Serialize decisions for the same application before checking terminal state.
     const [app] = await tx
       .select()
       .from(shiftApplications)
       .where(eq(shiftApplications.id, applicationId))
+      .for('update')
       .limit(1);
 
     if (!app) return { success: false, message: 'Sollicitatie niet gevonden' };
 
-    // Update application status
-    await tx
-      .update(shiftApplications)
-      .set({
-        status,
-        reviewedBy: reviewerId,
-        reviewedAt: new Date(),
-        rejectionReason: status === 'rejected' ? rejectionReason : null,
-      })
-      .where(eq(shiftApplications.id, applicationId));
+    if (app.status !== 'pending') {
+      if (app.status === status) {
+        if (status === 'rejected' && (app.rejectionReason ?? null) !== (rejectionReason ?? null)) {
+          return {
+            success: false,
+            message: 'Sollicitatie is al beoordeeld met andere gegevens',
+            conflict: true,
+          };
+        }
+
+        return {
+          success: true,
+          message: 'Sollicitatie was al beoordeeld',
+          replayed: true,
+        };
+      }
+
+      return {
+        success: false,
+        message: 'Sollicitatie is al met een andere uitkomst beoordeeld',
+        conflict: true,
+      };
+    }
 
     // If accepted, create a shift assignment with capacity check
     if (status === 'accepted') {
@@ -137,8 +161,7 @@ export async function reviewApplication(
 
       // Enforce capacity
       if (assignedCount >= shift.requiredWorkers) {
-        // Rollback application status update by throwing
-        throw new Error('Dienst is vol');
+        return { success: false, message: 'Dienst is vol' };
       }
 
       // Check if already assigned (double-check after lock)
@@ -152,60 +175,105 @@ export async function reviewApplication(
         .limit(1);
 
       if (existingAssignment) {
-        throw new Error('Werknemer is al ingedeeld voor deze dienst');
+        return {
+          success: false,
+          message: 'Werknemer is al ingedeeld voor deze dienst',
+          conflict: true,
+        };
       }
 
       // Create assignment
-      await tx.insert(shiftAssignments).values({
+      const [assignment] = await tx.insert(shiftAssignments).values({
         shiftId: app.shiftId,
         employeeId: app.employeeId,
         applicationId: app.id,
         status: 'assigned',
         assignedBy: reviewerId,
-      });
+      }).returning();
 
-      // Create notification
-      const [shiftTitle] = await tx
-        .select({ title: shifts.title })
-        .from(shifts)
-        .where(eq(shifts.id, app.shiftId))
-        .limit(1);
+      await logAuditEvent({
+        actorId: reviewerId,
+        action: 'INSERT',
+        entityType: 'shift_assignments',
+        entityId: assignment.id,
+        oldValues: null,
+        newValues: { applicationId: app.id, status: 'assigned' },
+        ...auditMetadata,
+      }, tx);
 
-      await tx.insert(notifications).values({
-        recipientId: app.employeeId,
-        type: 'application_accepted',
-        title: 'Sollicitatie geaccepteerd',
-        message: `Je sollicitatie voor de dienst "${shiftTitle?.title}" is geaccepteerd.`,
-        relatedShiftId: app.shiftId,
-        relatedApplicationId: app.id,
-      });
-
-      return { success: true, message: 'Sollicitatie geaccepteerd en ingedeeld' };
-    } else if (status === 'rejected') {
-      // Create notification for rejection
-      const [shiftTitle] = await tx
-        .select({ title: shifts.title })
-        .from(shifts)
-        .where(eq(shifts.id, app.shiftId))
-        .limit(1);
-
-      await tx.insert(notifications).values({
-        recipientId: app.employeeId,
-        type: 'application_rejected',
-        title: 'Sollicitatie afgewezen',
-        message: `Je sollicitatie voor de dienst "${shiftTitle?.title}" is afgewezen.${rejectionReason ? ` Reden: ${rejectionReason}` : ''}`,
-        relatedShiftId: app.shiftId,
-        relatedApplicationId: app.id,
-      });
-
-      return { success: true, message: 'Sollicitatie afgewezen' };
     }
 
-    return { success: true, message: 'Sollicitatie bijgewerkt' };
+    const [shiftTitle] = await tx
+      .select({ title: shifts.title })
+      .from(shifts)
+      .where(eq(shifts.id, app.shiftId))
+      .limit(1);
+
+    await tx
+      .update(shiftApplications)
+      .set({
+        status,
+        reviewedBy: reviewerId,
+        reviewedAt: new Date(),
+        rejectionReason: status === 'rejected' ? rejectionReason : null,
+      })
+      .where(eq(shiftApplications.id, applicationId));
+
+    const accepted = status === 'accepted';
+    const notificationResult = await createNotificationIdempotent({
+      recipientId: app.employeeId,
+      type: accepted ? 'application_accepted' : 'application_rejected',
+      title: accepted ? 'Sollicitatie geaccepteerd' : 'Sollicitatie afgewezen',
+      message: accepted
+        ? `Je sollicitatie voor de dienst "${shiftTitle?.title}" is geaccepteerd.`
+        : `Je sollicitatie voor de dienst "${shiftTitle?.title}" is afgewezen.${rejectionReason ? ` Reden: ${rejectionReason}` : ''}`,
+      relatedShiftId: app.shiftId,
+      relatedApplicationId: app.id,
+      idempotencyKey: `application-decision:v1:${app.id}`,
+    }, tx);
+
+    if (!notificationResult.replayed) {
+      await logAuditEvent({
+        actorId: reviewerId,
+        action: 'INSERT',
+        entityType: 'notifications',
+        entityId: notificationResult.notification.id,
+        oldValues: null,
+        newValues: {
+          type: notificationResult.notification.type,
+          relatedApplicationId: app.id,
+          read: false,
+        },
+        ...auditMetadata,
+      }, tx);
+    }
+
+    await logAuditEvent({
+      actorId: reviewerId,
+      action: 'UPDATE',
+      entityType: 'shift_applications',
+      entityId: app.id,
+      oldValues: { status: app.status },
+      newValues: { status },
+      ...auditMetadata,
+    }, tx);
+
+    return {
+      success: true,
+      message: accepted ? 'Sollicitatie geaccepteerd en ingedeeld' : 'Sollicitatie afgewezen',
+    };
   }).catch((err) => {
+    if (err instanceof NotificationIdempotencyConflictError) {
+      return {
+        success: false,
+        message: 'Notificatie-idempotentiesleutel is al gebruikt voor andere gegevens',
+        conflict: true,
+      };
+    }
+
     // Transaction failed - return error
     console.error('[reviewApplication] Transaction error:', err);
-    return { success: false, message: err instanceof Error ? err.message : 'Verwerken mislukt' };
+    return { success: false, message: 'Verwerken mislukt', internalError: true };
   });
 }
 
@@ -215,7 +283,8 @@ export async function reviewApplication(
  */
 export async function applyForShiftWithLock(
   shiftId: string,
-  employeeId: string
+  employeeId: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null }
 ): Promise<{ success: boolean; message: string; applicationId?: string }> {
   let redis;
   let lockAcquired = false;
@@ -306,6 +375,16 @@ export async function applyForShiftWithLock(
           status: 'pending',
         })
         .returning();
+
+      await logAuditEvent({
+        actorId: employeeId,
+        action: 'INSERT',
+        entityType: 'shift_applications',
+        entityId: newApp.id,
+        oldValues: null,
+        newValues: { shiftId, status: 'pending' },
+        ...auditMetadata,
+      }, tx);
 
       return {
         success: true,

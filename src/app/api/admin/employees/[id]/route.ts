@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth/session';
 import { verifyTokenFromCookie } from '@/lib/auth/tokens';
 import { employeeIdParamSchema, updateEmployeeSchema } from '@/lib/validators/employees';
 import { getEmployeeById, updateEmployee } from '@/lib/db/queries/employees';
+import { getAuditMetadata } from '@/lib/middleware/auditLogger';
 
 /**
  * GET /api/admin/employees/[id] - Get employee by ID (admin only)
@@ -90,6 +91,7 @@ async function PATCH(req: NextRequest, { params }: { params: { id: string } }): 
     // Update employee
     const success = await updateEmployee(
       params.id,
+      payload.sub,
       {
         fullName: validation.data.fullName,
         phone: validation.data.phone,
@@ -110,7 +112,8 @@ async function PATCH(req: NextRequest, { params }: { params: { id: string } }): 
         postalCode: validation.data.postalCode,
         dateOfBirth: validation.data.dateOfBirth ? new Date(validation.data.dateOfBirth) : undefined,
         bsNumber: validation.data.bsNumber,
-      }
+      },
+      getAuditMetadata(req)
     );
 
     if (!success) {

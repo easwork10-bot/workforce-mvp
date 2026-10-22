@@ -8,7 +8,8 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
-    // Run integration tests sequentially to avoid database conflicts
+    fileParallelism: false,
+    // Database test files share fixture tables and must not overlap.
     sequence: {
       hooks: 'list',
       shuffle: false,
