@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 14 (App Router), TypeScript, Tailwind CSS, next-intl, Radix UI, PostgreSQL (self-hosted), Redis (self-hosted), Docker Compose for local dev, Zod for validation, Argon2id for passwords, jose for JWT, Drizzle ORM.
 
-**Spec:** Current implementation at `/home/as/projects/workforce-mvp` — 9 tables, RLS policies, auth flow, 13 pages, role-based access (admin/supervisor/employee)
+**Spec:** Current implementation in this repository — 9 tables, RLS policies, auth flow, 13 pages, role-based access (admin/supervisor/employee)
 
 ## Global Constraints
 
@@ -379,10 +379,12 @@ volumes: { pgdata, redisdata }
 
 ### Phase 5: Notifications & Audit (1 day)
 
-- [ ] Task 5.1: Notification CRUD API (`/api/notifications*`)
-- [ ] Task 5.2: Audit log middleware — auto-log mutations with actor_id, action, entity_type, entity_id, old/new_values, ip, user_agent
-- [ ] Task 5.3: Background job for upcoming shift reminders (cron via `node-cron` or Next.js scheduled revalidation)
-- [ ] **Verify:** Audit log captures all mutations; notifications created on application status change
+> **Plan alignment and local status (2026-10-22):** The detailed [2026-10-20 Phase 5 plan](./2026-10-20-phase5-notifications-audit.md) is authoritative for implementation details and current verification evidence. This older roadmap's task numbers and descriptions are retained; the crosswalk is: older Task 5.1 (notification CRUD) maps to detailed Tasks 5.1, 5.2, and 5.5 (query/idempotency, own-notification API, and application-review notification); older Task 5.2 (audit logging) maps to detailed Task 5.3; older Task 5.3 (shift reminders) maps to detailed Task 5.4; and this roadmap's Verify item maps to detailed Task 5.6. The old Task 5.3's `node-cron` suggestion was not adopted: the verified implementation is an opt-in in-process Node scheduler with bounded best-effort delivery. All mapped Phase 5 items are locally implemented and verified; see the detailed plan for implementation and test evidence. The local test database has the four current journaled migrations 0000–0003 plus a retained legacy ledger entry for `0000_melodic_spectrum.sql`, absent from the current journal. No migration history was changed; `workforce` and production were not accessed or migrated.
+
+- [x] Task 5.1: Notification CRUD API (`/api/notifications*`) — see crosswalk above; client POST remains intentionally disabled.
+- [x] Task 5.2: Audit logging — transactional audit coverage is implemented; see detailed Task 5.3.
+- [x] Task 5.3: Background job for upcoming shift reminders — see detailed Task 5.4 for actual scheduler and reliability semantics.
+- [x] **Verify:** Phase 5 cross-feature verification passed locally; see detailed Task 5.6.
 
 ### Phase 6: Migration & Polish (2 days)
 
