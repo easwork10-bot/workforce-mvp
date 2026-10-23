@@ -15,3 +15,8 @@ they are not the current product specification. Verify current behavior in the
 
 - [Workforce MVP handoff](./workforce-handoff.md) — original product proposal and
   implementation guidance, retained as a historical record.
+
+## Historical database schema
+
+- [Supabase initial schema](./database/supabase/001_initial_schema.sql) — archived
+  SQL from the former Supabase schema track; not an active migration.

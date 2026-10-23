@@ -19,7 +19,6 @@ test-results
 tests
 test-*.ts
 docs
-supabase
 .vercel
 .turbo
 *.tsbuildinfo

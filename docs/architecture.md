@@ -163,10 +163,10 @@ schema and writes migration artifacts to [`drizzle/`](../drizzle/).
 The current Drizzle journal records `0000_wild_agent_zero` and migrations
 `0001_notification_idempotency_expand`, `0002_retire_notification_legacy_indexes`,
 and `0003_damp_unus`. There is also an older `drizzle/0000_melodic_spectrum.sql`
-file that is not present in the current journal, plus a separate
-`supabase/migrations/001_initial_schema.sql`. These artifacts represent different
-historical schema tracks; their presence does not establish the state of any
-existing database.
+file that is not present in the current journal, plus the historical
+[Supabase initial schema](./history/database/supabase/001_initial_schema.sql).
+These artifacts represent different historical schema tracks; their presence
+does not establish the state of any existing database.
 
 **Unresolved operational concern:** reconcile the current schema, deployed/local
 database migration ledgers, and both historical SQL tracks before deciding how to
@@ -266,10 +266,10 @@ maintained.
 - The [historical records index](./history/README.md) links to the dated
   [implementation plans](./history/plans/) and original
   [product handoff](./history/workforce-handoff.md).
-- `supabase/migrations/` is a historical Supabase-era artifact, not the active
-  database or runtime configuration. The unused Supabase environment templates and
-  feature-flag module were removed after confirming no current consumers. Use the
-  root `.env.example` for active variable names.
+- The archived Supabase SQL is a historical artifact, not the active database or
+  runtime configuration. The unused Supabase environment templates and feature-flag
+  module were removed after confirming no current consumers. Use the root
+  `.env.example` for active variable names.
 
 Historical documents may contain unfinished tasks or obsolete implementation
 descriptions. Their original content is retained; verify all current behavior

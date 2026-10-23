@@ -110,6 +110,25 @@ describe('JWT key configuration', () => {
     await expect(tokens.verifyAccessToken(pair.accessToken)).resolves.toMatchObject({ sub: 'file-user' });
   });
 
+  it('extracts and verifies an access token from a browser cookie header', async () => {
+    const directory = await createTemporaryDirectory();
+    const paths = await writeKeyPair(directory, validKeyPair);
+    process.env.JWT_PRIVATE_KEY_FILE = paths.privatePath;
+    process.env.JWT_PUBLIC_KEY_FILE = paths.publicPath;
+    const tokens = await loadTokens();
+    const pair = await tokens.createTokenPair('cookie-user', 'employee', '127.0.0.1');
+
+    await expect(tokens.verifyTokenFromCookie(
+      `csrf_token=synthetic-csrf; access_token=${encodeURIComponent(pair.accessToken)}`
+    )).resolves.toMatchObject({
+      sub: 'cookie-user',
+      role: 'employee',
+    });
+    await expect(tokens.verifyTokenFromCookie('refresh_token=synthetic-refresh'))
+      .resolves.toBeNull();
+    await expect(tokens.verifyTokenFromCookie(null)).resolves.toBeNull();
+  });
+
   it('ignores empty base64 placeholders when an explicit file pair is configured', async () => {
     const directory = await createTemporaryDirectory();
     const paths = await writeKeyPair(directory, validKeyPair);
