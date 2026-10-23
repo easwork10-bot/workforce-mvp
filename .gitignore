@@ -17,6 +17,8 @@
 /coverage/
 /playwright-report/
 /test-results/
+/tests/results/
+/.cache/
 
 # Local tooling and generated files
 /.vercel/

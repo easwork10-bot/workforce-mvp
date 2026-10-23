@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
-import { findFrontendBoundaryViolations } from '../scripts/check-frontend-boundaries.mjs';
+import { findFrontendBoundaryViolations } from '../../../scripts/check-frontend-boundaries.mjs';
 
 const projectRoot = process.cwd();
 

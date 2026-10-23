@@ -35,6 +35,7 @@
       ]
     },
     "incremental": true,
+    "tsBuildInfoFile": ".cache/typescript/tsconfig.tsbuildinfo",
     "plugins": [
       {
         "name": "next"

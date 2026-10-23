@@ -23,9 +23,9 @@ const protectedTables = [
   'user_roles',
 ];
 const focusedTests = [
-  'tests/testDatabaseSafety.test.ts',
-  'tests/session-security.test.ts',
-  'tests/jwtKeys.test.ts',
+  'tests/unit/testing/testDatabaseSafety.test.ts',
+  'tests/unit/security/session-security.test.ts',
+  'tests/unit/security/jwtKeys.test.ts',
   'tests/integration/phase3-shift-browsing.test.ts',
   'tests/integration/phase3-application-concurrency.test.ts',
   'tests/integration/phase3-attendance.test.ts',
@@ -132,7 +132,7 @@ async function waitForDatabase(connectionString) {
 
 async function verifyLiveDatabaseIdentity() {
   const guardScript = [
-    "import { verifyTestDatabaseTarget } from './tests/testDatabaseSafety.ts';",
+    "import { verifyTestDatabaseTarget } from './tests/support/database/testDatabaseSafety.ts';",
     'await verifyTestDatabaseTarget(',
     '  process.env.DATABASE_URL,',
     '  process.env.WORKFORCE_TEST_DB_SERVER_ADDRESS,',
@@ -239,7 +239,13 @@ try {
   }
 
   await runQualityCommand('Focused database safety, auth, and business tests',
-    process.execPath, ['node_modules/vitest/vitest.mjs', 'run', ...focusedTests]);
+    process.execPath, [
+      'node_modules/vitest/vitest.mjs',
+      'run',
+      '--config',
+      'vitest.integration.config.ts',
+      ...focusedTests,
+    ]);
   const afterFocused = await waitForDatabase(databaseUrl);
   try {
     await assertFixturesEmpty(afterFocused, 'after focused tests');
@@ -248,7 +254,12 @@ try {
   }
 
   await runQualityCommand('Complete Vitest suite',
-    process.execPath, ['node_modules/vitest/vitest.mjs', 'run']);
+    process.execPath, [
+      'node_modules/vitest/vitest.mjs',
+      'run',
+      '--config',
+      'vitest.integration.config.ts',
+    ]);
   const afterFull = await waitForDatabase(databaseUrl);
   try {
     await assertFixturesEmpty(afterFull, 'after the full test suite');

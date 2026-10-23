@@ -11,9 +11,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.ts",
     "test:integration:safe": "node scripts/test-integration-safe.mjs",
-    "test:ui": "vitest --ui",
+    "test:ui": "vitest --ui --config vitest.config.ts",
     "check:frontend-boundaries": "node scripts/check-frontend-boundaries.mjs"
   },
   "dependencies": {

@@ -3,7 +3,7 @@ import {
   validateTestDatabaseTarget,
   verifyTestDatabaseTarget,
   type TestDatabaseIdentity,
-} from './testDatabaseSafety';
+} from '../../support/database/testDatabaseSafety';
 
 const safeUrl = 'postgresql://tester:private@localhost:5432/workforce_test';
 const safeServerAddress = '127.0.0.1';
