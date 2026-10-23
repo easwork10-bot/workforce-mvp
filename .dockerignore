@@ -1,0 +1,30 @@
+# Source control, local environment, and secrets
+.git
+.ai-bridge
+.env*
+docker-compose*.yml
+secrets
+**/*.pem
+**/*.key
+
+# Dependencies and generated build output
+node_modules
+.next
+out
+coverage
+playwright-report
+test-results
+
+# Tests and local-only artifacts
+tests
+test-*.ts
+docs
+supabase
+.vercel
+.turbo
+*.tsbuildinfo
+*.log
+*.dump
+*.sql.gz
+skill-observations
+cross-cutting-principles.md

@@ -3,15 +3,23 @@
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: development
     ports:
       - "3000:3000"
+    working_dir: /app
+    init: true
+    command: ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/workforce
-      - REDIS_URL=redis://redis:6379
-      - JWT_PUBLIC_KEY_FILE=/run/secrets/jwt_public_key
-      - JWT_PRIVATE_KEY_FILE=/run/secrets/jwt_private_key
-      - NODE_ENV=development
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/workforce
+      REDIS_URL: redis://redis:6379
+      JWT_PUBLIC_KEY_FILE: /run/secrets/jwt_public_key
+      JWT_PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
+      JWT_PUBLIC_KEY_B64: ""
+      JWT_PRIVATE_KEY_B64: ""
+      CSRF_SECRET: ${CSRF_SECRET:?Set CSRF_SECRET to a random value of at least 32 bytes}
+      NODE_ENV: development
     depends_on:
       db:
         condition: service_healthy
@@ -20,6 +28,7 @@ services:
     volumes:
       - ".:/app"
       - "/app/node_modules"
+      - "/app/.next"
     secrets:
       - jwt_public_key
       - jwt_private_key

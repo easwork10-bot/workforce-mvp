@@ -1,29 +1,36 @@
 # Multi-stage Dockerfile for Workforce MVP
-# Builder stage
-FROM node:20-alpine AS builder
+# Development stage
+FROM node:24-alpine AS development
 
 WORKDIR /app
 
-# Install dependencies for argon2 and pg
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ libstdc++
 
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci --legacy-peer-deps
-
-# Copy source code
 COPY . .
 
-# Generate Drizzle migrations
-RUN npx drizzle-kit generate:pg
+ENV NODE_ENV=development
+EXPOSE 3000
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]
 
-# Build the application
+# Production builder stage
+FROM node:24-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json ./
+RUN npm ci --legacy-peer-deps
+
+COPY . .
+
+RUN mkdir -p public
 RUN npm run build
 
 # Runner stage
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 
@@ -41,7 +48,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy node_modules for drizzle migrations
+# Copy runtime dependencies
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/drizzle ./drizzle
 

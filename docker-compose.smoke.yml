@@ -1,0 +1,77 @@
+services:
+  app:
+    build:
+      context: .
+      target: development
+    command: ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]
+    environment:
+      DATABASE_URL: postgresql://workforce_smoke:${WORKFORCE_SMOKE_DB_PASSWORD:?Set a temporary smoke-test database password}@db:5432/workforce_docker_smoke
+      REDIS_URL: redis://redis:6379
+      JWT_PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
+      JWT_PUBLIC_KEY_FILE: /run/secrets/jwt_public_key
+      JWT_PRIVATE_KEY_B64: ""
+      JWT_PUBLIC_KEY_B64: ""
+      CSRF_SECRET: ${CSRF_SECRET:?Set a temporary smoke-test CSRF_SECRET}
+      NODE_ENV: development
+      SHIFT_REMINDER_JOB_ENABLED: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "3000"
+    secrets:
+      - jwt_private_key
+      - jwt_public_key
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 4s
+      retries: 24
+      start_period: 20s
+    networks:
+      - isolated
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: workforce_docker_smoke
+      POSTGRES_USER: workforce_smoke
+      POSTGRES_PASSWORD: ${WORKFORCE_SMOKE_DB_PASSWORD:?Set a temporary smoke-test database password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workforce_smoke -d workforce_docker_smoke"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    tmpfs:
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=512m
+    networks:
+      - isolated
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    tmpfs:
+      - /data:rw,noexec,nosuid,size=64m
+    networks:
+      - isolated
+
+networks:
+  isolated:
+    internal: true
+
+secrets:
+  jwt_private_key:
+    file: ${WORKFORCE_SMOKE_SECRETS_DIR:?Set temporary smoke secrets directory}/jwt_private_key.pem
+  jwt_public_key:
+    file: ${WORKFORCE_SMOKE_SECRETS_DIR:?Set temporary smoke secrets directory}/jwt_public_key.pem
