@@ -4,6 +4,7 @@ import { verifyTokenFromCookie } from '@/lib/auth/tokens';
 import { employeeIdParamSchema, updateEmployeeSchema } from '@/lib/validators/employees';
 import { getEmployeeById, updateEmployee } from '@/lib/db/queries/employees';
 import { getAuditMetadata } from '@/lib/middleware/auditLogger';
+import { requireCsrf } from '@/lib/middleware/csrf';
 
 /**
  * GET /api/admin/employees/[id] - Get employee by ID (admin only)
@@ -54,7 +55,7 @@ async function GET(req: NextRequest, { params }: { params: { id: string } }): Pr
 /**
  * PATCH /api/admin/employees/[id] - Update employee (admin only)
  */
-async function PATCH(req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+async function PATCH(req: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
   try {
     // Verify authentication
     const payload = await verifyTokenFromCookie(req.headers.get('cookie'));
@@ -68,6 +69,22 @@ async function PATCH(req: NextRequest, { params }: { params: { id: string } }): 
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
+    return await protectedPATCH(req, context, payload.sub);
+  } catch (error) {
+    console.error('[Admin Employee PATCH] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update employee' },
+      { status: 500 }
+    );
+  }
+}
+
+const protectedPATCH = requireCsrf(async (
+  req: NextRequest,
+  { params }: { params: { id: string } },
+  actorId: string
+): Promise<NextResponse> => {
+  try {
     // Validate employee ID
     const idValidation = employeeIdParamSchema.safeParse({ id: params.id });
     if (!idValidation.success) {
@@ -91,7 +108,7 @@ async function PATCH(req: NextRequest, { params }: { params: { id: string } }): 
     // Update employee
     const success = await updateEmployee(
       params.id,
-      payload.sub,
+      actorId,
       {
         fullName: validation.data.fullName,
         phone: validation.data.phone,
@@ -134,7 +151,7 @@ async function PATCH(req: NextRequest, { params }: { params: { id: string } }): 
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * DELETE /api/admin/employees/[id] - Delete employee (admin only)
