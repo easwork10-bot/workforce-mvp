@@ -28,8 +28,7 @@ pnpm-debug.log*
 .DS_Store
 
 # Local AI handoff artifacts; retain locally, do not include in product commits
-/.ai-bridge/inbox/
-/.ai-bridge/outbox/
+/.ai-bridge/
 /WORKFORCE_AI_HANDOFF.md
 /cross-cutting-principles.md
 /skill-observations/
