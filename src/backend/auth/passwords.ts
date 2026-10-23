@@ -34,18 +34,3 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     return false;
   }
 }
-
-/**
- * Check if a hash needs rehashing (e.g., parameters changed)
- * @param _hash - Stored Argon2id hash (unused)
- * @returns True if rehash is needed
- */
-export function needsRehash(_hash: string): boolean {
-  try {
-    // argon2 library doesn't have extractOptions, so we just return false
-    // In production, you could parse the hash string manually
-    return false;
-  } catch {
-    return true;
-  }
-}

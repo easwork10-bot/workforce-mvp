@@ -74,24 +74,3 @@ export function getClientIp(req: NextRequest): string {
   }
   return req.headers.get('x-real-ip') || '127.0.0.1';
 }
-
-/**
- * Higher-order function to wrap API route handlers with auth
- */
-export function withAuth<T extends any[]>(
-  handler: (req: AuthenticatedRequest, ...args: T) => Promise<NextResponse>
-) {
-  return async (req: NextRequest, ...args: T): Promise<NextResponse> => {
-    const authResult = await requireAuth(req);
-
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // Attach auth to request
-    const authReq = req as AuthenticatedRequest;
-    authReq.auth = authResult;
-
-    return handler(authReq, ...args);
-  };
-}

@@ -7,7 +7,7 @@ import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { ReactNode } from 'react';
 import { cn } from '@/frontend/lib/utils';
-import { Locale } from '@/lib/i18n';
+import type { Locale } from '@/i18n';
 import Navigation from '@/frontend/components/navigation';
 
 const inter = Inter({

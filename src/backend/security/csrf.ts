@@ -43,17 +43,6 @@ export function verifyCsrfToken(signedToken: string): string | null {
 }
 
 /**
- * Get raw CSRF token from request cookie (unsigned, for token endpoint)
- * This reads the cookie directly from NextRequest.cookies
- */
-export function getRawCsrfTokenFromCookie(req: NextRequest): string | null {
-  const cookie = req.cookies.get(CSRF_COOKIE_NAME);
-  if (!cookie) return null;
-  // Return the signed token as-is (the token endpoint will extract raw)
-  return cookie.value;
-}
-
-/**
  * Set CSRF cookie on response (HttpOnly for security)
  * The raw token is delivered to frontend via a separate /api/auth/csrf endpoint
  */

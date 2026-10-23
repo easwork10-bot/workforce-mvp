@@ -1,6 +1,6 @@
 import 'server-only';
 import { db } from '..';
-import { shiftAssignments, shifts, profiles, attendanceRecords } from '../schema';
+import { shiftAssignments, shifts, attendanceRecords } from '../schema';
 import { eq, and, desc, count, gte, lte, asc } from 'drizzle-orm';
 import type { ShiftAssignment } from '../schema';
 import { logAuditEvent, type AuditMetadata } from './audit';
@@ -53,78 +53,6 @@ export async function getAssignments({
     .offset(offset);
 
   return { data, total };
-}
-
-/**
- * Get shift assignments with details
- */
-export async function getAssignmentsWithDetails({
-  shiftId,
-  employeeId,
-  page = 1,
-  limit = 20,
-}: {
-  shiftId?: string;
-  employeeId?: string;
-  page?: number;
-  limit?: number;
-}): Promise<{
-  data: (ShiftAssignment & {
-    shift: { title: string; startAt: Date; endAt: Date; location: string };
-    employee: { fullName: string; email: string; phone: string | null };
-  })[];
-  total: number;
-}> {
-  const offset = (page - 1) * limit;
-
-  const conditions = [];
-
-  if (shiftId) {
-    conditions.push(eq(shiftAssignments.shiftId, shiftId));
-  }
-
-  if (employeeId) {
-    conditions.push(eq(shiftAssignments.employeeId, employeeId));
-  }
-
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(shiftAssignments)
-    .where(whereClause);
-
-  const data = await db
-    .select({
-      shiftAssignment: shiftAssignments,
-      shift: {
-        title: shifts.title,
-        startAt: shifts.startAt,
-        endAt: shifts.endAt,
-        location: shifts.location,
-      },
-      employee: {
-        fullName: profiles.fullName,
-        email: profiles.email,
-        phone: profiles.phone,
-      },
-    })
-    .from(shiftAssignments)
-    .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
-    .leftJoin(profiles, eq(shiftAssignments.employeeId, profiles.id))
-    .where(whereClause)
-    .orderBy(desc(shiftAssignments.assignedAt))
-    .limit(limit)
-    .offset(offset);
-
-  return {
-    data: data.map((item) => ({
-      ...item.shiftAssignment,
-      shift: item.shift!,
-      employee: item.employee!,
-    })),
-    total,
-  };
 }
 
 /**
