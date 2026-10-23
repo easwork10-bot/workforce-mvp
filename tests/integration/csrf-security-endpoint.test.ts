@@ -25,6 +25,7 @@ vi.mock('@/lib/auth/session', () => ({
   getSession: vi.fn(),
   deleteSession: vi.fn(),
   revokeAllUserSessions: vi.fn(),
+  rotateRefreshToken: vi.fn(),
   createSession: vi.fn(),
   checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 100, resetAt: Date.now() + 60000 }),
   RedisUnavailableError: class extends Error {},
@@ -113,7 +114,7 @@ describe('CSRF Security - Endpoint Tests', () => {
   /**
    * Test 4: Cross-session token replay is rejected
    */
-  it('should reject replayed CSRF token from different session', async () => {
+  it('should reject replayed CSRF token when the browser cookie has changed', async () => {
     const tokenA = signCsrfToken('session-a-token');
     const tokenB = signCsrfToken('session-b-token');
 
@@ -181,6 +182,60 @@ describe('CSRF Security - Endpoint Tests', () => {
     const setCookie = res.headers.get('set-cookie');
     expect(setCookie).toContain('csrf_token');
     expect(setCookie).toContain('HttpOnly');
+  });
+
+  it('should rotate a valid refresh session and return the established auth response and cookies', async () => {
+    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
+    const { rotateRefreshToken } = await import('@/lib/auth/session');
+    (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'user-123', jti: 'old-session' });
+    (rotateRefreshToken as any).mockResolvedValue({
+      accessToken: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+      jti: 'new-session',
+      role: 'employee',
+    });
+
+    const { POST } = await import('@/app/api/auth/refresh/route');
+    const req = createReq('POST', 'http://localhost:3000/api/auth/refresh', {
+      cookie: 'access_token=old-access-token; refresh_token=old-refresh-token',
+    });
+
+    const response = await POST(req);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      user: { id: 'user-123', role: 'employee' },
+    });
+    expect(response.headers.get('set-cookie')).toContain('access_token=new-access-token');
+    expect(response.headers.get('set-cookie')).toContain('refresh_token=new-refresh-token');
+    expect(response.headers.get('set-cookie')).toContain('csrf_token');
+    expect(rotateRefreshToken).toHaveBeenCalledWith(
+      'user-123',
+      'old-refresh-token',
+      '127.0.0.1',
+      'unknown'
+    );
+  });
+
+  it('should reject an invalid refresh session and clear auth cookies', async () => {
+    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
+    const { rotateRefreshToken, revokeAllUserSessions } = await import('@/lib/auth/session');
+    (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'user-123', jti: 'old-session' });
+    (rotateRefreshToken as any).mockResolvedValue(null);
+
+    const { POST } = await import('@/app/api/auth/refresh/route');
+    const req = createReq('POST', 'http://localhost:3000/api/auth/refresh', {
+      cookie: 'access_token=old-access-token; refresh_token=invalid-refresh-token',
+    });
+
+    const response = await POST(req);
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Session expired or invalid. Please log in again.',
+    });
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
+    expect(revokeAllUserSessions).toHaveBeenCalledWith('user-123');
   });
 
   it('should set CSRF cookie on register', async () => {
@@ -433,10 +488,7 @@ describe('CSRF Security - Endpoint Tests', () => {
     expect(res.status).toBe(403);
   });
 
-  /**
-   * Test 12: CSRF token endpoint delivers signed token securely
-   */
-  it('should deliver CSRF token via /api/auth/csrf endpoint', async () => {
+  it('should deliver the raw CSRF token and set its signed HttpOnly cookie', async () => {
     const { GET } = await import('@/app/api/auth/csrf/route');
     const req = createReq('GET', 'http://localhost:3000/api/auth/csrf', {
       cookie: '',
@@ -446,6 +498,9 @@ describe('CSRF Security - Endpoint Tests', () => {
     const data = await res.json();
     expect(data.csrfToken).toBeDefined();
     expect(typeof data.csrfToken).toBe('string');
-    expect(data.csrfToken.length).toBeGreaterThan(20);
+    const setCookie = res.headers.get('set-cookie');
+    expect(setCookie).toContain('HttpOnly');
+    const signedCookie = setCookie?.match(/csrf_token=([^;]+)/)?.[1];
+    expect(signedCookie?.split('.')[0]).toBe(data.csrfToken);
   });
 });

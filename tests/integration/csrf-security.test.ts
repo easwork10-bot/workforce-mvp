@@ -90,7 +90,7 @@ describe('CSRF Security - Utility Functions', () => {
   /**
    * Test 4: Cross-session token replay rejected
    */
-  it('should reject replayed token from different session', async () => {
+  it('should reject token replay after the CSRF cookie changes', async () => {
     const token = generateCsrfToken();
     const signedToken = signCsrfToken(token);
 
@@ -142,6 +142,89 @@ describe('CSRF Security - Utility Functions', () => {
     expect(cookieToken).toBe(token);
     expect(headerToken).toBe(token);
     expect(cookieToken).toBe(headerToken);
+  });
+
+  it('should accept the raw token returned by the CSRF token endpoint in the header', async () => {
+    const token = generateCsrfToken();
+    const req = createReq('POST', {
+      'content-type': 'application/json',
+      'x-csrf-token': token,
+      'x-cookie-header': `csrf_token=${signCsrfToken(token)}`,
+    });
+
+    expect(getCsrfTokenFromCookie(req)).toBe(token);
+    expect(getCsrfTokenFromHeader(req)).toBe(token);
+  });
+
+  it('should allow a state-changing request with the endpoint-issued raw header token', async () => {
+    const token = generateCsrfToken();
+    const handler = vi.fn().mockResolvedValue(NextResponse.json({ success: true }));
+    const wrappedHandler = requireCsrf(handler);
+    const req = createReq('POST', {
+      'content-type': 'application/json',
+      'x-csrf-token': token,
+      'x-cookie-header': `csrf_token=${signCsrfToken(token)}`,
+    });
+
+    const response = await wrappedHandler(req);
+
+    expect(response.status).toBe(200);
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('should reject an endpoint-issued raw header token that differs from the signed cookie', async () => {
+    const handler = vi.fn().mockResolvedValue(NextResponse.json({ success: true }));
+    const wrappedHandler = requireCsrf(handler);
+    const req = createReq('POST', {
+      'content-type': 'application/json',
+      'x-csrf-token': generateCsrfToken(),
+      'x-cookie-header': `csrf_token=${signCsrfToken(generateCsrfToken())}`,
+    });
+
+    const response = await wrappedHandler(req);
+
+    expect(response.status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['missing cookie', (token: string) => ({ 'x-csrf-token': token })],
+    ['missing header', (token: string) => ({ 'x-cookie-header': `csrf_token=${signCsrfToken(token)}` })],
+    ['tampered cookie signature', (token: string) => {
+      const signedToken = signCsrfToken(token);
+      const tamperedToken = signedToken.slice(0, -1) + (signedToken.endsWith('x') ? 'y' : 'x');
+      return {
+        'x-csrf-token': token,
+        'x-cookie-header': `csrf_token=${tamperedToken}`,
+      };
+    }],
+  ])('rejects endpoint-issued raw tokens with a %s', async (_description, headersFor) => {
+    const token = generateCsrfToken();
+    const handler = vi.fn().mockResolvedValue(NextResponse.json({ success: true }));
+    const req = createReq('POST', {
+      'content-type': 'application/json',
+      ...headersFor(token),
+    });
+
+    const response = await requireCsrf(handler)(req);
+
+    expect(response.status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('retains compatibility with matching signed cookie and header tokens', async () => {
+    const token = signCsrfToken(generateCsrfToken());
+    const handler = vi.fn().mockResolvedValue(NextResponse.json({ success: true }));
+    const req = createReq('POST', {
+      'content-type': 'application/json',
+      'x-csrf-token': token,
+      'x-cookie-header': `csrf_token=${token}`,
+    });
+
+    const response = await requireCsrf(handler)(req);
+
+    expect(response.status).toBe(200);
+    expect(handler).toHaveBeenCalledOnce();
   });
 
   /**

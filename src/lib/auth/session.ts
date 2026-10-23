@@ -201,22 +201,30 @@ export async function rotateRefreshToken(
     return null; // Invalid refresh token
   }
 
-  // REUSE DETECTION: If token was already used, revoke entire session family
-  if (matchedSession.used === 'true') {
+  // Atomically claim the single-use refresh token so concurrent rotations cannot both proceed.
+  let claimed: number;
+  try {
+    claimed = Number(await redis.eval(
+      `if redis.call('HGET', KEYS[1], 'used') ~= 'false' then
+        return 0
+      end
+      redis.call('HSET', KEYS[1], 'used', 'true')
+      return 1`,
+      { keys: [matchedKey], arguments: [] }
+    ));
+  } catch {
+    console.error('[rotateRefreshToken] Redis error claiming refresh token');
+    return null;
+  }
+
+  // REUSE DETECTION: If another request already claimed the token, revoke the session family.
+  if (matchedSession.used === 'true' || claimed !== 1) {
     console.warn(`[Security] Refresh token reuse detected for user ${userId}, revoking all sessions`);
     try {
       await revokeAllUserSessions(userId);
     } catch {
       // Best effort
     }
-    return null;
-  }
-
-  // Mark old refresh token as used
-  try {
-    await redis.hSet(matchedKey, 'used', 'true');
-  } catch {
-    console.error('[rotateRefreshToken] Redis error marking token used');
     return null;
   }
 

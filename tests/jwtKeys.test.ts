@@ -2,6 +2,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { importPKCS8, SignJWT } from 'jose';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const environmentNames = [
@@ -115,6 +116,15 @@ describe('JWT key configuration', () => {
     const pair = await tokens.createTokenPair('base64-user', 'employee', '127.0.0.1');
     await expect(tokens.verifyAccessToken(pair.accessToken)).resolves.toMatchObject({ sub: 'base64-user' });
     await expect(tokens.verifyAccessToken('not-a-jwt')).resolves.toBeNull();
+
+    const privateKey = await importPKCS8(validKeyPair.privateKey, 'RS256');
+    const now = Math.floor(Date.now() / 1000);
+    const expiredToken = await new SignJWT({ sub: 'expired-user' })
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+      .setIssuedAt(now - 120)
+      .setExpirationTime(now - 60)
+      .sign(privateKey);
+    await expect(tokens.verifyAccessToken(expiredToken)).resolves.toBeNull();
   });
 
   it('fails startup validation when configured key files are missing', async () => {
