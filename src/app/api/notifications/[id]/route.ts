@@ -5,7 +5,7 @@ import {
 } from '@/backend/db/queries/notifications';
 import { requireRole } from '@/backend/security/requireRole';
 import { withCsrfAndAuth } from '@/backend/security/csrf';
-import { markNotificationReadSchema, notificationIdSchema } from '@/lib/validators/notifications';
+import { markNotificationReadSchema, notificationIdSchema } from '@/backend/validation/notifications';
 import { getAuditMetadata } from '@/backend/security/auditLogger';
 
 const allowedRoles = ['administrator', 'supervisor', 'employee'] as const;

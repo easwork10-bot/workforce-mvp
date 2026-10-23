@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getNotifications } from '@/backend/db/queries/notifications';
 import { requireRole } from '@/backend/security/requireRole';
 import { withCsrfAndAuth } from '@/backend/security/csrf';
-import { notificationQuerySchema } from '@/lib/validators/notifications';
+import { notificationQuerySchema } from '@/backend/validation/notifications';
 
 const allowedRoles = ['administrator', 'supervisor', 'employee'] as const;
 

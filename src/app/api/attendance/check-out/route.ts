@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkOutCore } from '@/backend/services/attendance';
-import { checkOutSchema } from '@/lib/validators/attendance';
+import { checkOutSchema } from '@/backend/validation/attendance';
 import { requireRole } from '@/backend/security/requireRole';
 import { db } from '@/backend/db';
 import { shiftAssignments, attendanceRecords } from '@/backend/db/schema';

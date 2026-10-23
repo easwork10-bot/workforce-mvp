@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { hashPassword } from '@/backend/auth/passwords';
 import { createTokenPair, hashIp } from '@/backend/auth/tokens';
 import { createSession } from '@/backend/auth/session';
-import { registerSchema } from '@/lib/validators/auth';
+import { registerSchema } from '@/backend/validation/auth';
 import { checkRateLimit } from '@/backend/auth/session';
 import { decodeJwt } from '@/backend/auth/tokens';
 import { generateCsrfToken, setCsrfCookie } from '@/backend/security/csrf';

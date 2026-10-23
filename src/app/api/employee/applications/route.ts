@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getApplications } from '@/backend/db/queries/applications';
-import { applicationQuerySchema } from '@/lib/validators/applications';
+import { applicationQuerySchema } from '@/backend/validation/applications';
 import { requireRole } from '@/backend/security/requireRole';
 
 /**

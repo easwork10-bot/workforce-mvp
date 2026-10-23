@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkInCore } from '@/backend/services/attendance';
-import { checkInSchema } from '@/lib/validators/attendance';
+import { checkInSchema } from '@/backend/validation/attendance';
 import { requireRole } from '@/backend/security/requireRole';
 import { db } from '@/backend/db';
 import { shiftAssignments } from '@/backend/db/schema';

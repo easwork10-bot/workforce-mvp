@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { applyForShiftWithLock } from '@/backend/db/queries/applications';
-import { applyShiftSchema } from '@/lib/validators/applications';
+import { applyShiftSchema } from '@/backend/validation/applications';
 import { requireRole } from '@/backend/security/requireRole';
 import { withCsrfAndAuth } from '@/backend/security/csrf';
 import { getAuditMetadata } from '@/backend/security/auditLogger';

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/backend/auth/session';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
-import { createShiftSchema } from '@/lib/validators/shifts';
+import { createShiftSchema } from '@/backend/validation/shifts';
 import { createShift, getShifts } from '@/backend/db/queries/shifts';
 import { db } from '@/backend/db';
 import { profiles } from '@/backend/db/schema';

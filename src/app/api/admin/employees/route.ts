@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/backend/auth/session';
-import { employeeQuerySchema } from '@/lib/validators/employees';
+import { employeeQuerySchema } from '@/backend/validation/employees';
 import { getEmployees } from '@/backend/db/queries/employees';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
 import { requireCsrf } from '@/backend/security/csrf';

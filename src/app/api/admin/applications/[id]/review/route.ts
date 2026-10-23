@@ -4,7 +4,7 @@ import { verifyTokenFromCookie } from '@/backend/auth/tokens';
 import { reviewApplication } from '@/backend/db/queries/applications';
 import { getAuditMetadata } from '@/backend/security/auditLogger';
 import { requireCsrf } from '@/backend/security/csrf';
-import { applicationIdParamSchema, reviewApplicationSchema } from '@/lib/validators/applications';
+import { applicationIdParamSchema, reviewApplicationSchema } from '@/backend/validation/applications';
 
 async function postReview(
   req: NextRequest,

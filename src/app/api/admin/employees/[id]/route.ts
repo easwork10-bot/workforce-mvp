@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/backend/auth/session';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
-import { employeeIdParamSchema, updateEmployeeSchema } from '@/lib/validators/employees';
+import { employeeIdParamSchema, updateEmployeeSchema } from '@/backend/validation/employees';
 import { getEmployeeById, updateEmployee } from '@/backend/db/queries/employees';
 import { getAuditMetadata } from '@/backend/security/auditLogger';
 import { requireCsrf } from '@/backend/security/csrf';

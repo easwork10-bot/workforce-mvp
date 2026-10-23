@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEmployeeSchedule } from '@/backend/db/queries/assignments';
-import { attendanceQuerySchema } from '@/lib/validators/attendance';
+import { attendanceQuerySchema } from '@/backend/validation/attendance';
 import { requireRole } from '@/backend/security/requireRole';
 
 /**

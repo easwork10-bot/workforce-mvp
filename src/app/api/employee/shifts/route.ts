@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAvailableShiftsForEmployee } from '@/backend/db/queries/shifts';
-import { shiftQuerySchema } from '@/lib/validators/shifts';
+import { shiftQuerySchema } from '@/backend/validation/shifts';
 import { requireRole } from '@/backend/security/requireRole';
 
 /**

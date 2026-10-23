@@ -17,6 +17,7 @@ describe('frontend foundation architecture', () => {
     '@/backend/security/csrf',
     '@/backend/services/attendance',
     '@/backend/jobs/shiftReminders',
+    '@/backend/validation/auth',
   ])(
     'detects an intentional frontend-to-server import violation for %s',
     async (moduleSpecifier) => {

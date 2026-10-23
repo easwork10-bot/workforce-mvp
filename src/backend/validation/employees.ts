@@ -1,3 +1,4 @@
+import 'server-only';
 import { z } from 'zod';
 
 // Employee query params
