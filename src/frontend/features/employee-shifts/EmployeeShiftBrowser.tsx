@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Calendar, CheckCircle, Clock, Euro, MapPin, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/frontend/ui/button';
 import type { EmployeeShift, EmployeeShiftApiErrorKind, EmployeeShiftPage } from './employeeShiftsApi';
 import {
   Card,
@@ -12,7 +12,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/frontend/ui/card';
 import {
   applyForEmployeeShift,
   EmployeeShiftApiError,
