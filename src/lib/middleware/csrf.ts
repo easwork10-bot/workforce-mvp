@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes, createHmac } from 'crypto';
+import { getCsrfSecret } from './csrfSecret';
 
 const CSRF_COOKIE_NAME = 'csrf_token';
 const CSRF_HEADER_NAME = 'x-csrf-token';
-const CSRF_SECRET = process.env.CSRF_SECRET || 'development-csrf-secret-change-in-production';
 
 /**
  * Generate a cryptographically secure CSRF token
@@ -16,7 +16,7 @@ export function generateCsrfToken(): string {
  * Create a signed CSRF token (token + HMAC signature)
  */
 export function signCsrfToken(token: string): string {
-  const signature = createHmac('sha256', CSRF_SECRET).update(token).digest('base64url');
+  const signature = createHmac('sha256', getCsrfSecret()).update(token).digest('base64url');
   return `${token}.${signature}`;
 }
 
@@ -28,7 +28,7 @@ export function verifyCsrfToken(signedToken: string): string | null {
   if (parts.length !== 2) return null;
 
   const [token, signature] = parts;
-  const expectedSignature = createHmac('sha256', CSRF_SECRET).update(token).digest('base64url');
+  const expectedSignature = createHmac('sha256', getCsrfSecret()).update(token).digest('base64url');
 
   // Constant-time comparison
   if (signature.length !== expectedSignature.length) return null;

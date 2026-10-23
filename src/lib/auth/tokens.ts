@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify, importSPKI, importPKCS8, type JWTPayload, type KeyLike } from 'jose';
 import { createHash, randomBytes } from 'crypto';
+import { loadJwtKeyMaterial } from './jwtKeyMaterial.js';
 
 // Types
 export interface AccessTokenPayload extends JWTPayload {
@@ -16,74 +17,28 @@ export interface TokenPair {
   refreshTokenExpiresAt: number; // epoch ms
 }
 
-// Key loading - cached after first load
-let privateKey: KeyLike | null = null;
-let publicKey: KeyLike | null = null;
+let keysPromise: Promise<{ privateKey: KeyLike; publicKey: KeyLike }> | undefined;
 
-async function loadKeys(): Promise<{ privateKey: KeyLike; publicKey: KeyLike }> {
-  if (privateKey && publicKey) return { privateKey, publicKey };
-
-  // Load keys from environment variables (base64 encoded) or file system
-  let privateKeyPem: string;
-  let publicKeyPem: string;
-
-  const privateKeyB64 = process.env.JWT_PRIVATE_KEY_B64;
-  const publicKeyB64 = process.env.JWT_PUBLIC_KEY_B64;
-
-  if (privateKeyB64 && publicKeyB64) {
-    privateKeyPem = Buffer.from(privateKeyB64, 'base64').toString('utf-8');
-    publicKeyPem = Buffer.from(publicKeyB64, 'base64').toString('utf-8');
-  } else {
-    // Fallback to reading from file system (for standalone builds)
-    const fs = await import('fs/promises');
-    const path = await import('path');
-
-    // Try multiple locations for the secrets directory
-    const possiblePaths = [
-      path.join(process.cwd(), 'secrets'),
-      path.join(__dirname, '../../secrets'),
-      path.join(__dirname, '../../../secrets'),
-    ];
-
-    let privateKeyPath: string | null = null;
-    let publicKeyPath: string | null = null;
-
-    for (const secretsDir of possiblePaths) {
-      try {
-        const privatePath = path.join(secretsDir, 'jwt_private_key.pem');
-        const publicPath = path.join(secretsDir, 'jwt_public_key.pem');
-        await fs.access(privatePath);
-        await fs.access(publicPath);
-        privateKeyPath = privatePath;
-        publicKeyPath = publicPath;
-        break;
-      } catch {
-        // Continue to next path
-      }
-    }
-
-    if (!privateKeyPath || !publicKeyPath) {
-      throw new Error('JWT keys not found. Set JWT_PRIVATE_KEY_B64/JWT_PUBLIC_KEY_B64 or place keys in secrets/ directory');
-    }
-
-    privateKeyPem = await fs.readFile(privateKeyPath, 'utf-8');
-    publicKeyPem = await fs.readFile(publicKeyPath, 'utf-8');
+async function loadAndValidateKeys(): Promise<{ privateKey: KeyLike; publicKey: KeyLike }> {
+  const { privateKeyPem, publicKeyPem } = await loadJwtKeyMaterial();
+  try {
+    const [privateKey, publicKey] = await Promise.all([
+      importPKCS8(privateKeyPem, 'RS256'),
+      importSPKI(publicKeyPem, 'RS256'),
+    ]);
+    return { privateKey, publicKey };
+  } catch {
+    throw new Error('JWT keys must be valid RSA PKCS#8/SPKI keys with at least 2048-bit modulus.');
   }
-
-  privateKey = await importPKCS8(privateKeyPem, 'RS256');
-  publicKey = await importSPKI(publicKeyPem, 'RS256');
-
-  return { privateKey, publicKey };
 }
 
-async function getPrivateKey(): Promise<KeyLike> {
-  const { privateKey: key } = await loadKeys();
-  return key;
+function loadKeys(): Promise<{ privateKey: KeyLike; publicKey: KeyLike }> {
+  keysPromise ??= loadAndValidateKeys();
+  return keysPromise;
 }
 
-async function getPublicKey(): Promise<KeyLike> {
-  const { publicKey: key } = await loadKeys();
-  return key;
+export async function assertJwtKeyConfiguration(): Promise<void> {
+  await loadKeys();
 }
 
 /**
@@ -115,7 +70,7 @@ export async function createTokenPair(
   role: 'administrator' | 'supervisor' | 'employee',
   ip: string
 ): Promise<TokenPair> {
-  const privateKey = await getPrivateKey();
+  const { privateKey } = await loadKeys();
   const now = Math.floor(Date.now() / 1000);
   const accessTokenExpiresAt = now + 15 * 60; // 15 minutes
   const refreshTokenExpiresAt = now + 30 * 24 * 60 * 60; // 30 days
@@ -149,17 +104,13 @@ export async function createTokenPair(
  * Verify access JWT and return payload
  */
 export async function verifyAccessToken(token: string): Promise<AccessTokenPayload | null> {
+  const { publicKey } = await loadKeys();
   try {
-    console.log('[verifyAccessToken] Verifying token, length:', token.length);
-    const publicKey = await getPublicKey();
-    console.log('[verifyAccessToken] Got public key');
     const { payload } = await jwtVerify(token, publicKey, {
       algorithms: ['RS256'],
     });
-    console.log('[verifyAccessToken] Token verified successfully');
     return payload as unknown as AccessTokenPayload;
-  } catch (error) {
-    console.error('[verifyAccessToken] Error:', error);
+  } catch {
     return null;
   }
 }
