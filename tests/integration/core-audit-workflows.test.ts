@@ -210,13 +210,33 @@ describe('Core workflow audit integration', () => {
     expect(checkIn.success).toBe(true);
     expect(checkOut.success).toBe(true);
     expect(logs.total).toBe(3);
-    expect(logs.data.map((entry) => `${entry.entityType}:${entry.action}`).sort()).toEqual([
-      'attendance_records:INSERT',
-      'attendance_records:UPDATE',
-      'shift_assignments:UPDATE',
-    ]);
-    expect(JSON.stringify(logs.data)).not.toContain('52.1');
-    expect(JSON.stringify(logs.data)).not.toContain('4.3');
+    expect(logs.data).toHaveLength(3);
+    const auditValues = logs.data.map(({ entityType, action, oldValues, newValues }) => ({
+      entityType,
+      action,
+      oldValues,
+      newValues,
+    }));
+    expect(auditValues).toEqual(expect.arrayContaining([
+      {
+        entityType: 'attendance_records',
+        action: 'INSERT',
+        oldValues: null,
+        newValues: { assignmentId: assignment.id, attendanceStatus: 'checked_in' },
+      },
+      {
+        entityType: 'attendance_records',
+        action: 'UPDATE',
+        oldValues: { attendanceStatus: 'checked_in' },
+        newValues: { attendanceStatus: 'checked_out' },
+      },
+      {
+        entityType: 'shift_assignments',
+        action: 'UPDATE',
+        oldValues: { status: 'assigned' },
+        newValues: { status: 'confirmed' },
+      },
+    ]));
   });
 
   it('allows only one concurrent initial check-in for the same assignment', async () => {
