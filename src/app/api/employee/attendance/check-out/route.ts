@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkOutCore } from '@/lib/services/attendance';
+import { checkOutCore } from '@/backend/services/attendance';
 import { checkOutSchema } from '@/lib/validators/attendance';
-import { requireRole } from '@/lib/middleware/requireRole';
-import { db } from '@/lib/db';
-import { shiftAssignments, attendanceRecords } from '@/lib/db/schema';
+import { requireRole } from '@/backend/security/requireRole';
+import { db } from '@/backend/db';
+import { shiftAssignments, attendanceRecords } from '@/backend/db/schema';
 import { eq, and, or, desc } from 'drizzle-orm';
-import { withCsrfAndAuth } from '@/lib/middleware/csrf';
-import { getAuditMetadata } from '@/lib/middleware/auditLogger';
+import { withCsrfAndAuth } from '@/backend/security/csrf';
+import { getAuditMetadata } from '@/backend/security/auditLogger';
 
 /**
  * POST /api/employee/attendance/check-out - Check out for a shift assignment (employee)

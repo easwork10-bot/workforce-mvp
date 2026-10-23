@@ -1,5 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { importPKCS8, SignJWT } from 'jose';
@@ -54,7 +55,7 @@ async function writeKeyPair(
 
 async function loadTokens() {
   vi.resetModules();
-  return import('@/lib/auth/tokens');
+  return import('@/backend/auth/tokens');
 }
 
 beforeAll(() => {
@@ -83,6 +84,20 @@ afterEach(async () => {
 });
 
 describe('JWT key configuration', () => {
+  it('keeps the development preflight able to require the CommonJS key loader', async () => {
+    const directory = await createTemporaryDirectory();
+    const paths = await writeKeyPair(directory, validKeyPair);
+    process.env.JWT_PRIVATE_KEY_FILE = paths.privatePath;
+    process.env.JWT_PUBLIC_KEY_FILE = paths.publicPath;
+    const startupRequire = createRequire(path.resolve('scripts/start-dev.cjs'));
+    const { loadJwtKeyMaterial } = startupRequire('../src/backend/auth/jwtKeyMaterial.js');
+
+    await expect(loadJwtKeyMaterial()).resolves.toMatchObject({
+      privateKeyPem: validKeyPair.privateKey,
+      publicKeyPem: validKeyPair.publicKey,
+    });
+  });
+
   it('loads mounted PEM files and signs/verifies RS256 tokens', async () => {
     const directory = await createTemporaryDirectory();
     const paths = await writeKeyPair(directory, validKeyPair);

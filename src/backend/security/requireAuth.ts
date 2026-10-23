@@ -1,6 +1,7 @@
+import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { getSession, RedisUnavailableError } from '@/lib/auth/session';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { getSession, RedisUnavailableError } from '@/backend/auth/session';
 
 export interface AuthenticatedRequest extends NextRequest {
   auth: {

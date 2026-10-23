@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCsrfSecret } from '@/lib/middleware/csrfSecret';
+import { getCsrfSecret } from '@/backend/security/csrfSecret';
 
 describe('CSRF secret configuration', () => {
   it.each([

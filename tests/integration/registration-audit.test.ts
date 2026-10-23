@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { auditLogs, profiles, userRoles } from '@/lib/db/schema';
-import { getAuditLogs } from '@/lib/db/queries/audit';
+import { db } from '@/backend/db';
+import { auditLogs, profiles, userRoles } from '@/backend/db/schema';
+import { getAuditLogs } from '@/backend/db/queries/audit';
 import { POST } from '@/app/api/auth/register/route';
 
 const auditState = vi.hoisted(() => ({
   failWrites: false,
 }));
 
-vi.mock('@/lib/db/queries/audit', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/db/queries/audit')>();
+vi.mock('@/backend/db/queries/audit', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/db/queries/audit')>();
   return {
     ...actual,
     logAuditEvent: vi.fn(async (...args: Parameters<typeof actual.logAuditEvent>) => {
@@ -21,12 +21,12 @@ vi.mock('@/lib/db/queries/audit', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/auth/passwords', () => ({
+vi.mock('@/backend/auth/passwords', () => ({
   hashPassword: vi.fn(async () => 'password-hash-must-not-be-audited'),
 }));
 
-vi.mock('@/lib/auth/tokens', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/auth/tokens')>();
+vi.mock('@/backend/auth/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/auth/tokens')>();
   return {
     ...actual,
     createTokenPair: vi.fn(async () => ({ accessToken: 'test-access-token', refreshToken: 'test-refresh-token' })),
@@ -34,8 +34,8 @@ vi.mock('@/lib/auth/tokens', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/auth/session', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/auth/session')>();
+vi.mock('@/backend/auth/session', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/auth/session')>();
   return {
     ...actual,
     checkRateLimit: vi.fn(async () => ({ allowed: true, remaining: 4, resetAt: Date.now() + 60000 })),

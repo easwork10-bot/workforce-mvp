@@ -1,3 +1,4 @@
+import 'server-only';
 import { createHash } from 'node:crypto';
 import { db } from '..';
 import { notifications } from '../schema';

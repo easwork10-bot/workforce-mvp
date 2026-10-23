@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { getSession } from '@/backend/auth/session';
 import { employeeQuerySchema } from '@/lib/validators/employees';
-import { getEmployees } from '@/lib/db/queries/employees';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { requireCsrf } from '@/lib/middleware/csrf';
+import { getEmployees } from '@/backend/db/queries/employees';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { requireCsrf } from '@/backend/security/csrf';
 
 /**
  * GET /api/admin/employees - List employees with pagination and filtering

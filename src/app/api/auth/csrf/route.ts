@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCsrfTokenFromCookie, generateCsrfToken, signCsrfToken } from '@/lib/middleware/csrf';
+import { getCsrfTokenFromCookie, generateCsrfToken, signCsrfToken } from '@/backend/security/csrf';
 
 /**
  * GET /api/auth/csrf - Get CSRF token for frontend JavaScript

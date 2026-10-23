@@ -1,3 +1,4 @@
+import 'server-only';
 import { createClient } from 'redis';
 import { hashToken, hashIp } from './tokens';
 import { decodeJwt } from './tokens';

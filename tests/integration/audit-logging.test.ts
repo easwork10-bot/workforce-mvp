@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
-import { db } from '@/lib/db';
-import { auditLogs, profiles } from '@/lib/db/schema';
-import { getAuditLogs, logAuditEvent } from '@/lib/db/queries/audit';
-import { auditLog } from '@/lib/middleware/auditLogger';
-import type { AuthenticatedRequest } from '@/lib/middleware/requireAuth';
+import { db } from '@/backend/db';
+import { auditLogs, profiles } from '@/backend/db/schema';
+import { getAuditLogs, logAuditEvent } from '@/backend/db/queries/audit';
+import { auditLog } from '@/backend/security/auditLogger';
+import type { AuthenticatedRequest } from '@/backend/security/requireAuth';
 import { GET } from '@/app/api/admin/audit/route';
 import { inArray } from 'drizzle-orm';
 
@@ -15,7 +15,7 @@ const authState = vi.hoisted(() => ({
   role: 'administrator' as 'administrator' | 'supervisor' | 'employee',
 }));
 
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   verifyTokenFromCookie: vi.fn(async (cookieHeader: string | null) => (
     authState.authenticated && cookieHeader?.includes('access_token=valid')
       ? { sub: authState.userId, role: authState.role, jti: 'audit-api-test-session', ipHash: 'test' }
@@ -23,7 +23,7 @@ vi.mock('@/lib/auth/tokens', () => ({
   )),
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/backend/auth/session', () => ({
   getSession: vi.fn(async () => authState.authenticated
     ? {
         userId: authState.userId,

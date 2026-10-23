@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { getSession, deleteSession, revokeAllUserSessions } from '@/lib/auth/session';
-import { requireCsrf, clearCsrfCookie } from '@/lib/middleware/csrf';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { getSession, deleteSession, revokeAllUserSessions } from '@/backend/auth/session';
+import { requireCsrf, clearCsrfCookie } from '@/backend/security/csrf';
 
 async function logoutHandler(req: NextRequest): Promise<NextResponse> {
   try {

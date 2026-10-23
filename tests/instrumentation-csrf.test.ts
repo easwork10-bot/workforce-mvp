@@ -8,11 +8,11 @@ const jwtConfiguration = vi.hoisted(() => ({
   assert: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/lib/jobs/shiftReminders', () => ({
+vi.mock('@/backend/jobs/shiftReminders', () => ({
   startShiftReminderJob: scheduler.start,
   stopShiftReminderJob: scheduler.stop,
 }));
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   assertJwtKeyConfiguration: jwtConfiguration.assert,
 }));
 
@@ -64,6 +64,40 @@ describe('Node instrumentation security configuration validation', () => {
     await expect(register()).resolves.toBeUndefined();
     expect(jwtConfiguration.assert).toHaveBeenCalledOnce();
     expect(scheduler.start).not.toHaveBeenCalled();
+  });
+
+  it('keeps the reminder job disabled outside production even when explicitly enabled', async () => {
+    process.env.NODE_ENV = 'development';
+    delete process.env.NEXT_PHASE;
+    process.env.SHIFT_REMINDER_JOB_ENABLED = 'true';
+    process.env.CSRF_SECRET = 'valid-production-secret-material-at-least-thirty-two-bytes';
+
+    await expect(register()).resolves.toBeUndefined();
+    expect(jwtConfiguration.assert).toHaveBeenCalledOnce();
+    expect(scheduler.start).not.toHaveBeenCalled();
+  });
+
+  it('starts the enabled production job and registers both shutdown hooks', async () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.NEXT_PHASE;
+    process.env.SHIFT_REMINDER_JOB_ENABLED = 'true';
+    process.env.CSRF_SECRET = 'valid-production-secret-material-at-least-thirty-two-bytes';
+
+    await expect(register()).resolves.toBeUndefined();
+
+    expect(scheduler.start).toHaveBeenCalledOnce();
+    expect(jwtConfiguration.assert).toHaveBeenCalledOnce();
+
+    const sigtermHandler = process.listeners('SIGTERM').find((listener) => listener === scheduler.stop);
+    const sigintHandler = process.listeners('SIGINT').find((listener) => listener === scheduler.stop);
+    expect(sigtermHandler).toBe(scheduler.stop);
+    expect(sigintHandler).toBe(scheduler.stop);
+
+    process.removeListener('SIGTERM', scheduler.stop);
+    process.removeListener('SIGINT', scheduler.stop);
+    sigtermHandler?.();
+    sigintHandler?.();
+    expect(scheduler.stop).toHaveBeenCalledTimes(2);
   });
 
   it('does not validate runtime secrets during the production build phase', async () => {

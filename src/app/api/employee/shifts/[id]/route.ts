@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getShiftDetailsForEmployee } from '@/lib/db/queries/shifts';
+import { getShiftDetailsForEmployee } from '@/backend/db/queries/shifts';
 import { shiftIdParamSchema } from '@/lib/validators/shifts';
-import { requireRole } from '@/lib/middleware/requireRole';
+import { requireRole } from '@/backend/security/requireRole';
 
 /**
  * GET /api/employee/shifts/[id] - Get shift details for the authenticated employee

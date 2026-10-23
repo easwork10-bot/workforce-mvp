@@ -11,22 +11,31 @@ describe('frontend foundation architecture', () => {
     await expect(findFrontendBoundaryViolations(path.join(projectRoot, 'src/frontend'))).resolves.toEqual([]);
   });
 
-  it('detects an intentional frontend-to-server import violation', async () => {
-    const temporaryRoot = await mkdtemp(path.join(tmpdir(), 'frontend-boundary-probe-'));
-    try {
-      await writeFile(
-        path.join(temporaryRoot, 'probe.ts'),
-        "import { db } from '@/lib/db';\nvoid db;\n",
-        'utf8'
-      );
+  it.each([
+    '@/backend/db',
+    '@/backend/auth/tokens',
+    '@/backend/security/csrf',
+    '@/backend/services/attendance',
+    '@/backend/jobs/shiftReminders',
+  ])(
+    'detects an intentional frontend-to-server import violation for %s',
+    async (moduleSpecifier) => {
+      const temporaryRoot = await mkdtemp(path.join(tmpdir(), 'frontend-boundary-probe-'));
+      try {
+        await writeFile(
+          path.join(temporaryRoot, 'probe.ts'),
+          `import { value } from '${moduleSpecifier}';\nvoid value;\n`,
+          'utf8'
+        );
 
-      await expect(findFrontendBoundaryViolations(temporaryRoot)).resolves.toEqual([
-        expect.stringContaining("imports outside the frontend/shared boundary: @/lib/db"),
-      ]);
-    } finally {
-      await rm(temporaryRoot, { recursive: true, force: true });
+        await expect(findFrontendBoundaryViolations(temporaryRoot)).resolves.toEqual([
+          expect.stringContaining(`imports outside the frontend/shared boundary: ${moduleSpecifier}`),
+        ]);
+      } finally {
+        await rm(temporaryRoot, { recursive: true, force: true });
+      }
     }
-  });
+  );
 
   it('keeps localized framework route shells and frontend component entry points', async () => {
     const requiredRoutes = [

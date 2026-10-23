@@ -1,3 +1,4 @@
+import 'server-only';
 import { db } from '..';
 import { profiles, userRoles, employeeDetails } from '../schema';
 import { eq, and, desc, asc, ilike, or, count } from 'drizzle-orm';

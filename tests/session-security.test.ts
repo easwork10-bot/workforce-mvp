@@ -32,7 +32,7 @@ vi.mock('redis', () => ({
   createClient: redis.createClient,
 }));
 
-vi.mock('@/lib/auth/tokens', () => tokens);
+vi.mock('@/backend/auth/tokens', () => tokens);
 
 describe('Redis-backed authentication security behavior', () => {
   beforeEach(() => {
@@ -62,7 +62,7 @@ describe('Redis-backed authentication security behavior', () => {
   });
 
   it('fails closed when Redis cannot validate a session', async () => {
-    const { getSession } = await import('@/lib/auth/session');
+    const { getSession } = await import('@/backend/auth/session');
 
     await expect(getSession('session-id')).resolves.toBeNull();
     expect(redis.client.connect).toHaveBeenCalledOnce();
@@ -70,7 +70,7 @@ describe('Redis-backed authentication security behavior', () => {
   });
 
   it('preserves the documented fail-open rate-limit behavior when Redis is unavailable', async () => {
-    const { checkRateLimit } = await import('@/lib/auth/session');
+    const { checkRateLimit } = await import('@/backend/auth/session');
 
     const result = await checkRateLimit('127.0.0.1', 'login', 5, 60_000);
 
@@ -105,7 +105,7 @@ describe('Redis-backed authentication security behavior', () => {
       return 1;
     });
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const { rotateRefreshToken } = await import('@/lib/auth/session');
+    const { rotateRefreshToken } = await import('@/backend/auth/session');
 
     const results = await Promise.all([
       rotateRefreshToken('user-1', 'old-refresh-token', '127.0.0.1', 'test-agent'),

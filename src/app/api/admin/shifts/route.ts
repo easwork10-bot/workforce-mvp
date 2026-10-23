@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
+import { getSession } from '@/backend/auth/session';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
 import { createShiftSchema } from '@/lib/validators/shifts';
-import { createShift, getShifts } from '@/lib/db/queries/shifts';
-import { db } from '@/lib/db';
-import { profiles } from '@/lib/db/schema';
+import { createShift, getShifts } from '@/backend/db/queries/shifts';
+import { db } from '@/backend/db';
+import { profiles } from '@/backend/db/schema';
 import { eq } from 'drizzle-orm';
-import { requireCsrf } from '@/lib/middleware/csrf';
-import { getAuditMetadata } from '@/lib/middleware/auditLogger';
+import { requireCsrf } from '@/backend/security/csrf';
+import { getAuditMetadata } from '@/backend/security/auditLogger';
 
 /**
  * GET /api/admin/shifts - Get all shifts (admin only)

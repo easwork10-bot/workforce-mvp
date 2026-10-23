@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAvailableShiftsForEmployee } from '@/lib/db/queries/shifts';
+import { getAvailableShiftsForEmployee } from '@/backend/db/queries/shifts';
 import { shiftQuerySchema } from '@/lib/validators/shifts';
-import { requireRole } from '@/lib/middleware/requireRole';
+import { requireRole } from '@/backend/security/requireRole';
 
 /**
  * GET /api/employee/shifts - Get available shifts for the authenticated employee

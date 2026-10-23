@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { profiles } from '@/lib/db/schema';
+import { db } from '@/backend/db';
+import { profiles } from '@/backend/db/schema';
 import { eq } from 'drizzle-orm';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { getSession } from '@/lib/auth/session';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { getSession } from '@/backend/auth/session';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {

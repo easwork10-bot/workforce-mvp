@@ -1,6 +1,6 @@
 const { spawn } = require('node:child_process');
-const { loadJwtKeyMaterial } = require('../src/lib/auth/jwtKeyMaterial.js');
-const { assertCsrfSecretConfiguration } = require('../src/lib/middleware/csrfSecretConfig.js');
+const { loadJwtKeyMaterial } = require('../src/backend/auth/jwtKeyMaterial.js');
+const { assertCsrfSecretConfiguration } = require('../src/backend/security/csrfSecretConfig.js');
 
 async function startDevelopmentServer() {
   assertCsrfSecretConfiguration();

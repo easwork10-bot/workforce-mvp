@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { getAttendanceRecords } from '@/lib/db/queries/attendance';
+import { getSession } from '@/backend/auth/session';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { getAttendanceRecords } from '@/backend/db/queries/attendance';
 
 /**
  * GET /api/admin/attendance - Get attendance records overview (admin only)

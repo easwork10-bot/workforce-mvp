@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getApplications } from '@/lib/db/queries/applications';
+import { getApplications } from '@/backend/db/queries/applications';
 import { applicationQuerySchema } from '@/lib/validators/applications';
-import { requireRole } from '@/lib/middleware/requireRole';
+import { requireRole } from '@/backend/security/requireRole';
 
 /**
  * GET /api/employee/applications - Get employee's shift applications

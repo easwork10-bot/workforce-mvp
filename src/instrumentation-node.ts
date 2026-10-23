@@ -1,6 +1,6 @@
-import { startShiftReminderJob, stopShiftReminderJob } from '@/lib/jobs/shiftReminders';
-import { assertJwtKeyConfiguration } from '@/lib/auth/tokens';
-import { assertCsrfSecretConfiguration } from '@/lib/middleware/csrfSecret';
+import { startShiftReminderJob, stopShiftReminderJob } from '@/backend/jobs/shiftReminders';
+import { assertJwtKeyConfiguration } from '@/backend/auth/tokens';
+import { assertCsrfSecretConfiguration } from '@/backend/security/csrfSecret';
 
 let shutdownHandlersRegistered = false;
 

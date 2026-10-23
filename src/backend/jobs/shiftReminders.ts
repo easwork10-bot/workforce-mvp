@@ -1,8 +1,10 @@
+import 'server-only';
+
 import { and, eq, gt, inArray, lte, ne } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { shifts, shiftAssignments } from '@/lib/db/schema';
-import { logAuditEvent } from '@/lib/db/queries/audit';
-import { createNotificationIdempotent } from '@/lib/db/queries/notifications';
+import { db } from '@/backend/db';
+import { shifts, shiftAssignments } from '@/backend/db/schema';
+import { logAuditEvent } from '@/backend/db/queries/audit';
+import { createNotificationIdempotent } from '@/backend/db/queries/notifications';
 
 const REMINDER_LEAD_MS = 24 * 60 * 60 * 1000;
 const SCHEDULE_LOOKAHEAD_MS = 24 * 60 * 60 * 1000;

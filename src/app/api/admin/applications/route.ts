@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { getApplications } from '@/lib/db/queries/applications';
+import { getSession } from '@/backend/auth/session';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { getApplications } from '@/backend/db/queries/applications';
 
 /**
  * GET /api/admin/applications - Get all shift applications (admin only)

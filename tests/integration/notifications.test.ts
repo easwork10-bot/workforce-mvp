@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { db, pool } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db, pool } from '@/backend/db';
+import * as schema from '@/backend/db/schema';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import {
   profiles,
@@ -10,7 +10,7 @@ import {
   notifications,
   auditLogs,
   attendanceRecords,
-} from '@/lib/db/schema';
+} from '@/backend/db/schema';
 import {
   createNotification,
   createNotificationIdempotent,
@@ -20,7 +20,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
-} from '@/lib/db/queries/notifications';
+} from '@/backend/db/queries/notifications';
 import { eq, and, count } from 'drizzle-orm';
 
 // Generate unique test IDs to avoid conflicts between parallel test suites

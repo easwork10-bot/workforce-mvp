@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
+import { getSession } from '@/backend/auth/session';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
 import { employeeIdParamSchema, updateEmployeeSchema } from '@/lib/validators/employees';
-import { getEmployeeById, updateEmployee } from '@/lib/db/queries/employees';
-import { getAuditMetadata } from '@/lib/middleware/auditLogger';
-import { requireCsrf } from '@/lib/middleware/csrf';
+import { getEmployeeById, updateEmployee } from '@/backend/db/queries/employees';
+import { getAuditMetadata } from '@/backend/security/auditLogger';
+import { requireCsrf } from '@/backend/security/csrf';
 
 /**
  * GET /api/admin/employees/[id] - Get employee by ID (admin only)

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { profiles, userRoles } from '@/lib/db/schema';
+import { db } from '@/backend/db';
+import { profiles, userRoles } from '@/backend/db/schema';
 import { eq } from 'drizzle-orm';
-import { verifyPassword } from '@/lib/auth/passwords';
-import { createTokenPair } from '@/lib/auth/tokens';
-import { createSession } from '@/lib/auth/session';
+import { verifyPassword } from '@/backend/auth/passwords';
+import { createTokenPair } from '@/backend/auth/tokens';
+import { createSession } from '@/backend/auth/session';
 import { loginSchema } from '@/lib/validators/auth';
-import { checkRateLimit } from '@/lib/auth/session';
-import { decodeJwt } from '@/lib/auth/tokens';
-import { generateCsrfToken, setCsrfCookie } from '@/lib/middleware/csrf';
+import { checkRateLimit } from '@/backend/auth/session';
+import { decodeJwt } from '@/backend/auth/tokens';
+import { generateCsrfToken, setCsrfCookie } from '@/backend/security/csrf';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {

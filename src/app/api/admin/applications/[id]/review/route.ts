@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { reviewApplication } from '@/lib/db/queries/applications';
-import { getAuditMetadata } from '@/lib/middleware/auditLogger';
-import { requireCsrf } from '@/lib/middleware/csrf';
+import { getSession } from '@/backend/auth/session';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { reviewApplication } from '@/backend/db/queries/applications';
+import { getAuditMetadata } from '@/backend/security/auditLogger';
+import { requireCsrf } from '@/backend/security/csrf';
 import { applicationIdParamSchema, reviewApplicationSchema } from '@/lib/validators/applications';
 
 async function postReview(

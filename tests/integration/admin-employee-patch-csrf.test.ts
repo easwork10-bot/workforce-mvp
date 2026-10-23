@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { generateCsrfToken, signCsrfToken } from '@/lib/middleware/csrf';
+import { generateCsrfToken, signCsrfToken } from '@/backend/security/csrf';
 
 const mocks = vi.hoisted(() => ({
   verifyTokenFromCookie: vi.fn(),
@@ -9,20 +9,20 @@ const mocks = vi.hoisted(() => ({
   getAuditMetadata: vi.fn(),
 }));
 
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   verifyTokenFromCookie: mocks.verifyTokenFromCookie,
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/backend/auth/session', () => ({
   getSession: mocks.getSession,
 }));
 
-vi.mock('@/lib/db/queries/employees', () => ({
+vi.mock('@/backend/db/queries/employees', () => ({
   getEmployeeById: vi.fn(),
   updateEmployee: mocks.updateEmployee,
 }));
 
-vi.mock('@/lib/middleware/auditLogger', () => ({
+vi.mock('@/backend/security/auditLogger', () => ({
   getAuditMetadata: mocks.getAuditMetadata,
 }));
 

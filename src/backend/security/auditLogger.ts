@@ -1,6 +1,7 @@
+import 'server-only';
 import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { logAuditEvent, sanitizeAuditValues, type AuditMetadata } from '@/lib/db/queries/audit';
+import { logAuditEvent, sanitizeAuditValues, type AuditMetadata } from '@/backend/db/queries/audit';
 import { getClientIp, type AuthenticatedRequest } from './requireAuth';
 
 type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';

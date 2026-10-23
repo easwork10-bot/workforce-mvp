@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenFromCookie } from '@/lib/auth/tokens';
-import { rotateRefreshToken, revokeAllUserSessions } from '@/lib/auth/session';
-import { checkRateLimit } from '@/lib/auth/session';
-import { generateCsrfToken, setCsrfCookie } from '@/lib/middleware/csrf';
+import { verifyTokenFromCookie } from '@/backend/auth/tokens';
+import { rotateRefreshToken, revokeAllUserSessions } from '@/backend/auth/session';
+import { checkRateLimit } from '@/backend/auth/session';
+import { generateCsrfToken, setCsrfCookie } from '@/backend/security/csrf';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {

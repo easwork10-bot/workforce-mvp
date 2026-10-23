@@ -1,3 +1,4 @@
+import 'server-only';
 import argon2 from 'argon2';
 
 // Argon2id parameters - memory cost 64MB, time cost 3, parallelism 2

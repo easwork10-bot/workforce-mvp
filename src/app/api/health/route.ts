@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { checkDatabaseConnection } from '@/lib/db';
-import { getRedis } from '@/lib/auth/session';
+import { checkDatabaseConnection } from '@/backend/db';
+import { getRedis } from '@/backend/auth/session';
 
 export async function GET() {
   try {

@@ -4,15 +4,15 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCsrfToken, signCsrfToken } from '@/lib/middleware/csrf';
+import { generateCsrfToken, signCsrfToken } from '@/backend/security/csrf';
 
-vi.mock('@/lib/auth/passwords', () => ({
+vi.mock('@/backend/auth/passwords', () => ({
   hashPassword: vi.fn(),
   verifyPassword: vi.fn(),
 }));
 
 // Mock auth dependencies
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   verifyTokenFromCookie: vi.fn(),
   createTokenPair: vi.fn(),
   hashToken: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('@/lib/auth/tokens', () => ({
   decodeJwt: vi.fn(() => ({ jti: 'test-jti' })),
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/backend/auth/session', () => ({
   getSession: vi.fn(),
   deleteSession: vi.fn(),
   revokeAllUserSessions: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock('@/lib/auth/session', () => ({
 }));
 
 // Mock db to avoid actual database connections
-vi.mock('@/lib/db', () => ({
+vi.mock('@/backend/db', () => ({
   db: {
     select: vi.fn(),
     insert: vi.fn(),
@@ -133,8 +133,8 @@ describe('CSRF Security - Endpoint Tests', () => {
    * Test 5: Legitimate authenticated frontend requests succeed
    */
   it('should allow legitimate requests with valid CSRF token', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession, deleteSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession, deleteSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'user-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'user-123', role: 'employee', refreshHash: 'hash', ipHash: 'hash' });
@@ -158,10 +158,10 @@ describe('CSRF Security - Endpoint Tests', () => {
    * Test 6: Login/register/refresh/logout flows remain functional
    */
   it('should set CSRF cookie on login', async () => {
-    const { db } = await import('@/lib/db');
-    const { profiles, userRoles } = await import('@/lib/db/schema');
-    const { verifyPassword } = await import('@/lib/auth/passwords');
-    const { createTokenPair } = await import('@/lib/auth/tokens');
+    const { db } = await import('@/backend/db');
+    const { profiles, userRoles } = await import('@/backend/db/schema');
+    const { verifyPassword } = await import('@/backend/auth/passwords');
+    const { createTokenPair } = await import('@/backend/auth/tokens');
 
     (db.select as any).mockReturnValue({
       from: () => ({
@@ -185,8 +185,8 @@ describe('CSRF Security - Endpoint Tests', () => {
   });
 
   it('should rotate a valid refresh session and return the established auth response and cookies', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { rotateRefreshToken } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { rotateRefreshToken } = await import('@/backend/auth/session');
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'user-123', jti: 'old-session' });
     (rotateRefreshToken as any).mockResolvedValue({
       accessToken: 'new-access-token',
@@ -218,8 +218,8 @@ describe('CSRF Security - Endpoint Tests', () => {
   });
 
   it('should reject an invalid refresh session and clear auth cookies', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { rotateRefreshToken, revokeAllUserSessions } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { rotateRefreshToken, revokeAllUserSessions } = await import('@/backend/auth/session');
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'user-123', jti: 'old-session' });
     (rotateRefreshToken as any).mockResolvedValue(null);
 
@@ -239,10 +239,10 @@ describe('CSRF Security - Endpoint Tests', () => {
   });
 
   it('should set CSRF cookie on register', async () => {
-    const { db } = await import('@/lib/db');
-    const { profiles, userRoles } = await import('@/lib/db/schema');
-    const { hashPassword } = await import('@/lib/auth/passwords');
-    const { createTokenPair } = await import('@/lib/auth/tokens');
+    const { db } = await import('@/backend/db');
+    const { profiles, userRoles } = await import('@/backend/db/schema');
+    const { hashPassword } = await import('@/backend/auth/passwords');
+    const { createTokenPair } = await import('@/backend/auth/tokens');
 
     (db.select as any).mockReturnValue({
       from: () => ({
@@ -274,8 +274,8 @@ describe('CSRF Security - Endpoint Tests', () => {
   });
 
   it('should clear CSRF cookie on logout', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession, deleteSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession, deleteSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'user-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'user-123', role: 'employee', refreshHash: 'hash', ipHash: 'hash' });
@@ -338,9 +338,9 @@ describe('CSRF Security - Endpoint Tests', () => {
    * Test 8: Employees cannot modify another employee's attendance
    */
   it('should prevent employee from checking in for another employee', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
-    const { db } = await import('@/lib/db');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
+    const { db } = await import('@/backend/db');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-a', jti: 'jti-a' });
     (getSession as any).mockResolvedValue({ userId: 'emp-a', role: 'employee', refreshHash: 'hash', ipHash: 'hash' });
@@ -374,8 +374,8 @@ describe('CSRF Security - Endpoint Tests', () => {
    * Test 9: Supervisor/admin roles cannot bypass the self-attendance authorization rule
    */
   it('should reject supervisor trying to use employee attendance endpoint', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'sup-1', jti: 'jti-sup' });
     (getSession as any).mockResolvedValue({ userId: 'sup-1', role: 'supervisor', refreshHash: 'hash', ipHash: 'hash' });
@@ -396,8 +396,8 @@ describe('CSRF Security - Endpoint Tests', () => {
   });
 
   it('should reject administrator trying to use employee attendance endpoint', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'admin-1', jti: 'jti-admin' });
     (getSession as any).mockResolvedValue({ userId: 'admin-1', role: 'administrator', refreshHash: 'hash', ipHash: 'hash' });
@@ -421,9 +421,9 @@ describe('CSRF Security - Endpoint Tests', () => {
    * Test 10: Both attendance URL variants enforce identical security boundaries
    */
   it('should enforce same authorization on /api/attendance/check-in as /api/employee/attendance/check-in', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
-    const { db } = await import('@/lib/db');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
+    const { db } = await import('@/backend/db');
 
     // Mock employee session
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-1', jti: 'jti-1' });
@@ -467,8 +467,8 @@ describe('CSRF Security - Endpoint Tests', () => {
    * Test 11: Supervisor rejected on /api/attendance/check-in (same as employee endpoint)
    */
   it('should reject supervisor on /api/attendance/check-in', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'sup-1', jti: 'jti-sup' });
     (getSession as any).mockResolvedValue({ userId: 'sup-1', role: 'supervisor', refreshHash: 'hash', ipHash: 'hash' });

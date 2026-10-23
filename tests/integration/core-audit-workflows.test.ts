@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { and, eq, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { db, pool } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db, pool } from '@/backend/db';
+import * as schema from '@/backend/db/schema';
 import {
   attendanceRecords,
   auditLogs,
@@ -12,12 +12,12 @@ import {
   shiftApplications,
   shiftAssignments,
   shifts,
-} from '@/lib/db/schema';
-import { getAuditLogs } from '@/lib/db/queries/audit';
-import { updateEmployee } from '@/lib/db/queries/employees';
-import { markNotificationReadForRecipient, deleteNotificationForRecipient } from '@/lib/db/queries/notifications';
-import { createShift, deleteShift } from '@/lib/db/queries/shifts';
-import { checkInCore, checkOutCore } from '@/lib/services/attendance';
+} from '@/backend/db/schema';
+import { getAuditLogs } from '@/backend/db/queries/audit';
+import { updateEmployee } from '@/backend/db/queries/employees';
+import { markNotificationReadForRecipient, deleteNotificationForRecipient } from '@/backend/db/queries/notifications';
+import { createShift, deleteShift } from '@/backend/db/queries/shifts';
+import { checkInCore, checkOutCore } from '@/backend/services/attendance';
 
 describe('Core workflow audit integration', () => {
   let adminId: string;

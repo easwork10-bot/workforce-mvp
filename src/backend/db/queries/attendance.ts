@@ -1,3 +1,4 @@
+import 'server-only';
 import { db } from '..';
 import { attendanceRecords, shiftAssignments } from '../schema';
 import { eq, and, desc, count, gte, lte, or } from 'drizzle-orm';

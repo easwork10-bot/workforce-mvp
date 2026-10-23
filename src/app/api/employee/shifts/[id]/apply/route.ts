@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { applyForShiftWithLock } from '@/lib/db/queries/applications';
+import { applyForShiftWithLock } from '@/backend/db/queries/applications';
 import { applyShiftSchema } from '@/lib/validators/applications';
-import { requireRole } from '@/lib/middleware/requireRole';
-import { withCsrfAndAuth } from '@/lib/middleware/csrf';
-import { getAuditMetadata } from '@/lib/middleware/auditLogger';
+import { requireRole } from '@/backend/security/requireRole';
+import { withCsrfAndAuth } from '@/backend/security/csrf';
+import { getAuditMetadata } from '@/backend/security/auditLogger';
 
 /**
  * POST /api/employee/shifts/[id]/apply - Apply for a shift with concurrency lock

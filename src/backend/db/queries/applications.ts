@@ -1,8 +1,9 @@
+import 'server-only';
 import { db } from '..';
 import { shiftApplications, shifts, profiles, shiftAssignments } from '../schema';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import type { ShiftApplication } from '../schema';
-import { getRedis } from '../../auth/session';
+import { getRedis } from '@/backend/auth/session';
 import {
   createNotificationIdempotent,
   NotificationIdempotencyConflictError,

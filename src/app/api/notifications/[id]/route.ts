@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   deleteNotificationForRecipient,
   markNotificationReadForRecipient,
-} from '@/lib/db/queries/notifications';
-import { requireRole } from '@/lib/middleware/requireRole';
-import { withCsrfAndAuth } from '@/lib/middleware/csrf';
+} from '@/backend/db/queries/notifications';
+import { requireRole } from '@/backend/security/requireRole';
+import { withCsrfAndAuth } from '@/backend/security/csrf';
 import { markNotificationReadSchema, notificationIdSchema } from '@/lib/validators/notifications';
-import { getAuditMetadata } from '@/lib/middleware/auditLogger';
+import { getAuditMetadata } from '@/backend/security/auditLogger';
 
 const allowedRoles = ['administrator', 'supervisor', 'employee'] as const;
 type RouteContext = { params: { id: string } };

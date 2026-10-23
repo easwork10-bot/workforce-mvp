@@ -13,14 +13,14 @@ import {
   requireCsrf,
   withCsrfAndAuth,
   clearCsrfCookie
-} from '@/lib/middleware/csrf';
+} from '@/backend/security/csrf';
 import { NextRequest, NextResponse } from 'next/server';
 
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   verifyTokenFromCookie: vi.fn(),
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/backend/auth/session', () => ({
   getSession: vi.fn(),
   RedisUnavailableError: class extends Error {},
 }));
@@ -299,8 +299,8 @@ describe('CSRF Security - Utility Functions', () => {
    * Test 8: withCsrfAndAuth allows GET without CSRF
    */
   it('should allow GET requests without CSRF via withCsrfAndAuth', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash', refreshHash: 'hash' });
@@ -321,8 +321,8 @@ describe('CSRF Security - Utility Functions', () => {
    * Test 9: withCsrfAndAuth rejects POST without valid CSRF
    */
   it('should reject POST without valid CSRF via withCsrfAndAuth', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash', refreshHash: 'hash' });
@@ -345,13 +345,13 @@ describe('CSRF Security - Utility Functions', () => {
    */
   it('should accept POST with valid CSRF via withCsrfAndAuth', async () => {
     vi.resetModules();
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash', refreshHash: 'hash' });
 
-    const { generateCsrfToken, signCsrfToken } = await import('@/lib/middleware/csrf');
+    const { generateCsrfToken, signCsrfToken } = await import('@/backend/security/csrf');
     const token = generateCsrfToken();
     const signedToken = signCsrfToken(token);
 
@@ -374,8 +374,8 @@ describe('CSRF Security - Utility Functions', () => {
    */
   it('should reject invalid role via withCsrfAndAuth', async () => {
     vi.resetModules();
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash', refreshHash: 'hash' });

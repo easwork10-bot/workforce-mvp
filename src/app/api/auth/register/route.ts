@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { profiles, userRoles } from '@/lib/db/schema';
+import { db } from '@/backend/db';
+import { profiles, userRoles } from '@/backend/db/schema';
 import { eq } from 'drizzle-orm';
-import { hashPassword } from '@/lib/auth/passwords';
-import { createTokenPair, hashIp } from '@/lib/auth/tokens';
-import { createSession } from '@/lib/auth/session';
+import { hashPassword } from '@/backend/auth/passwords';
+import { createTokenPair, hashIp } from '@/backend/auth/tokens';
+import { createSession } from '@/backend/auth/session';
 import { registerSchema } from '@/lib/validators/auth';
-import { checkRateLimit } from '@/lib/auth/session';
-import { decodeJwt } from '@/lib/auth/tokens';
-import { generateCsrfToken, setCsrfCookie } from '@/lib/middleware/csrf';
-import { logAuditEvent } from '@/lib/db/queries/audit';
+import { checkRateLimit } from '@/backend/auth/session';
+import { decodeJwt } from '@/backend/auth/tokens';
+import { generateCsrfToken, setCsrfCookie } from '@/backend/security/csrf';
+import { logAuditEvent } from '@/backend/db/queries/audit';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {

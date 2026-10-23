@@ -4,16 +4,16 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { checkInCore, checkOutCore } from '@/lib/services/attendance';
-import { requireAuth } from '@/lib/middleware/requireAuth';
+import { checkInCore, checkOutCore } from '@/backend/services/attendance';
+import { requireAuth } from '@/backend/security/requireAuth';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Mock the database and session
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   verifyTokenFromCookie: vi.fn(),
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/backend/auth/session', () => ({
   getSession: vi.fn(),
   RedisUnavailableError: class extends Error {},
 }));
@@ -31,8 +31,8 @@ describe('Attendance Authorization Tests', () => {
    * Test 1: Employee can check in for themselves (via route handler RBAC)
    */
   it('should allow employee role through requireAuth', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     // Mock valid employee session
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
@@ -50,8 +50,8 @@ describe('Attendance Authorization Tests', () => {
    * Test 2: Supervisor can check in for any employee
    */
   it('should allow supervisor role through requireAuth', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'sup-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'sup-123', role: 'supervisor', ipHash: 'hash' });
@@ -67,8 +67,8 @@ describe('Attendance Authorization Tests', () => {
    * Test 3: Administrator can check in for any employee
    */
   it('should allow administrator role through requireAuth', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'admin-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'admin-123', role: 'administrator', ipHash: 'hash' });
@@ -84,7 +84,7 @@ describe('Attendance Authorization Tests', () => {
    * Test 4: Unauthenticated request is rejected
    */
   it('should reject unauthenticated requests', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
     (verifyTokenFromCookie as any).mockResolvedValue(null);
 
     const { req } = createMocks({ method: 'GET', headers: {} });
@@ -98,8 +98,8 @@ describe('Attendance Authorization Tests', () => {
    * Test 5: Expired session is rejected
    */
   it('should reject expired session', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue(null);
@@ -115,8 +115,8 @@ describe('Attendance Authorization Tests', () => {
    * Test 6: Both URL variants enforce identical RBAC via withCsrfAndAuth
    */
   it('should use same role validation for both attendance URL variants', async () => {
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     // Test employee role
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
@@ -147,9 +147,9 @@ describe('Attendance Authorization Tests', () => {
    * Test 7: CSRF wrapper allows GET without CSRF
    */
   it('should allow GET requests without CSRF via withCsrfAndAuth', async () => {
-    const { withCsrfAndAuth } = await import('@/lib/middleware/csrf');
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { withCsrfAndAuth } = await import('@/backend/security/csrf');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash' });
@@ -168,9 +168,9 @@ describe('Attendance Authorization Tests', () => {
    * Test 8: CSRF wrapper rejects POST without valid CSRF
    */
   it('should reject POST without valid CSRF via withCsrfAndAuth', async () => {
-    const { withCsrfAndAuth } = await import('@/lib/middleware/csrf');
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { withCsrfAndAuth } = await import('@/backend/security/csrf');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash' });
@@ -192,9 +192,9 @@ describe('Attendance Authorization Tests', () => {
    * Test 9: CSRF wrapper accepts POST with valid CSRF
    */
   it('should accept POST with valid CSRF via withCsrfAndAuth', async () => {
-    const { withCsrfAndAuth, generateCsrfToken, signCsrfToken } = await import('@/lib/middleware/csrf');
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { withCsrfAndAuth, generateCsrfToken, signCsrfToken } = await import('@/backend/security/csrf');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash' });
@@ -223,9 +223,9 @@ describe('Attendance Authorization Tests', () => {
    * Test 10: Invalid role rejected by withCsrfAndAuth
    */
   it('should reject invalid role via withCsrfAndAuth', async () => {
-    const { withCsrfAndAuth } = await import('@/lib/middleware/csrf');
-    const { verifyTokenFromCookie } = await import('@/lib/auth/tokens');
-    const { getSession } = await import('@/lib/auth/session');
+    const { withCsrfAndAuth } = await import('@/backend/security/csrf');
+    const { verifyTokenFromCookie } = await import('@/backend/auth/tokens');
+    const { getSession } = await import('@/backend/auth/session');
 
     (verifyTokenFromCookie as any).mockResolvedValue({ sub: 'emp-123', jti: 'jti-123' });
     (getSession as any).mockResolvedValue({ userId: 'emp-123', role: 'employee', ipHash: 'hash' });

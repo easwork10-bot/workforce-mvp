@@ -1,3 +1,4 @@
+import 'server-only';
 import { db } from '..';
 import { auditLogs } from '../schema';
 import { and, count, desc, eq } from 'drizzle-orm';

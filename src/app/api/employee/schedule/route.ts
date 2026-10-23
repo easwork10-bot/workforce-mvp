@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmployeeSchedule } from '@/lib/db/queries/assignments';
+import { getEmployeeSchedule } from '@/backend/db/queries/assignments';
 import { attendanceQuerySchema } from '@/lib/validators/attendance';
-import { requireRole } from '@/lib/middleware/requireRole';
+import { requireRole } from '@/backend/security/requireRole';
 
 /**
  * GET /api/employee/schedule - Get employee's schedule (upcoming and past assignments)

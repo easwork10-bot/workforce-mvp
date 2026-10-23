@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { db } from '@/lib/db';
+import { db } from '@/backend/db';
 import {
   profiles,
   shifts,
@@ -8,14 +8,14 @@ import {
   notifications,
   attendanceRecords,
   auditLogs,
-} from '@/lib/db/schema';
+} from '@/backend/db/schema';
 import {
   getAvailableShiftsForEmployee,
   getShiftDetailsForEmployee,
-} from '@/lib/db/queries/shifts';
-import { applyForShiftWithLock, reviewApplication } from '@/lib/db/queries/applications';
-import { getAuditLogs } from '@/lib/db/queries/audit';
-import { employeeCheckIn, employeeCheckOut } from '@/lib/db/queries/attendance';
+} from '@/backend/db/queries/shifts';
+import { applyForShiftWithLock, reviewApplication } from '@/backend/db/queries/applications';
+import { getAuditLogs } from '@/backend/db/queries/audit';
+import { employeeCheckIn, employeeCheckOut } from '@/backend/db/queries/attendance';
 import { eq, and, inArray, count } from 'drizzle-orm';
 
 // Generate unique test IDs to avoid conflicts between parallel test suites

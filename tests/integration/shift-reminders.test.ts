@@ -1,21 +1,21 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { and, eq, inArray } from 'drizzle-orm';
-import { db, pool } from '@/lib/db';
+import { db, pool } from '@/backend/db';
 import {
   auditLogs,
   notifications,
   profiles,
   shiftAssignments,
   shifts,
-} from '@/lib/db/schema';
-import * as auditQueries from '@/lib/db/queries/audit';
+} from '@/backend/db/schema';
+import * as auditQueries from '@/backend/db/queries/audit';
 import {
   getUpcomingShiftReminderOccurrences,
   sendShiftReminders,
   startShiftReminderJob,
   stopShiftReminderJob,
   type ShiftReminderOccurrence,
-} from '@/lib/jobs/shiftReminders';
+} from '@/backend/jobs/shiftReminders';
 
 const realSetTimeout = globalThis.setTimeout;
 

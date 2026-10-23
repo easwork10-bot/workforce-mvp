@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
-import { auditLogs, notifications, profiles } from '@/lib/db/schema';
-import { signCsrfToken } from '@/lib/middleware/csrf';
+import { db } from '@/backend/db';
+import { auditLogs, notifications, profiles } from '@/backend/db/schema';
+import { signCsrfToken } from '@/backend/security/csrf';
 import { DELETE, PATCH } from '@/app/api/notifications/[id]/route';
 import { GET, POST } from '@/app/api/notifications/route';
 import { eq, inArray } from 'drizzle-orm';
@@ -13,13 +13,13 @@ const authState = vi.hoisted(() => ({
   role: 'employee' as 'administrator' | 'supervisor' | 'employee',
 }));
 
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   verifyTokenFromCookie: vi.fn(async (cookieHeader: string | null) => authState.authenticated && cookieHeader?.includes('access_token=valid')
     ? { sub: authState.userId, role: authState.role, jti: 'notification-api-test-session', ipHash: 'test' }
     : null),
 }));
 
-vi.mock('@/lib/auth/session', () => ({
+vi.mock('@/backend/auth/session', () => ({
   getSession: vi.fn(async () => authState.authenticated
     ? {
         userId: authState.userId,

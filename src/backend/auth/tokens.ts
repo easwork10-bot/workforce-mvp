@@ -1,3 +1,4 @@
+import 'server-only';
 import { SignJWT, jwtVerify, importSPKI, importPKCS8, type JWTPayload, type KeyLike } from 'jose';
 import { createHash, randomBytes } from 'crypto';
 import { loadJwtKeyMaterial } from './jwtKeyMaterial.js';

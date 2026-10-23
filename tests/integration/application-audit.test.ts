@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { createHash } from 'node:crypto';
 import { eq, inArray } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import * as notificationQueries from '@/lib/db/queries/notifications';
+import { db } from '@/backend/db';
+import * as notificationQueries from '@/backend/db/queries/notifications';
 import {
   auditLogs,
   notifications,
@@ -11,10 +11,10 @@ import {
   shiftApplications,
   shiftAssignments,
   shifts,
-} from '@/lib/db/schema';
-import { getAuditLogs } from '@/lib/db/queries/audit';
-import { reviewApplication } from '@/lib/db/queries/applications';
-import { signCsrfToken } from '@/lib/middleware/csrf';
+} from '@/backend/db/schema';
+import { getAuditLogs } from '@/backend/db/queries/audit';
+import { reviewApplication } from '@/backend/db/queries/applications';
+import { signCsrfToken } from '@/backend/security/csrf';
 import { POST as postApplicationReview } from '@/app/api/admin/applications/[id]/review/route';
 
 const auditState = vi.hoisted(() => ({
@@ -27,8 +27,8 @@ const authState = vi.hoisted(() => ({
   role: 'administrator' as 'administrator' | 'supervisor' | 'employee',
 }));
 
-vi.mock('@/lib/db/queries/audit', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/db/queries/audit')>();
+vi.mock('@/backend/db/queries/audit', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/db/queries/audit')>();
   return {
     ...actual,
     logAuditEvent: vi.fn(async (...args: Parameters<typeof actual.logAuditEvent>) => {
@@ -38,14 +38,14 @@ vi.mock('@/lib/db/queries/audit', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/auth/tokens', () => ({
+vi.mock('@/backend/auth/tokens', () => ({
   verifyTokenFromCookie: vi.fn(async () => authState.authenticated
     ? { sub: authState.userId, role: authState.role, jti: 'application-audit-session', ipHash: 'test' }
     : null),
 }));
 
-vi.mock('@/lib/auth/session', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/auth/session')>();
+vi.mock('@/backend/auth/session', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/auth/session')>();
   return {
     ...actual,
     getSession: vi.fn(async () => authState.authenticated

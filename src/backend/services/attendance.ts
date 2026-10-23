@@ -1,8 +1,10 @@
-import { db } from '@/lib/db';
-import { attendanceRecords, shiftAssignments } from '@/lib/db/schema';
+import 'server-only';
+
+import { db } from '@/backend/db';
+import { attendanceRecords, shiftAssignments } from '@/backend/db/schema';
 import { eq, and, desc, or } from 'drizzle-orm';
-import type { AttendanceRecord } from '@/lib/db/schema';
-import { logAuditEvent, type AuditMetadata } from '@/lib/db/queries/audit';
+import type { AttendanceRecord } from '@/backend/db/schema';
+import { logAuditEvent, type AuditMetadata } from '@/backend/db/queries/audit';
 
 type AttendanceExecutor = Pick<typeof db, 'transaction'>;
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuditLogs, sanitizeAuditValues } from '@/lib/db/queries/audit';
-import { withCsrfAndAuth } from '@/lib/middleware/csrf';
+import { getAuditLogs, sanitizeAuditValues } from '@/backend/db/queries/audit';
+import { withCsrfAndAuth } from '@/backend/security/csrf';
 import { auditLogQuerySchema } from '@/lib/validators/audit';
 
 async function getAuditLogHandler(req: NextRequest): Promise<NextResponse> {
