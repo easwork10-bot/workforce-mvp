@@ -1,5 +1,11 @@
 # Phase 3 Critical/High Fixes Implementation Plan
 
+> **Historical plan:** This dated plan is retained as an implementation and decision
+> record; its task references and status are not a statement of current completion.
+> Consult the current [README](../../../README.md) and
+> [architecture](../../../ARCHITECTURE.md) for verified behavior. The original plan
+> follows unchanged.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Fix 5 Critical/High severity issues in Phase 3 employee APIs: shift browsing filter, Redis lock scoping, lock TTL, Redis fail-open behavior, and shift capacity enforcement.

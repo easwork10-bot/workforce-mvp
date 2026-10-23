@@ -1,5 +1,10 @@
 # Workforce MVP Migration Plan
 
+> **Historical plan:** This dated plan is retained as an implementation and decision
+> record; its scope and status are not a statement of current completion. Consult the
+> current [README](../../../README.md) and [architecture](../../../ARCHITECTURE.md)
+> for verified behavior. The original plan follows unchanged.
+
 > **For agentic workers:** This plan uses native phased implementation (not subagent-driven) due to constrained provider capacity. Each phase ends with targeted verification before proceeding to the next. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Migrate the Workforce MVP from Supabase (PostgreSQL + Auth + RLS) to a self-hosted architecture with Next.js API routes, Redis for sessions/locks/rate-limiting/verification state, and a separate PostgreSQL database — preserving all existing frontend functionality while replacing backend dependencies.
