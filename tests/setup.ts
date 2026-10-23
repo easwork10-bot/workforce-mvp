@@ -1,12 +1,7 @@
 // Test setup for vitest
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-
-// Set test environment variables
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/workforce_test';
 process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-process.env.JWT_PRIVATE_KEY = process.env.JWT_PRIVATE_KEY || 'test-private-key';
-process.env.JWT_PUBLIC_KEY = process.env.JWT_PUBLIC_KEY || 'test-public-key';
+process.env.CSRF_SECRET = process.env.CSRF_SECRET || 'test-only-csrf-secret-not-for-other-environments';
 
 // Global test timeout
 vi.setConfig({ testTimeout: 30000 });
