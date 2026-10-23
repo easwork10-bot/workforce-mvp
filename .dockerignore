@@ -26,5 +26,8 @@ supabase
 *.log
 *.dump
 *.sql.gz
+.cache
 skill-observations
 cross-cutting-principles.md
+.taste-skill
+WORKFORCE_AI_HANDOFF.md
