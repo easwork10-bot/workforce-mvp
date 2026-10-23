@@ -98,12 +98,14 @@ export function getCsrfTokenFromCookie(req: NextRequest): string | null {
 }
 
 /**
- * Get CSRF token from request header and verify signature
+ * Read the frontend token returned by /api/auth/csrf, while retaining support
+ * for existing clients that send the signed cookie value in the header.
  */
 export function getCsrfTokenFromHeader(req: NextRequest): string | null {
   const headerToken = req.headers.get(CSRF_HEADER_NAME);
   if (!headerToken) return null;
-  return verifyCsrfToken(headerToken);
+  return verifyCsrfToken(headerToken)
+    ?? (/^[A-Za-z0-9_-]{43}$/.test(headerToken) ? headerToken : null);
 }
 
 /**

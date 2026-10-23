@@ -291,6 +291,36 @@
       "availability": "Indienen beschikbaarheid"
     }
   },
+  "employeeShifts": {
+    "description": "Bekijk beschikbare diensten en solliciteer rechtstreeks.",
+    "loading": "Beschikbare diensten laden...",
+    "retry": "Opnieuw proberen",
+    "emptyTitle": "Geen diensten beschikbaar",
+    "emptyDescription": "Kom later terug voor nieuwe mogelijkheden.",
+    "applicants": "Sollicitaties: {applied} · {required} medewerkers nodig",
+    "applying": "Bezig met solliciteren...",
+    "applicationSuccess": "Je sollicitatie is succesvol verzonden.",
+    "compensation": {
+      "notSpecified": "Vergoeding niet vermeld",
+      "hourly": "{amount} per uur",
+      "daily": "{amount} per dag",
+      "fixed": "{amount} vast"
+    },
+    "pagination": {
+      "label": "Paginering beschikbare diensten",
+      "previous": "Vorige pagina",
+      "next": "Volgende pagina",
+      "page": "Pagina {page} van {totalPages}"
+    },
+    "errors": {
+      "unauthorized": "Je sessie is verlopen. Log opnieuw in om diensten te bekijken.",
+      "forbidden": "Je hebt geen toestemming om deze diensten te bekijken of aan te vragen.",
+      "invalid": "Deze aanvraag kan niet worden verwerkt. Vernieuw de lijst en probeer opnieuw.",
+      "server": "Er is iets misgegaan bij het laden of aanvragen van de dienst.",
+      "network": "De server is niet bereikbaar. Controleer je verbinding en probeer opnieuw.",
+      "csrf": "De beveiligingstoken kon niet worden opgehaald. Vernieuw de pagina en probeer opnieuw."
+    }
+  },
   "languages": {
     "nl": "Nederlands",
     "ar": "العربية",
