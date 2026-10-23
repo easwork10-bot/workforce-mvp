@@ -120,10 +120,17 @@ async function readDatabaseIdentity(connectionString: string): Promise<TestDatab
 export async function verifyTestDatabaseTarget(
   connectionString: string | undefined,
   expectedServerAddress: string | undefined,
-  readIdentity: ReadDatabaseIdentity = readDatabaseIdentity
+  readIdentity: ReadDatabaseIdentity = readDatabaseIdentity,
+  expectedServerPort?: string
 ): Promise<void> {
   const target = validateTestDatabaseTarget(connectionString);
   const expectedAddress = validateExpectedServerAddress(expectedServerAddress);
+  const serverPort = expectedServerPort === undefined
+    ? target.port
+    : Number(expectedServerPort);
+  if (!Number.isInteger(serverPort) || serverPort < 1 || serverPort > 65535) {
+    return fail('WORKFORCE_TEST_DB_SERVER_PORT must explicitly pin a valid PostgreSQL server port.');
+  }
   if (!connectionString) {
     return fail('DATABASE_URL must be explicitly set to the approved local workforce_test database.');
   }
@@ -143,9 +150,9 @@ export async function verifyTestDatabaseTarget(
     return fail('the connected PostgreSQL database is not workforce_test; no tests were run.');
   }
 
-  if (identity.serverAddress !== expectedAddress || identity.serverPort !== target.port) {
+  if (identity.serverAddress !== expectedAddress || identity.serverPort !== serverPort) {
     return fail(
-      'the connected PostgreSQL server endpoint does not match WORKFORCE_TEST_DB_SERVER_ADDRESS and DATABASE_URL port; no tests were run.'
+      'the connected PostgreSQL server endpoint does not match WORKFORCE_TEST_DB_SERVER_ADDRESS and WORKFORCE_TEST_DB_SERVER_PORT; no tests were run.'
     );
   }
 }

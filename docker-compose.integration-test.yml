@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: workforce_test
+      POSTGRES_USER: workforce_test
+      POSTGRES_PASSWORD: ${WORKFORCE_SAFE_DB_PASSWORD:?The isolated test runner must set a temporary password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workforce_test -d workforce_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=512m
+    networks:
+      - isolated
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /data:rw,noexec,nosuid,size=64m
+    networks:
+      - isolated
+
+networks:
+  isolated:
+    internal: true

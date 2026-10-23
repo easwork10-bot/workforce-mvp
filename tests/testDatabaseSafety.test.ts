@@ -45,6 +45,31 @@ describe('integration test database safety guard', () => {
     expect(readIdentity).not.toHaveBeenCalled();
   });
 
+  it('supports an explicitly pinned PostgreSQL server port behind a loopback port mapping', async () => {
+    const mappedUrl = 'postgresql://test:test@localhost:6432/workforce_test';
+    const matchingIdentity = vi.fn(async (): Promise<TestDatabaseIdentity> => ({
+      database: 'workforce_test',
+      serverAddress: safeServerAddress,
+      serverPort: 5432,
+    }));
+
+    await expect(
+      verifyTestDatabaseTarget(mappedUrl, safeServerAddress, matchingIdentity, '5432')
+    ).resolves.toBeUndefined();
+    await expect(
+      verifyTestDatabaseTarget(mappedUrl, safeServerAddress, matchingIdentity, 'not-a-port')
+    ).rejects.toThrow('WORKFORCE_TEST_DB_SERVER_PORT');
+
+    const mismatchedIdentity = vi.fn(async (): Promise<TestDatabaseIdentity> => ({
+      database: 'workforce_test',
+      serverAddress: safeServerAddress,
+      serverPort: 5433,
+    }));
+    await expect(
+      verifyTestDatabaseTarget(mappedUrl, safeServerAddress, mismatchedIdentity, '5432')
+    ).rejects.toThrow('server endpoint does not match');
+  });
+
   it.each([
     [
       'unexpected database identity',

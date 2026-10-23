@@ -12,6 +12,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:integration:safe": "node scripts/test-integration-safe.mjs",
     "test:ui": "vitest --ui",
     "check:frontend-boundaries": "node scripts/check-frontend-boundaries.mjs"
   },
