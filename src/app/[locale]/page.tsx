@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/frontend/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/ui/card";
 import { Users, Clock, Calendar, Shield, ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 

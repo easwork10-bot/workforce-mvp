@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/frontend/ui/button';
+import { Input } from '@/frontend/ui/input';
+import { Label } from '@/frontend/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/ui/card';
+import { Textarea } from '@/frontend/ui/textarea';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Euro } from 'lucide-react';
 

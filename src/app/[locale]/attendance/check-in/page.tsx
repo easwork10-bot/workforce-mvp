@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/ui/card';
+import { Button } from '@/frontend/ui/button';
 import { MapPin, Clock, CheckCircle, AlertCircle, Satellite, Shield, Calendar } from 'lucide-react';
 
 const mockTodaysShifts = [

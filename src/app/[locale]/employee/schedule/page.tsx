@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/frontend/ui/card';
+import { Button } from '@/frontend/ui/button';
 import { Clock, MapPin, CheckCircle, ChevronLeft, ChevronRight, Sun } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isToday } from 'date-fns';
 import { nl } from 'date-fns/locale';

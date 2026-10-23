@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/frontend/ui/button";
+import { Input } from "@/frontend/ui/input";
+import { Label } from "@/frontend/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/frontend/ui/card";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 

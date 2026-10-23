@@ -4,11 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/frontend/ui/button";
 import { Users, LogOut, Home, Menu, X } from "lucide-react";
-import { useSession } from "@/components/session-provider";
-import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useSession } from "@/frontend/components/session-provider";
+import { cn } from "@/frontend/lib/utils";
+import { Sheet, SheetContent, SheetTrigger } from "@/frontend/ui/sheet";
 
 export default function Navigation() {
   const t = useTranslations("navigation");

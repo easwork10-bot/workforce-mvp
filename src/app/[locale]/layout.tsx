@@ -6,9 +6,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/lib/utils';
 import { Locale } from '@/lib/i18n';
-import Navigation from '@/components/navigation';
+import Navigation from '@/frontend/components/navigation';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,7 +32,7 @@ const spaceGrotesk = Space_Grotesk({
   preload: true,
 });
 
-import { SessionProvider } from '@/components/session-provider';
+import { SessionProvider } from '@/frontend/components/session-provider';
 
 export default async function RootLayout({
   children,
