@@ -2,8 +2,8 @@
 
 > **Historical handoff:** This document records an earlier project proposal and
 > instructions. Its implementation status and architecture claims may be stale; do
-> not use it as the current specification. See the current [README](./README.md) and
-> [technical architecture](./ARCHITECTURE.md). The original handoff text below is
+> not use it as the current specification. See the [documentation index](../README.md)
+> and current [technical architecture](../architecture.md). The original handoff text below is
 > preserved.
 
 ## **1. Instructions for the AI Receiving This Handoff**

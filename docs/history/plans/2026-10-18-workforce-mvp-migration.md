@@ -2,7 +2,8 @@
 
 > **Historical plan:** This dated plan is retained as an implementation and decision
 > record; its scope and status are not a statement of current completion. Consult the
-> current [README](../../../README.md) and [architecture](../../../ARCHITECTURE.md)
+> current [documentation index](../../README.md) and
+> [architecture](../../architecture.md)
 > for verified behavior. The original plan follows unchanged.
 
 > **For agentic workers:** This plan uses native phased implementation (not subagent-driven) due to constrained provider capacity. Each phase ends with targeted verification before proceeding to the next. Steps use checkbox (`- [ ]`) syntax for tracking.

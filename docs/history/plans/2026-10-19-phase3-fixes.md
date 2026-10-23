@@ -2,8 +2,8 @@
 
 > **Historical plan:** This dated plan is retained as an implementation and decision
 > record; its task references and status are not a statement of current completion.
-> Consult the current [README](../../../README.md) and
-> [architecture](../../../ARCHITECTURE.md) for verified behavior. The original plan
+> Consult the current [documentation index](../../README.md) and
+> [architecture](../../architecture.md) for verified behavior. The original plan
 > follows unchanged.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -14,7 +14,7 @@
 
 **Tech Stack:** Next.js 14, TypeScript, Drizzle ORM, PostgreSQL, Redis (ioredis/redis v4), Zod
 
-**Spec:** Verification report (this conversation) + migration plan `docs/superpowers/plans/2026-10-18-workforce-mvp-migration.md`
+**Spec:** Verification report (this conversation) + migration plan `docs/history/plans/2026-10-18-workforce-mvp-migration.md`
 
 ## Global Constraints
 
@@ -620,7 +620,7 @@ git commit --allow-empty -m "verify: all Phase 3 Critical/High fixes pass typech
 
 ## Execution Handoff
 
-**Plan complete and saved to `docs/superpowers/plans/2026-10-19-phase3-fixes.md`. Please review the plan. Which execution approach would you prefer?**
+**Plan complete and saved to `docs/history/plans/2026-10-19-phase3-fixes.md`. Please review the plan. Which execution approach would you prefer?**
 
 - **Subagent-driven** - A fresh subagent implements each task and a fresh reviewer checks it before the next one starts, then a whole-branch review at the end. Most thorough; costs a fresh context per task and per review.
 - **Native** - I implement every task myself in this session, the way this harness runs work, then one fresh reviewer on the most capable model checks the whole branch. Cheapest and fastest; no independent review until the end. Runs well with a mid-tier session model, since the plan carries the design.

@@ -2,8 +2,8 @@
 
 > **Historical plan:** This dated plan is retained as an implementation and decision
 > record; its status matrix and task references are not a statement of current
-> completion. Consult the current [README](../../../README.md) and
-> [architecture](../../../ARCHITECTURE.md) for verified behavior. The original plan
+> completion. Consult the current [documentation index](../../README.md) and
+> [architecture](../../architecture.md) for verified behavior. The original plan
 > follows unchanged.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
