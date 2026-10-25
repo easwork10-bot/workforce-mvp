@@ -4,6 +4,10 @@
 # Next.js build output
 /.next/
 /out/
+/showcase/.next/
+/showcase/out/
+/showcase/public/
+/showcase/next-env.d.ts
 
 # Local environment and secrets
 .env*

@@ -1,0 +1,2393 @@
+.jofra-page {
+  --paper: #f7f7f3;
+  --ink: #171b1d;
+  --muted: #666c6d;
+  --line: #d8dbd8;
+  --orange: #fc651b;
+  --orange-ink: #b04310;
+  --dark: #191f20;
+  --sage: #68756d;
+}
+.jofra-page * {
+  box-sizing: border-box;
+}
+.jofra-page {
+  scroll-behavior: smooth;
+}
+.jofra-page {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-dm-sans),Arial,sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.jofra-page a {
+  color: inherit;
+  text-decoration: none;
+}
+.jofra-page button {
+  font: inherit;
+}
+.jofra-page .container {
+  width: min(1370px,calc(100% - 112px));
+  margin: auto;
+}
+.jofra-page .nav {
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  gap: 30px;
+}
+.jofra-page .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+.jofra-page .brandmark {
+  width: 56px;
+  height: 30px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.jofra-page .brandname {
+  font-family: var(--font-manrope),sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -1.05px;
+}
+.jofra-page .navlinks {
+  display: flex;
+  gap: 37px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.jofra-page .navlinks a {
+  transition: color .2s;
+}
+.jofra-page .navlinks a:hover {
+  color: var(--orange-ink);
+}
+.jofra-page .btn {
+  min-height: 49px;
+  display: inline-flex;
+  gap: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 23px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 800;
+  transition: background .25s,transform .25s,color .25s;
+}
+.jofra-page .btn:hover {
+  transform: translateY(-2px);
+}
+.jofra-page .btn.orange {
+  background: var(--orange);
+  color: var(--ink);
+}
+.jofra-page .btn.orange:hover {
+  background: #dd4f0b;
+}
+.jofra-page .btn.outline {
+  border-color: #aeb5b2;
+}
+.jofra-page .btn.outline:hover {
+  border-color: var(--ink);
+}
+.jofra-page .arrow {
+  font-size: 19px;
+  font-weight: 400;
+}
+.jofra-page .menu {
+  display: none;
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+}
+.jofra-page .hero {
+  display: grid;
+  grid-template-columns: 51% 49%;
+  min-height: 670px;
+  border-bottom: 1px solid var(--line);
+}
+.jofra-page .hero-copy {
+  padding: 96px 50px 72px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  justify-content: center;
+}
+.jofra-page .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+.jofra-page .eyebrow:before {
+  content: '';
+  width: 25px;
+  height: 2px;
+  background: var(--orange);
+}
+.jofra-page h1,.jofra-page h2,.jofra-page h3,.jofra-page p {
+  margin-top: 0;
+}
+.jofra-page .hero h1 {
+  font-family: var(--font-manrope),Arial,sans-serif;
+  font-size: clamp(48px,5.6vw,88px);
+  line-height: 1.065;
+  letter-spacing: -.072em;
+  font-weight: 800;
+  margin: 30px 0 23px;
+  max-width: 740px;
+}
+.jofra-page .hero h1 span {
+  color: var(--orange-ink);
+}
+.jofra-page .lead {
+  max-width: 470px;
+  color: #525b5a;
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0 0 29px;
+}
+.jofra-page .hero-actions {
+  display: flex;
+  gap: 13px;
+  flex-wrap: wrap;
+}
+.jofra-page .hero-foot {
+  margin-top: 64px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #555e5c;
+  font-size: 12px;
+}
+.jofra-page .hero-foot .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--orange);
+}
+.jofra-page .hero-image {
+  position: relative;
+  overflow: hidden;
+  min-height: 620px;
+  background: #d7d8d3;
+}
+.jofra-page .hero-image img {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  object-position: 50% 37%;
+  filter: saturate(.92);
+  transition: transform 1.3s cubic-bezier(.2,.7,.2,1);
+}
+.jofra-page .hero-image:hover img {
+  transform: scale(1.035);
+}
+.jofra-page .image-label {
+  position: absolute;
+  bottom: 20px;
+  left: 23px;
+  background: rgba(247,247,243,.95);
+  padding: 11px 16px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+.jofra-page .image-corner {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-top: 83px solid var(--orange);
+  border-left: 83px solid transparent;
+}
+.jofra-page .section {
+  padding: 125px 0;
+}
+.jofra-page .section-head {
+  display: grid;
+  grid-template-columns: 43% 57%;
+  align-items: end;
+  gap: 40px;
+  margin-bottom: 46px;
+}
+.jofra-page .section-title {
+  font: 800 clamp(38px,4.2vw,61px)/1.13 var(--font-manrope),Arial,sans-serif;
+  letter-spacing: -.062em;
+  margin: 17px 0 0;
+}
+.jofra-page .section-desc {
+  max-width: 480px;
+  font-size: 16px;
+  color: #656b69;
+  line-height: 1.75;
+  margin: 0 0 4px;
+}
+.jofra-page .services {
+  border-top: 1px solid var(--line);
+}
+.jofra-page .service-row {
+  display: grid;
+  grid-template-columns: 90px 1fr minmax(230px,360px) 35px;
+  align-items: center;
+  gap: 22px;
+  border-bottom: 1px solid var(--line);
+  min-height: 150px;
+  transition: padding .3s,background .3s;
+  position: relative;
+}
+.jofra-page .service-row:first-child {
+  border-top: 1px solid var(--line);
+}
+.jofra-page .service-row:hover {
+  padding-left: 18px;
+  padding-right: 18px;
+  background: #ebece7;
+}
+.jofra-page .service-id {
+  font-size: 14px;
+  color: var(--orange-ink);
+  font-weight: 800;
+}
+.jofra-page .service-title {
+  font: 800 clamp(22px,2.7vw,37px)/1.2 var(--font-manrope),sans-serif;
+  letter-spacing: -.055em;
+}
+.jofra-page .service-desc {
+  color: #5c6360;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.jofra-page .service-arrow {
+  font-size: 32px;
+  font-weight: 300;
+  transition: transform .25s;
+}
+.jofra-page .service-row:hover .service-arrow {
+  transform: translate(5px,-5px);
+  color: var(--orange);
+}
+.jofra-page .benefits {
+  background: var(--dark);
+  color: var(--paper);
+  padding: 112px 0 115px;
+  position: relative;
+  overflow: hidden;
+}
+.jofra-page .benefits:after {
+  content: '';
+  position: absolute;
+  right: -100px;
+  bottom: -340px;
+  width: 660px;
+  height: 660px;
+  border: 1px solid rgba(252,101,27,.36);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.jofra-page .benefits .eyebrow {
+  color: #e2e6e1;
+}
+.jofra-page .benefits h2 {
+  font: 800 clamp(43px,5.7vw,78px)/1.1 var(--font-manrope),sans-serif;
+  letter-spacing: -.07em;
+  margin: 30px 0 8px;
+  max-width: 850px;
+  color: var(--paper);
+}
+.jofra-page .benefits h2 em {
+  font-style: normal;
+  color: var(--orange);
+}
+.jofra-page .benefits-statement {
+  max-width: 700px;
+  margin: 0 0 54px;
+  color: var(--paper);
+  font-size: clamp(18px,2vw,24px);
+  line-height: 1.4;
+}
+.jofra-page .benefit-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 35px;
+}
+.jofra-page .benefit {
+  border-top: 1px solid #656b68;
+  padding-top: 24px;
+}
+.jofra-page .benefit strong {
+  display: block;
+  font-size: 18px;
+  font-family: var(--font-manrope),sans-serif;
+  letter-spacing: -.035em;
+  margin-bottom: 11px;
+}
+.jofra-page .benefit p {
+  max-width: 290px;
+  color: #bdc3be;
+  line-height: 1.7;
+  font-size: 16px;
+}
+.jofra-page .process-head {
+  max-width: 700px;
+}
+.jofra-page .process-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 0;
+  margin-top: 66px;
+  border-top: 2px solid var(--ink);
+}
+.jofra-page .step {
+  position: relative;
+  padding: 31px 25px 0 0;
+  min-height: 205px;
+}
+.jofra-page .step:not(:last-child) {
+  border-right: 1px solid var(--line);
+  margin-right: 25px;
+}
+.jofra-page .step-number {
+  display: block;
+  font: 800 13px var(--font-manrope),sans-serif;
+  color: var(--orange);
+  margin-bottom: 35px;
+}
+.jofra-page .step h3 {
+  font: 800 20px var(--font-manrope),sans-serif;
+  letter-spacing: -.04em;
+  margin-bottom: 10px;
+}
+.jofra-page .step p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #69716e;
+  max-width: 225px;
+}
+.jofra-page .step:before {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  background: var(--orange);
+  border: 3px solid var(--paper);
+  border-radius: 50%;
+  top: -8px;
+  left: 0;
+}
+.jofra-page .contact {
+  padding: 95px 0;
+  background: #e8eae5;
+}
+.jofra-page .contact-grid {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 65px;
+  align-items: center;
+}
+.jofra-page .contact h2 {
+  font: 800 clamp(48px,5.8vw,82px)/1.08 var(--font-manrope),sans-serif;
+  letter-spacing: -.07em;
+  margin: 20px 0;
+}
+.jofra-page .contact h2 span {
+  color: var(--orange-ink);
+}
+.jofra-page .contact p {
+  max-width: 470px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #555e58;
+}
+.jofra-page .contact-info {
+  border-top: 1px solid #b5bbb4;
+}
+.jofra-page .contact-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid #b5bbb4;
+}
+.jofra-page .contact-line small {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: #6d756e;
+  font-weight: 800;
+}
+.jofra-page .contact-line a,.jofra-page .contact-line span {
+  font-size: clamp(15px,1.7vw,22px);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  text-align: right;
+}
+.jofra-page .contact-line a:hover {
+  color: var(--orange);
+}
+.jofra-page .contact-info .btn {
+  margin-top: 29px;
+}
+.jofra-page .footer {
+  background: #151919;
+  color: #ecede7;
+  padding: 36px 0;
+}
+.jofra-page .footer-inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: center;
+}
+.jofra-page .footer .brandmark {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+.jofra-page .footer small {
+  color: #a7ada8;
+  font-size: 11px;
+}
+.jofra-page .footer a:hover {
+  color: var(--orange);
+}
+.jofra-page .footer-links {
+  display: flex;
+  gap: 25px;
+  font-size: 12px;
+}
+.jofra-page .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .85s cubic-bezier(.2,.7,.2,1),transform .85s cubic-bezier(.2,.7,.2,1);
+}
+.jofra-page .reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.jofra-page .hero-copy>* {
+  animation: up .85s both;
+}
+.jofra-page .hero-copy>*:nth-child(2) {
+  animation-delay: .12s;
+}
+.jofra-page .hero-copy>*:nth-child(3) {
+  animation-delay: .22s;
+}
+.jofra-page .hero-copy>*:nth-child(4) {
+  animation-delay: .31s;
+}
+.jofra-page .hero-copy>*:nth-child(5) {
+  animation-delay: .4s;
+}
+@keyframes up {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width:900px) {
+  .jofra-page .container {
+    width: calc(100% - 48px);
+  }
+  .jofra-page .nav {
+    height: 76px;
+  }
+  .jofra-page .navlinks {
+    gap: 17px;
+  }
+  .jofra-page .hero {
+    grid-template-columns: 1fr 1fr;
+    min-height: 560px;
+  }
+  .jofra-page .hero-copy {
+    padding: 54px 28px 50px 0;
+  }
+  .jofra-page .hero h1 {
+    font-size: clamp(40px,5.5vw,65px);
+  }
+  .jofra-page .hero-image {
+    min-height: 540px;
+  }
+  .jofra-page .hero-foot {
+    margin-top: 38px;
+  }
+  .jofra-page .section {
+    padding: 85px 0;
+  }
+  .jofra-page .service-row {
+    grid-template-columns: 50px 1fr minmax(200px,270px) 25px;
+  }
+  .jofra-page .benefits {
+    padding: 85px 0;
+  }
+  .jofra-page .process-grid {
+    gap: 15px;
+  }
+  .jofra-page .contact-grid {
+    gap: 30px;
+  }
+}
+@media (max-width:650px) {
+  .jofra-page .container {
+    width: calc(100% - 36px);
+  }
+  .jofra-page .nav {
+    height: 70px;
+  }
+  .jofra-page .brandname {
+    font-size: 17px;
+  }
+  .jofra-page .brandmark {
+    width: 43px;
+  }
+  .jofra-page .navlinks {
+    position: absolute;
+    display: none;
+    top: 70px;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--paper);
+    padding: 22px;
+    box-shadow: 0 12px 20px #171b1d1a;
+    flex-direction: column;
+    align-items: start;
+  }
+  .jofra-page .navlinks.open {
+    display: flex;
+  }
+  .jofra-page .nav>.btn {
+    display: none;
+  }
+  .jofra-page .menu {
+    display: block;
+  }
+  .jofra-page .hero {
+    display: flex;
+    flex-direction: column;
+  }
+  .jofra-page .hero-copy {
+    padding: 62px 0 35px;
+  }
+  .jofra-page .hero h1 {
+    font-size: clamp(45px,10vw,65px);
+    margin: 24px 0 19px;
+  }
+  .jofra-page .lead {
+    font-size: 15px;
+  }
+  .jofra-page .hero-foot {
+    margin-top: 33px;
+  }
+  .jofra-page .hero-image {
+    min-height: 470px;
+  }
+  .jofra-page .section {
+    padding: 77px 0;
+  }
+  .jofra-page .section-head {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    margin-bottom: 31px;
+  }
+  .jofra-page .section-title {
+    font-size: 39px;
+  }
+  .jofra-page .service-row {
+    grid-template-columns: 35px 1fr 25px;
+    gap: 10px;
+    min-height: 130px;
+    padding: 18px 0;
+  }
+  .jofra-page .service-title {
+    font-size: 24px;
+  }
+  .jofra-page .service-desc {
+    grid-column: 2/3;
+    grid-row: 2;
+    margin-top: -4px;
+  }
+  .jofra-page .service-arrow {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .jofra-page .benefits {
+    padding: 80px 0;
+  }
+  .jofra-page .benefits h2 {
+    font-size: 47px;
+    margin-bottom: 42px;
+  }
+  .jofra-page .benefit-grid {
+    grid-template-columns: 1fr;
+    gap: 21px;
+  }
+  .jofra-page .benefit p {
+    max-width: none;
+  }
+  .jofra-page .process-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .jofra-page .step {
+    min-height: 220px;
+    padding-right: 12px;
+  }
+  .jofra-page .step:not(:last-child) {
+    margin-right: 0;
+  }
+  .jofra-page .step:nth-child(2) {
+    border-right: 0;
+    padding-left: 20px;
+  }
+  .jofra-page .step:nth-child(4) {
+    padding-left: 20px;
+  }
+  .jofra-page .step:nth-child(n+3) {
+    border-top: 2px solid var(--ink);
+  }
+  .jofra-page .step:nth-child(n+3):before {
+    top: -8px;
+  }
+  .jofra-page .contact {
+    padding: 78px 0;
+  }
+  .jofra-page .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .jofra-page .contact h2 {
+    font-size: 53px;
+  }
+  .jofra-page .contact-line {
+    align-items: start;
+  }
+  .jofra-page .contact-line a,.jofra-page .contact-line span {
+    font-size: 17px;
+  }
+  .jofra-page .footer-inner {
+    align-items: start;
+    flex-direction: column;
+  }
+  .jofra-page .footer-links {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .jofra-page *,.jofra-page *:before,.jofra-page *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .jofra-page .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+/*Art direction v2 — typographic rhythm, precise motion, road-language details*/
+.jofra-page {
+  --ease-out: cubic-bezier(.22,1,.36,1);
+}
+.jofra-page ::selection {
+  background: var(--orange);
+  color: white;
+}
+.jofra-page :focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 5px;
+}
+.jofra-page .nav {
+  position: relative;
+}
+.jofra-page .nav:after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 9%;
+  height: 1px;
+  background: var(--orange);
+  pointer-events: none;
+}
+.jofra-page .navlinks a {
+  position: relative;
+  padding: 8px 0;
+}
+.jofra-page .navlinks a:after {
+  content: "";
+  position: absolute;
+  bottom: 1px;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .32s var(--ease-out);
+}
+.jofra-page .navlinks a:hover:after,.jofra-page .navlinks a:focus-visible:after {
+  transform: scaleX(1);
+}
+.jofra-page .btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: background .25s,transform .35s var(--ease-out),color .25s;
+}
+.jofra-page .btn .arrow {
+  transition: transform .3s var(--ease-out);
+}
+.jofra-page .btn:hover .arrow {
+  transform: translate(3px,-3px);
+}
+.jofra-page .hero {
+  position: relative;
+}
+.jofra-page .hero:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 86px;
+  height: 3px;
+  background: var(--orange);
+  z-index: 1;
+}
+.jofra-page .hero h1 {
+  max-width: 760px;
+}
+.jofra-page .hero h1 span {
+  position: relative;
+  display: inline-block;
+}
+.jofra-page .hero h1 span:after {
+  content: "";
+  position: absolute;
+  bottom: -.08em;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: drawline 1s .85s var(--ease-out) forwards;
+}
+@keyframes drawline {
+  to {
+    transform: scaleX(1);
+  }
+}
+.jofra-page .hero-image:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 24%;
+  background: linear-gradient(transparent,rgba(0,0,0,.32));
+  pointer-events: none;
+}
+.jofra-page .hero-image-index {
+  position: absolute;
+  top: 28px;
+  left: 27px;
+  z-index: 2;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-shadow: 0 1px 5px #0009;
+}
+.jofra-page .image-label {
+  z-index: 2;
+}
+.jofra-page .image-corner {
+  z-index: 2;
+  transform-origin: top right;
+  transition: transform .5s var(--ease-out);
+}
+.jofra-page .hero-image:hover .image-corner {
+  transform: scale(1.16);
+}
+.jofra-page .hero-scroll {
+  margin-top: 31px;
+  font-size: 9px;
+  letter-spacing: .18em;
+  font-weight: 800;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #59615e;
+}
+.jofra-page .scroll-bar {
+  display: inline-block;
+  width: 43px;
+  height: 1px;
+  background: #abb0aa;
+  position: relative;
+  overflow: hidden;
+}
+.jofra-page .scroll-bar:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--orange);
+  transform: translateX(-100%);
+  animation: roadscan 1.2s 1.2s var(--ease-out) 1 both;
+}
+@keyframes roadscan {
+  55%,100% {
+    transform: translateX(100%);
+  }
+}
+.jofra-page .section-head {
+  align-items: start;
+}
+.jofra-page .section-title {
+  max-width: 740px;
+}
+.jofra-page .section-desc {
+  padding-top: 42px;
+  border-top: 1px solid var(--line);
+}
+.jofra-page .service-row {
+  isolation: isolate;
+  overflow: hidden;
+}
+.jofra-page .service-row:before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--orange);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform .4s var(--ease-out);
+}
+.jofra-page .service-row:hover:before {
+  transform: scaleY(1);
+}
+.jofra-page .service-id {
+  font-variant-numeric: tabular-nums;
+}
+.jofra-page .service-title {
+  transition: letter-spacing .35s var(--ease-out);
+}
+.jofra-page .service-row:hover .service-title {
+  letter-spacing: -.038em;
+}
+.jofra-page .services-after {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 22px 0 0;
+  color: #7b837d;
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: .02em;
+}
+.jofra-page .road-dash {
+  display: block;
+  width: 35px;
+  height: 2px;
+  background: var(--orange);
+  flex: none;
+}
+.jofra-page .benefits {
+  background-image: none;
+}
+.jofra-page .benefits h2 {
+  max-width: 910px;
+}
+.jofra-page .benefit {
+  position: relative;
+  padding-top: 36px;
+}
+.jofra-page .benefit-index {
+  position: absolute;
+  right: 0;
+  top: 22px;
+  font: 700 12px var(--font-manrope),sans-serif;
+  color: #7d8985;
+  letter-spacing: .1em;
+}
+.jofra-page .benefit strong {
+  max-width: 280px;
+}
+.jofra-page .benefits-signature {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 90px;
+  font-size: 10px;
+  letter-spacing: .17em;
+  font-weight: 800;
+  color: #aab3ad;
+}
+.jofra-page .signature-line {
+  height: 1px;
+  background: #666f6a;
+  flex: 1;
+}
+.jofra-page .benefits:after {
+  content: none;
+}
+.jofra-page .process-intro {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 25px;
+}
+.jofra-page .process-aside {
+  text-align: right;
+  color: #929b95;
+  font-size: 10px;
+  letter-spacing: .17em;
+  font-weight: 800;
+  line-height: 1.7;
+}
+.jofra-page .process-grid {
+  position: relative;
+}
+.jofra-page .process-grid:after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.5s var(--ease-out);
+}
+.jofra-page .process-grid.track-visible:after {
+  transform: scaleX(1);
+}
+.jofra-page .step-number {
+  font-size: 14px;
+}
+.jofra-page .step {
+  transition: background .3s;
+}
+.jofra-page .step:hover h3 {
+  color: var(--orange);
+}
+.jofra-page .contact {
+  position: relative;
+  overflow: hidden;
+}
+.jofra-page .contact:before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  content: none;
+}
+.jofra-page .contact-line a {
+  transition: color .2s,transform .3s var(--ease-out);
+}
+.jofra-page .contact-line a:hover {
+  transform: translateX(3px);
+}
+.jofra-page .reveal {
+  transform: translateY(35px);
+  transition: opacity .9s var(--ease-out),transform .9s var(--ease-out);
+}
+.jofra-page .service-row.reveal:nth-child(2),.jofra-page .benefit.reveal:nth-child(2),.jofra-page .step.reveal:nth-child(2) {
+  transition-delay: .09s;
+}
+.jofra-page .service-row.reveal:nth-child(3),.jofra-page .benefit.reveal:nth-child(3),.jofra-page .step.reveal:nth-child(3) {
+  transition-delay: .17s;
+}
+.jofra-page .step.reveal:nth-child(4) {
+  transition-delay: .25s;
+}
+@media (max-width:900px) {
+  .jofra-page .section-desc {
+    padding-top: 24px;
+  }
+  .jofra-page .benefits-signature {
+    margin-top: 60px;
+  }
+}
+@media (max-width:650px) {
+  .jofra-page .hero-scroll {
+    margin-top: 22px;
+  }
+  .jofra-page .hero-image-index {
+    left: 12px;
+    top: 22px;
+  }
+  .jofra-page .section-desc {
+    padding-top: 16px;
+  }
+  .jofra-page .services-after {
+    font-size: 10px;
+  }
+  .jofra-page .process-aside {
+    font-size: 9px;
+  }
+  .jofra-page .benefits-signature {
+    gap: 10px;
+    letter-spacing: .09em;
+    font-size: 8px;
+  }
+  .jofra-page .benefits {
+    background-image: none;
+  }
+  .jofra-page .contact:before {
+    width: 220px;
+    height: 220px;
+    top: -150px;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .jofra-page .hero h1 span:after {
+    animation: none;
+    transform: scaleX(1);
+  }
+  .jofra-page .scroll-bar:after {
+    animation: none;
+    transform: none;
+  }
+  .jofra-page .process-grid:after {
+    transition: none;
+  }
+}
+/*V3 — restrained editorial and road-inspired identity*/
+.jofra-page {
+  scroll-padding-top: 86px;
+}
+.jofra-page a:focus-visible,.jofra-page button:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 4px;
+}
+.jofra-page .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(247,247,243,.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+}
+.jofra-page .site-header .nav {
+  border-bottom: 0;
+}
+.jofra-page .navlinks a {
+  position: relative;
+  padding: 12px 0;
+}
+.jofra-page .navlinks a:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: 5px;
+  height: 2px;
+  background: var(--orange);
+  transition: right .4s cubic-bezier(.22,1,.36,1);
+}
+.jofra-page .navlinks a:hover:after,.jofra-page .navlinks a.active:after {
+  right: 0;
+}
+.jofra-page .navlinks a.active {
+  color: var(--ink);
+}
+.jofra-page .hero .hero-headline {
+  font-size: clamp(50px,5.8vw,88px);
+  line-height: 1.01;
+  letter-spacing: -.075em;
+  max-width: 760px;
+}
+.jofra-page .hero .hero-headline>span {
+  display: block;
+  color: var(--orange);
+  white-space: normal;
+}
+.jofra-page .hero .hero-headline>span:after {
+  display: none;
+}
+.jofra-page .headline-period {
+  color: var(--ink);
+}
+.jofra-page .hero-image {
+  isolation: isolate;
+}
+.jofra-page .image-corner {
+  border-top-width: 68px;
+  border-left-width: 68px;
+}
+.jofra-page .hero-copy>.eyebrow {
+  letter-spacing: .16em;
+}
+/*A quiet graphic system, not extra UI cards*/
+.jofra-page .route-divider {
+  border-bottom: 1px solid var(--line);
+  background: #edefe9;
+}
+.jofra-page .route-divider-inner {
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  min-height: 58px;
+  font: 800 10px var(--font-manrope),sans-serif;
+  letter-spacing: .16em;
+  color: #565e5a;
+}
+.jofra-page .route-track {
+  height: 2px;
+  flex: 1;
+  display: flex;
+  gap: 13px;
+  overflow: hidden;
+}
+.jofra-page .route-track span {
+  display: block;
+  height: 2px;
+  background: #b7beb7;
+  flex: 1;
+}
+.jofra-page .route-track span:first-child {
+  background: var(--orange);
+}
+.jofra-page .route-track span:last-child {
+  flex: 2;
+  background: #b7beb7;
+}
+/*The first hover is a quiet surface change, not a layout jump*/
+.jofra-page .service-row {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  transform: none;
+  transition: background-color .45s cubic-bezier(.22,1,.36,1),border-color .45s;
+}
+.jofra-page .service-row:hover {
+  background: #eef0ea;
+}
+.jofra-page .service-row:before {
+  content: '';
+  position: absolute;
+  inset: 14px auto 14px 0;
+  width: 2px;
+  background: var(--orange);
+  transform: scaleY(0);
+  transform-origin: 50% 50%;
+  opacity: 0;
+  transition: transform .5s cubic-bezier(.22,1,.36,1),opacity .3s;
+}
+.jofra-page .service-row:hover:before {
+  transform: scaleY(1);
+  opacity: 1;
+}
+.jofra-page .service-row>* {
+  transition: transform .5s cubic-bezier(.22,1,.36,1);
+}
+.jofra-page .service-row:hover .service-title {
+  transform: translateX(7px);
+}
+.jofra-page .service-row:hover .service-arrow {
+  transform: translate(3px,-3px);
+}
+.jofra-page .transition-rule {
+  background: var(--paper);
+}
+.jofra-page .transition-rule .container {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  color: #8d9591;
+  padding-bottom: 26px;
+}
+.jofra-page .transition-rule i {
+  height: 1px;
+  background: var(--line);
+  flex: 1;
+}
+.jofra-page .dark-to-light {
+  height: 23px;
+  background: var(--paper);
+  position: relative;
+}
+.jofra-page .dark-to-light span {
+  position: absolute;
+  left: 50%;
+  top: -21px;
+  background: var(--orange);
+  color: white;
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 20px;
+  transform: rotate(45deg);
+}
+.jofra-page .contact-lead-in {
+  background: var(--paper);
+}
+.jofra-page .contact-lead-in .container {
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 21px;
+  padding-bottom: 21px;
+  color: #6b7370;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+.jofra-page .contact-lead-arrow {
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--orange);
+}
+/*Typographic footer with purposeful whitespace*/
+.jofra-page .footer {
+  padding: 76px 0 22px;
+}
+.jofra-page .footer-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr;
+  gap: 50px;
+  padding-bottom: 90px;
+}
+.jofra-page .footer-intro p {
+  color: #aeb8b2;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 18px 0 35px;
+}
+.jofra-page .footer-mail {
+  display: inline-flex;
+  gap: 20px;
+  align-items: center;
+  border-bottom: 1px solid #68716b;
+  padding-bottom: 10px;
+  font: 700 clamp(15px,1.8vw,21px) var(--font-manrope),sans-serif;
+  transition: border-color .25s,color .25s;
+}
+.jofra-page .footer-mail:hover {
+  border-color: var(--orange);
+}
+.jofra-page .footer-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 15px;
+  font-size: 13px;
+}
+.jofra-page .footer-label {
+  color: #9ca79f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  margin-bottom: 12px;
+}
+.jofra-page .footer-column p {
+  font-size: 15px;
+  color: #b3bab5;
+  line-height: 1.7;
+  margin: 0;
+}
+.jofra-page .footer-bottom {
+  border-top: 1px solid #434b48;
+  padding-top: 23px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  color: #9da8a1;
+  font-size: 11px;
+}
+.jofra-page .footer-bottom>span {
+  letter-spacing: .16em;
+  font-size: 10px;
+}
+.jofra-page .footer-orange-dot {
+  color: var(--orange);
+  font-size: 10px;
+}
+.jofra-page .footer-bottom a:hover {
+  color: var(--orange);
+}
+@media (max-width:900px) {
+  .jofra-page .footer-main {
+    gap: 25px;
+    grid-template-columns: 1.4fr 1fr 1.2fr;
+  }
+  .jofra-page .hero .hero-headline {
+    font-size: clamp(44px,5.6vw,70px);
+  }
+}
+@media (max-width:650px) {
+  .jofra-page {
+    scroll-padding-top: 70px;
+  }
+  .jofra-page .site-header .navlinks {
+    position: fixed;
+    top: 70px;
+    box-shadow: 0 25px 35px #171b1d18;
+  }
+  .jofra-page .hero .hero-headline {
+    font-size: clamp(45px,10.5vw,68px);
+  }
+  .jofra-page .route-divider-inner {
+    gap: 15px;
+    font-size: 8px;
+  }
+  .jofra-page .route-track {
+    gap: 6px;
+  }
+  .jofra-page .footer {
+    padding: 62px 0 22px;
+  }
+  .jofra-page .footer-main {
+    grid-template-columns: 1fr 1fr;
+    gap: 45px 22px;
+    padding-bottom: 58px;
+  }
+  .jofra-page .footer-intro {
+    grid-column: 1/-1;
+  }
+  .jofra-page .footer-bottom {
+    flex-wrap: wrap;
+  }
+  .jofra-page .footer-bottom>span {
+    order: 3;
+    width: 100%;
+  }
+  .jofra-page .dark-to-light {
+    height: 15px;
+  }
+  .jofra-page .service-row:hover .service-title {
+    transform: none;
+  }
+  .jofra-page .service-row:before {
+    inset: 16px auto 16px 0;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .jofra-page {
+    scroll-behavior: auto;
+  }
+  .jofra-page .navlinks a:after,.jofra-page .service-row,.jofra-page .service-row:before,.jofra-page .service-row>*,.jofra-page .footer-mail {
+    transition: none !important;
+  }
+}
+/*V4 — Infrastructure in Motion / bespoke editorial refinement*/
+.jofra-page {
+  --motion: cubic-bezier(.22,1,.36,1);
+}
+.jofra-page .hero-copy {
+  position: relative;
+  isolation: isolate;
+}
+.jofra-page .hero-copy>*:not(.hero-route-art) {
+  position: relative;
+  z-index: 1;
+}
+.jofra-page .hero-route-art {
+  position: absolute;
+  bottom: 26px;
+  right: 0;
+  width: min(54%,340px);
+  height: auto;
+  color: var(--ink);
+  z-index: 0;
+  pointer-events: none;
+  opacity: .8;
+}
+.jofra-page .hero-route-draw {
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: route-draw 2.2s var(--motion) .35s forwards;
+}
+@keyframes route-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.jofra-page .hero .hero-headline {
+  letter-spacing: -.085em;
+}
+.jofra-page .hero .hero-headline>span {
+  letter-spacing: -.083em;
+}
+.jofra-page .hero .hero-headline .headline-period {
+  color: var(--ink);
+}
+.jofra-page .services {
+  position: relative;
+}
+.jofra-page .services .service-row {
+  grid-template-columns: 64px minmax(0,1fr) minmax(230px,350px) 42px;
+  min-height: 160px;
+  padding: 18px 15px 18px 0;
+  gap: 26px;
+  transition: background .5s var(--motion),border-color .35s;
+  cursor: default;
+}
+.jofra-page .services .service-row:hover,.jofra-page .services .service-row:focus-visible {
+  padding-left: 0;
+  padding-right: 15px;
+  background: rgba(232,235,228,.6);
+}
+.jofra-page .services .service-row:before {
+  content: none;
+}
+.jofra-page .services .service-row:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: 100%;
+  background: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .65s var(--motion);
+}
+.jofra-page .services .service-row:hover:after,.jofra-page .services .service-row:focus-visible:after {
+  transform: scaleX(1);
+}
+.jofra-page .service-name {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 11px;
+}
+.jofra-page .service-tag {
+  font-size: 10px;
+  letter-spacing: .15em;
+  font-weight: 800;
+  color: #838982;
+  transition: color .25s;
+}
+.jofra-page .services .service-row:hover .service-tag,.jofra-page .services .service-row:focus-visible .service-tag {
+  color: #C84E10;
+}
+.jofra-page .services .service-row .service-title {
+  transform: none !important;
+  transition: color .3s;
+}
+.jofra-page .services .service-row:hover .service-title,.jofra-page .services .service-row:focus-visible .service-title {
+  color: var(--ink);
+}
+.jofra-page .services .service-row .service-arrow {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #d2d7d0;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  font-size: 25px;
+  transition: border-color .3s,color .3s,transform .55s var(--motion);
+}
+.jofra-page .services .service-row:hover .service-arrow,.jofra-page .services .service-row:focus-visible .service-arrow {
+  border-color: var(--orange);
+  color: var(--orange);
+  transform: rotate(45deg);
+}
+.jofra-page .field-story {
+  background: #eaede7;
+  padding: 112px 0;
+  position: relative;
+  overflow: hidden;
+}
+.jofra-page .field-story:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line);
+}
+.jofra-page .field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(45px,8vw,125px);
+  align-items: center;
+}
+.jofra-page .field-photo {
+  position: relative;
+  height: 630px;
+  max-height: 70vw;
+  overflow: hidden;
+  background: #ced5ce;
+  clip-path: inset(0 0 0 0);
+}
+.jofra-page .field-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 36%;
+  filter: saturate(.91);
+  transition: transform 1.2s var(--motion);
+}
+.jofra-page .field-photo:hover img {
+  transform: scale(1.025);
+}
+.jofra-page .field-photo-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--ink);
+  color: white;
+  padding: 17px 23px;
+  font: 700 10px var(--font-manrope),sans-serif;
+  letter-spacing: .13em;
+  display: flex;
+  justify-content: space-between;
+}
+.jofra-page .field-photo-caption span {
+  color: var(--orange);
+  font-size: 18px;
+}
+.jofra-page .field-copy {
+  max-width: 540px;
+}
+.jofra-page .field-small {
+  display: block;
+  margin-top: 75px;
+  color: #747d75;
+  font-size: 10px;
+  letter-spacing: .16em;
+  font-weight: 700;
+}
+.jofra-page .field-copy h2 {
+  margin: 22px 0 26px;
+  font: 800 clamp(38px,3.8vw,56px)/1.11 var(--font-manrope),sans-serif;
+  letter-spacing: -.075em;
+}
+.jofra-page .field-copy h2 em {
+  display: block;
+  color: var(--orange-ink);
+  font-style: normal;
+}
+.jofra-page .field-copy p {
+  max-width: 470px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #5c6660;
+}
+.jofra-page .text-link {
+  display: inline-flex;
+  gap: 45px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ink);
+  font: 800 13px var(--font-manrope),sans-serif;
+  transition: gap .35s var(--motion),border-color .35s;
+}
+.jofra-page .text-link:hover {
+  gap: 55px;
+  border-color: var(--orange);
+}
+.jofra-page .text-link span {
+  font-size: 21px;
+  color: var(--orange);
+}
+.jofra-page .field-coordinate {
+  margin-top: 92px;
+  padding-top: 16px;
+  border-top: 1px solid #cbd1c9;
+  color: #898e87;
+  font: 700 10px var(--font-manrope),sans-serif;
+  letter-spacing: .13em;
+}
+/*A single graphic transition between the human story and process*/
+.jofra-page .field-story:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 26%;
+  height: 3px;
+  background: var(--orange);
+}
+.jofra-page .site-header {
+  transition: box-shadow .4s,background .4s;
+}
+.jofra-page .site-header.is-scrolled {
+  box-shadow: 0 10px 35px rgba(23,27,29,.06);
+  background: rgba(247,247,243,.985);
+}
+.jofra-page .navlinks a:after {
+  transition: right .6s var(--motion);
+}
+@media (hover:none) {
+  .jofra-page .services .service-row:hover {
+    background: transparent;
+  }
+  .jofra-page .services .service-row:hover:after {
+    transform: scaleX(0);
+  }
+  .jofra-page .services .service-row:hover .service-arrow {
+    transform: none;
+    border-color: #d2d7d0;
+    color: inherit;
+  }
+}
+@media (max-width:900px) {
+  .jofra-page .services .service-row {
+    grid-template-columns: 42px minmax(0,1fr) minmax(190px,250px) 42px;
+    gap: 15px;
+  }
+  .jofra-page .field-grid {
+    gap: 38px;
+  }
+  .jofra-page .field-photo {
+    height: 530px;
+  }
+  .jofra-page .field-small {
+    margin-top: 35px;
+  }
+  .jofra-page .field-coordinate {
+    margin-top: 42px;
+  }
+}
+@media (max-width:650px) {
+  .jofra-page .hero-route-art {
+    opacity: .22;
+    width: 36%;
+    right: -8px;
+    bottom: -12px;
+  }
+  .jofra-page .services .service-row {
+    grid-template-columns: 31px 1fr 36px;
+    min-height: 155px;
+    gap: 12px;
+    padding: 20px 0;
+  }
+  .jofra-page .services .service-row:hover {
+    padding: 20px 0;
+  }
+  .jofra-page .services .service-row .service-desc {
+    grid-column: 2/3;
+    grid-row: 2;
+  }
+  .jofra-page .services .service-row .service-arrow {
+    grid-column: 3;
+    grid-row: 1;
+    width: 35px;
+    height: 35px;
+    font-size: 19px;
+  }
+  .jofra-page .service-tag {
+    font-size: 9px;
+  }
+  .jofra-page .field-story {
+    padding: 70px 0;
+  }
+  .jofra-page .field-grid {
+    grid-template-columns: 1fr;
+    gap: 42px;
+  }
+  .jofra-page .field-photo {
+    height: clamp(340px,105vw,410px);
+    max-height: none;
+  }
+  .jofra-page .field-copy h2 {
+    font-size: clamp(32px,8.5vw,44px);
+  }
+  .jofra-page .field-small {
+    margin-top: 32px;
+  }
+  .jofra-page .field-coordinate {
+    margin-top: 50px;
+  }
+  .jofra-page .field-story:after {
+    width: 40%;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .jofra-page .hero-route-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .jofra-page .field-photo img,.jofra-page .service-row,.jofra-page .services .service-row:after,.jofra-page .services .service-row .service-arrow,.jofra-page .text-link {
+    transition: none !important;
+  }
+}
+
+.jofra-page .reveal {
+  opacity: 1;
+  transform: none;
+}
+.jofra-page.motion-enabled .reveal {
+  opacity: 0;
+  transform: translateY(35px);
+}
+.jofra-page.motion-enabled .reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+html:has(.jofra-page) {
+  scroll-behavior: smooth;
+  scroll-padding-top: 86px;
+}
+.jofra-page[dir="rtl"] {
+  font-family: var(--font-arabic), Arial, sans-serif;
+}
+.jofra-page[dir="rtl"] :is(.hero-headline, .section-title, .benefits h2, .service-title, .field-copy h2, .step h3, .contact h2) {
+  font-family: var(--font-arabic), Arial, sans-serif;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+.jofra-page[dir="rtl"] .benefits h2 {
+  font-size: clamp(40px, 4.5vw, 64px);
+}
+.jofra-page[dir="rtl"] .hero-copy {
+  padding-right: 0;
+  padding-left: 50px;
+}
+.jofra-page[dir="rtl"] .hero:before {
+  right: 0;
+  left: auto;
+}
+.jofra-page[dir="rtl"] .hero-route-art {
+  right: auto;
+  left: 0;
+}
+.jofra-page[dir="rtl"] .eyebrow,
+.jofra-page[dir="rtl"] .hero-scroll,
+.jofra-page[dir="rtl"] .route-divider-inner,
+.jofra-page[dir="rtl"] .service-tag,
+.jofra-page[dir="rtl"] .benefits-signature,
+.jofra-page[dir="rtl"] .field-small,
+.jofra-page[dir="rtl"] .field-coordinate,
+.jofra-page[dir="rtl"] .contact-lead-in .container,
+.jofra-page[dir="rtl"] .contact-line small,
+.jofra-page[dir="rtl"] .footer-label,
+.jofra-page[dir="rtl"] .footer-bottom > span {
+  letter-spacing: 0;
+}
+.jofra-page[dir="rtl"] .hero-image-index {
+  right: 27px;
+  left: auto;
+}
+.jofra-page[dir="rtl"] .image-label {
+  right: 23px;
+  left: auto;
+}
+.jofra-page[dir="rtl"] .image-corner {
+  right: auto;
+  left: 0;
+  border-right: 68px solid transparent;
+  border-left: 0;
+}
+.jofra-page[dir="rtl"] .hero-image:hover .image-corner {
+  transform-origin: top left;
+}
+.jofra-page[dir="rtl"] .navlinks a:after {
+  right: 0;
+  left: 100%;
+  transition: left .6s var(--motion);
+}
+.jofra-page[dir="rtl"] .navlinks a:hover:after,
+.jofra-page[dir="rtl"] .navlinks a.active:after {
+  right: 0;
+  left: 0;
+}
+.jofra-page[dir="rtl"] .services .service-row:after {
+  transform-origin: right;
+}
+.jofra-page[dir="rtl"] .service-row:hover .service-title {
+  transform: translateX(-7px);
+}
+.jofra-page[dir="rtl"] .benefit-index {
+  right: auto;
+  left: 0;
+}
+.jofra-page[dir="rtl"] .benefits:after {
+  right: auto;
+  left: -210px;
+}
+.jofra-page[dir="rtl"] .process-aside {
+  text-align: left;
+}
+.jofra-page[dir="rtl"] .process-grid:after {
+  right: 0;
+  left: auto;
+  transform-origin: right;
+}
+.jofra-page[dir="rtl"] .step {
+  padding-right: 0;
+  padding-left: 25px;
+}
+.jofra-page[dir="rtl"] .step:not(:last-child) {
+  margin-right: 0;
+  margin-left: 25px;
+  border-right: 0;
+  border-left: 1px solid var(--line);
+}
+.jofra-page[dir="rtl"] .step:before {
+  right: 0;
+  left: auto;
+}
+.jofra-page[dir="rtl"] .contact:before {
+  content: none;
+}
+.jofra-page[dir="rtl"] .contact-line a,
+.jofra-page[dir="rtl"] .contact-line span {
+  text-align: left;
+}
+.jofra-page[dir="rtl"] .ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
+}
+.jofra-page[dir="rtl"] .field-story:after {
+  right: auto;
+  left: 0;
+}
+.jofra-page[dir="rtl"] .arrow,
+.jofra-page[dir="rtl"] .service-arrow,
+.jofra-page[dir="rtl"] .text-link span,
+.jofra-page[dir="rtl"] .contact-lead-arrow {
+  transform: scaleX(-1);
+}
+@media (max-width: 900px) {
+  .jofra-page[dir="rtl"] .hero-copy {
+    padding-right: 0;
+    padding-left: 28px;
+  }
+  .jofra-page[dir="rtl"] .step {
+    padding-left: 12px;
+  }
+}
+@media (max-width: 650px) {
+  html:has(.jofra-page) {
+    scroll-padding-top: 70px;
+  }
+  .jofra-page[dir="rtl"] .hero-copy {
+    padding: 62px 0 35px;
+  }
+  .jofra-page[dir="rtl"] .hero-image-index {
+    right: 12px;
+  }
+  .jofra-page[dir="rtl"] .benefits h2 {
+    font-size: clamp(31px,8.1vw,36px);
+  }
+  .jofra-page[dir="rtl"] .services .service-row:hover .service-title {
+    transform: none;
+  }
+  .jofra-page[dir="rtl"] .step {
+    padding-right: 0;
+    padding-left: 12px;
+  }
+  .jofra-page[dir="rtl"] .step:nth-child(2),
+  .jofra-page[dir="rtl"] .step:nth-child(4) {
+    padding-right: 20px;
+    padding-left: 0;
+  }
+  .jofra-page[dir="rtl"] .step:not(:last-child) {
+    margin-left: 0;
+  }
+  .jofra-page[dir="rtl"] .step:nth-child(2) {
+    border-left: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has(.jofra-page) {
+    scroll-behavior: auto;
+  }
+}
+@media (max-width: 900px) {
+  .jofra-page .nav {
+    gap: 18px;
+  }
+  .jofra-page .brand {
+    gap: 8px;
+  }
+  .jofra-page .brandmark {
+    width: 45px;
+  }
+  .jofra-page .brandname {
+    font-size: 16px;
+    letter-spacing: -.6px;
+  }
+  .jofra-page .navlinks {
+    gap: 12px;
+  }
+  .jofra-page .navlinks a {
+    white-space: nowrap;
+  }
+  .jofra-page .nav > .btn {
+    gap: 10px;
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+}
+
+.jofra-page .hero .hero-headline > span {
+  color: var(--orange-ink);
+}
+.jofra-page .btn.orange {
+  color: var(--ink);
+}
+.jofra-page .service-tag,
+.jofra-page .services .service-row:hover .service-tag,
+.jofra-page .services .service-row:focus-visible .service-tag {
+  color: var(--orange-ink);
+}
+.jofra-page .text-link {
+  transition: border-color .25s;
+}
+.jofra-page .text-link span {
+  display: inline-block;
+  transition: transform .25s var(--motion);
+}
+.jofra-page .text-link:hover {
+  gap: 45px;
+}
+.jofra-page .text-link:hover span {
+  transform: translateX(4px);
+}
+.jofra-page .site-header {
+  backdrop-filter: none;
+}
+.jofra-page .process-grid:after {
+  width: 100%;
+  transform: scaleX(0);
+  transition: transform 1.1s var(--motion);
+}
+.jofra-page .process-grid.track-visible:after {
+  transform: scaleX(1);
+}
+.jofra-page.motion-enabled .field-photo img {
+  transform: scale(1.035);
+  transition: transform 1.1s var(--motion);
+}
+.jofra-page.motion-enabled .field-photo.visible img,
+.jofra-page.motion-enabled .field-photo:hover img {
+  transform: scale(1);
+}
+.jofra-page .benefit-grid .benefit:nth-child(2),
+.jofra-page .process-grid .step:nth-child(2) {
+  transition-delay: 80ms;
+}
+.jofra-page .benefit-grid .benefit:nth-child(3),
+.jofra-page .process-grid .step:nth-child(3) {
+  transition-delay: 160ms;
+}
+.jofra-page .process-grid .step:nth-child(4) {
+  transition-delay: 240ms;
+}
+@media (max-width: 1100px) {
+  .jofra-page .section-head {
+    grid-template-columns: minmax(0,1fr);
+    gap: 18px;
+    margin-bottom: 36px;
+  }
+  .jofra-page .section-title {
+    max-width: 900px;
+  }
+  .jofra-page .section-desc {
+    max-width: 700px;
+    padding-top: 0;
+    border-top: 0;
+    font-size: 16px;
+  }
+  .jofra-page .service-desc,
+  .jofra-page .benefit p,
+  .jofra-page .step p,
+  .jofra-page .contact p,
+  .jofra-page .field-copy p {
+    font-size: 16px;
+  }
+  .jofra-page .services .service-row {
+    grid-template-columns: 42px minmax(0,1fr) minmax(170px,250px) 38px;
+    gap: 14px;
+    min-height: 145px;
+  }
+  .jofra-page .field-copy h2 {
+    font-size: clamp(36px,3.7vw,42px);
+  }
+  .jofra-page .process-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 0;
+  }
+  .jofra-page .step {
+    min-height: 200px;
+  }
+  .jofra-page .step:nth-child(2),
+  .jofra-page .step:nth-child(4) {
+    border-right: 0;
+    margin-right: 0;
+    padding-left: 24px;
+  }
+  .jofra-page .step:nth-child(2):before,
+  .jofra-page .step:nth-child(4):before {
+    left: 24px;
+  }
+  .jofra-page .step:nth-child(n+3) {
+    border-top: 2px solid var(--ink);
+  }
+}
+@media (max-width: 780px) {
+  .jofra-page .nav {
+    height: 76px;
+  }
+  .jofra-page .navlinks {
+    position: fixed;
+    top: 76px;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    display: none;
+    align-items: stretch;
+    gap: 0;
+    padding: 12px 24px 20px;
+    background: var(--paper);
+    box-shadow: 0 18px 24px rgba(23,27,29,.12);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity .2s var(--motion),transform .2s var(--motion);
+  }
+  .jofra-page .navlinks.open {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .jofra-page .navlinks a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+  }
+  .jofra-page .nav > .btn {
+    display: none;
+  }
+  .jofra-page .menu {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    cursor: pointer;
+  }
+  .jofra-page .menu-icon {
+    width: 21px;
+    display: grid;
+    gap: 5px;
+  }
+  .jofra-page .menu-icon span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--ink);
+    transition: transform .2s var(--motion),opacity .15s;
+  }
+  .jofra-page .menu-icon.is-open span:first-child {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .jofra-page .menu-icon.is-open span:nth-child(2) {
+    opacity: 0;
+  }
+  .jofra-page .menu-icon.is-open span:last-child {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+  .jofra-page .field-grid {
+    grid-template-columns: minmax(0,1fr);
+    gap: 38px;
+  }
+  .jofra-page .field-photo {
+    width: min(100%,560px);
+    height: clamp(390px,68vw,520px);
+    max-height: none;
+    justify-self: center;
+  }
+  .jofra-page .field-copy {
+    max-width: 700px;
+  }
+  .jofra-page .field-small {
+    margin-top: 20px;
+  }
+  .jofra-page .field-coordinate {
+    margin-top: 35px;
+  }
+  .jofra-page .contact-grid {
+    grid-template-columns: minmax(0,1fr);
+    gap: 34px;
+  }
+  .jofra-page .hero .hero-headline {
+    font-size: clamp(34px,10.7vw,43px);
+  }
+  .jofra-page .section-title {
+    font-size: clamp(30px,7.2vw,38px);
+  }
+  .jofra-page .benefits h2 {
+    font-size: clamp(32px,7.5vw,52px);
+  }
+  .jofra-page .process-head {
+    font-size: clamp(32px,6.8vw,46px);
+  }
+  .jofra-page .contact h2 {
+    font-size: clamp(36px,7vw,52px);
+  }
+  .jofra-page .step:nth-child(2),
+  .jofra-page .step:nth-child(4) {
+    padding-left: 20px;
+  }
+  .jofra-page .step:nth-child(2):before,
+  .jofra-page .step:nth-child(4):before {
+    left: 20px;
+  }
+}
+@media (max-width: 650px) {
+  .jofra-page .nav {
+    height: 70px;
+  }
+  .jofra-page .navlinks {
+    top: 70px;
+  }
+  .jofra-page .hero-copy {
+    padding-top: 48px;
+  }
+  .jofra-page .hero .hero-headline {
+    font-size: clamp(34px,10.7vw,43px);
+  }
+  .jofra-page .hero-route-art {
+    right: -8px;
+    bottom: -12px;
+    width: 34%;
+    opacity: .2;
+  }
+  .jofra-page .hero-foot {
+    gap: 9px;
+  }
+  .jofra-page .hero-image {
+    min-height: clamp(350px,112vw,470px);
+  }
+  .jofra-page .services .service-row {
+    grid-template-columns: 30px minmax(0,1fr) 38px;
+    min-height: 145px;
+    gap: 10px;
+  }
+  .jofra-page .service-name,
+  .jofra-page .service-desc {
+    min-width: 0;
+  }
+  .jofra-page .service-desc {
+    overflow-wrap: anywhere;
+    font-size: 15px;
+  }
+  .jofra-page .benefits h2 {
+    font-size: clamp(30px,8vw,36px);
+    line-height: 1.2;
+    margin-top: 22px;
+    margin-bottom: 8px;
+  }
+  .jofra-page .benefits-statement {
+    margin-bottom: 30px;
+    font-size: 18px;
+  }
+  .jofra-page .benefit-grid {
+    gap: 16px;
+  }
+  .jofra-page .benefit p,
+  .jofra-page .step p {
+    font-size: 15px;
+  }
+  .jofra-page .step {
+    min-height: 205px;
+    padding-right: 10px;
+  }
+  .jofra-page .step h3 {
+    font-size: 18px;
+  }
+  .jofra-page .field-photo {
+    width: 100%;
+    height: clamp(340px,105vw,410px);
+  }
+  .jofra-page .field-copy h2 {
+    font-size: clamp(30px,7.5vw,36px);
+  }
+  .jofra-page .contact-line {
+    gap: 12px;
+  }
+  .jofra-page .contact-line small {
+    font-size: 12px;
+  }
+  .jofra-page .footer-main {
+    gap: 34px 20px;
+  }
+  .jofra-page .footer-column {
+    min-width: 0;
+  }
+  .jofra-page .footer-column p,
+  .jofra-page .footer-intro p {
+    font-size: 15px;
+  }
+}
+@media (max-width: 380px) {
+  .jofra-page .container {
+    width: calc(100% - 32px);
+  }
+  .jofra-page .hero .hero-headline {
+    font-size: 34px;
+  }
+  .jofra-page .hero .hero-headline > span {
+    white-space: nowrap;
+  }
+  .jofra-page .hero-actions {
+    width: 100%;
+  }
+  .jofra-page .hero-actions .btn {
+    min-height: 48px;
+    padding-inline: 16px;
+  }
+  .jofra-page .route-divider-inner {
+    gap: 9px;
+    font-size: 7px;
+    letter-spacing: .08em;
+  }
+  .jofra-page .benefits h2 {
+    font-size: 26px;
+  }
+  .jofra-page .process-head {
+    font-size: 24px;
+  }
+  .jofra-page .field-copy h2 {
+    font-size: 24px;
+  }
+  .jofra-page .contact h2 {
+    font-size: 28px;
+  }
+  .jofra-page .field-photo {
+    height: 340px;
+  }
+  .jofra-page .footer-main {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .jofra-page .footer-intro {
+    grid-column: auto;
+  }
+  .jofra-page .footer-bottom {
+    align-items: flex-start;
+  }
+}
+.jofra-page[dir="rtl"] .process-grid:after {
+  transform-origin: right;
+}
+.jofra-page[dir="rtl"] .text-link:hover span {
+  transform: translateX(-4px);
+}
+.jofra-page[dir="rtl"] .hero-route-art {
+  right: auto;
+  left: 0;
+}
+@media (max-width: 1100px) {
+  .jofra-page[dir="rtl"] .step:nth-child(2),
+  .jofra-page[dir="rtl"] .step:nth-child(4) {
+    padding-right: 24px;
+    padding-left: 0;
+  }
+  .jofra-page[dir="rtl"] .step:nth-child(2):before,
+  .jofra-page[dir="rtl"] .step:nth-child(4):before {
+    right: 24px;
+    left: auto;
+  }
+}
+@media (max-width: 780px) {
+  .jofra-page[dir="rtl"] .navlinks {
+    align-items: stretch;
+  }
+}
+@media (max-width: 650px) {
+  .jofra-page[dir="rtl"] .hero-route-art {
+    right: auto;
+    left: -8px;
+  }
+  .jofra-page[dir="rtl"] .step:nth-child(2),
+  .jofra-page[dir="rtl"] .step:nth-child(4) {
+    padding-right: 20px;
+    padding-left: 0;
+  }
+  .jofra-page[dir="rtl"] .step:nth-child(2):before,
+  .jofra-page[dir="rtl"] .step:nth-child(4):before {
+    right: 20px;
+    left: auto;
+  }
+}
+@media (max-width: 900px) {
+  .jofra-page .hero-route-art {
+    width: 36%;
+    right: -10px;
+    bottom: 10px;
+    opacity: .3;
+  }
+  .jofra-page[dir="rtl"] .hero-route-art {
+    right: auto;
+    left: -10px;
+  }
+}
+@media (max-width: 650px) {
+  .jofra-page[dir="rtl"] .benefits h2 {
+    font-size: clamp(30px,7.6vw,36px);
+  }
+}
+@media (max-width: 390px) {
+  .jofra-page .hero-route-art {
+    display: none;
+  }
+}
+@media (max-width: 390px) {
+  .jofra-page[dir="rtl"] .hero-route-art {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jofra-page *,
+  .jofra-page *::before,
+  .jofra-page *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+  .jofra-page.motion-enabled .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .jofra-page.motion-enabled .field-photo img {
+    transform: none;
+  }
+  .jofra-page .process-grid:after {
+    transform: scaleX(1);
+  }
+}

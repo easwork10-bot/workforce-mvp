@@ -1,0 +1,31 @@
+.showcase-home {
+  display: grid;
+  min-height: 100vh;
+  align-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px;
+  background: #f7f7f3;
+  color: #171b1d;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.showcase-home h1,
+.showcase-home p {
+  margin: 0;
+}
+
+.showcase-home nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.showcase-home a {
+  padding: 14px 20px;
+  background: #fc651b;
+  color: #171b1d;
+  font-weight: 700;
+  text-decoration: none;
+}

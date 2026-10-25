@@ -2,6 +2,136 @@
   "app": {
     "name": "Workforce MVP"
   },
+  "jofraLanding": {
+    "navigation": {
+      "label": "Hoofdnavigatie",
+      "services": "Diensten",
+      "benefits": "Waarom Jofra",
+      "process": "Werkwijze",
+      "contact": "Contact",
+      "quote": "Offerte aanvragen",
+      "menuOpen": "Menu openen",
+      "menuClose": "Menu sluiten"
+    },
+    "hero": {
+      "eyebrow": "Verkeersveiligheid, goed geregeld",
+      "line1": "VEILIGHEID",
+      "line2": "IN BEWEGING",
+      "lead": "Professionele verkeersregelaars voor bouw, infrastructuur en evenementen. Duidelijke afspraken, betrouwbare inzet en aandacht voor iedere situatie.",
+      "quote": "Vraag een offerte aan",
+      "discover": "Ontdek onze diensten",
+      "foot1": "Professionele inzet op locatie",
+      "foot2": "Direct contact",
+      "scroll": "SCROLL OM TE ONTDEKKEN",
+      "imageIndex": "IN HET VELD — 001",
+      "imageLabel": "JOFRA VERKEER / IN DE PRAKTIJK",
+      "imageAlt": "Verkeersregelaar van Jofra Verkeer op een infrastructuurlocatie"
+    },
+    "route": {
+      "from": "VAN PLAN NAAR PRAKTIJK",
+      "count": "01 — 04"
+    },
+    "services": {
+      "eyebrow": "01 / Onze expertise",
+      "titleLine1": "Voor elke situatie",
+      "titleLine2": "de juiste aanpak.",
+      "description": "Van een tijdelijke wegafzetting tot de bezoekersstroom van een evenement: verkeersveiligheid vraagt om overzicht, voorbereiding en mensen die weten wat ze doen.",
+      "items": {
+        "0": {
+          "tag": "01 — BOUW / INFRA",
+          "title": "Bouw & infrastructuur",
+          "description": "Verkeersbegeleiding bij wegwerkzaamheden, bouwplaatsen en infrastructurele projecten."
+        },
+        "1": {
+          "tag": "02 — EVENEMENTEN",
+          "title": "Evenementen",
+          "description": "Een veilige en overzichtelijke doorstroom van bezoekers en verkeer, klein of groot."
+        },
+        "2": {
+          "tag": "03 — PROJECTEN",
+          "title": "Projectondersteuning",
+          "description": "Praktische ondersteuning bij verkeersmaatregelen, afstemming en coördinatie."
+        }
+      },
+      "after": "Van eerste afzetting tot laatste verkeersbeweging — overzicht op locatie."
+    },
+    "benefits": {
+      "eyebrow": "02 / Waarom Jofra Verkeer",
+      "titleLine1": "Op straat telt niet alleen het plan.",
+      "titleLine2": "De uitvoering telt.",
+      "items": {
+        "0": {
+          "title": "Betrouwbare inzet",
+          "description": "Heldere afspraken en verkeersregelaars die voorbereid op locatie verschijnen."
+        },
+        "1": {
+          "title": "Korte lijnen",
+          "description": "Direct contact, snelle afstemming en één duidelijk aanspreekpunt."
+        },
+        "2": {
+          "title": "Veiligheid als uitgangspunt",
+          "description": "Aandacht voor weggebruikers, medewerkers en bezoekers bij iedere opdracht."
+        }
+      },
+      "signature": "VEILIGHEID IN BEWEGING"
+    },
+    "story": {
+      "eyebrow": "03 / Mensen maken het verschil",
+      "small": "MET AANDACHT VOOR DE SITUATIE",
+      "titleLine1": "Veilige routes",
+      "titleLine2": "beginnen bij mensen.",
+      "description": "Een goed verkeersplan werkt pas op straat. Met duidelijke communicatie en betrokken verkeersregelaars houden we beweging overzichtelijk — voor iedereen op locatie.",
+      "link": "Bespreek uw project",
+      "caption": "IN DE PRAKTIJK",
+      "coordinate": "JOFRA / MENSEN IN BEWEGING — 003",
+      "imageAlt": "Verkeersregelaar van Jofra Verkeer aan het werk"
+    },
+    "process": {
+      "eyebrow": "04 / Onze werkwijze",
+      "asideLine1": "EEN HELDERE ROUTE",
+      "asideLine2": "VAN A TOT Z",
+      "titleLine1": "Van eerste gesprek",
+      "titleLine2": "naar veilige inzet.",
+      "steps": {
+        "0": {
+          "title": "Vertel ons uw plan",
+          "description": "We bespreken de locatie, situatie en uw wensen."
+        },
+        "1": {
+          "title": "Een heldere aanpak",
+          "description": "We stemmen de benodigde inzet en planning af."
+        },
+        "2": {
+          "title": "Aan het werk",
+          "description": "Onze verkeersregelaars zorgen voor begeleiding op locatie."
+        },
+        "3": {
+          "title": "Contact blijft direct",
+          "description": "Tijdens de opdracht blijven we bereikbaar voor afstemming."
+        }
+      }
+    },
+    "contact": {
+      "leadIn": "05 / VOLGENDE STAP",
+      "eyebrow": "05 / Neem contact op",
+      "titleLine1": "Uw project.",
+      "titleLine2": "Onze aandacht.",
+      "description": "Een project bespreken of een offerte aanvragen? Neem rechtstreeks contact op. We denken graag met u mee.",
+      "quote": "Vraag een offerte aan",
+      "phone": "Telefoon",
+      "email": "E-mail",
+      "address": "Adres",
+      "company": "Onderneming"
+    },
+    "footer": {
+      "tagline": "Wij ontzorgen uw project volledig.",
+      "emailCta": "Laten we uw project bespreken",
+      "explore": "VERKEN",
+      "reach": "BEREIK ONS",
+      "slogan": "VEILIGHEID IN BEWEGING",
+      "backToTop": "Terug naar boven ↑"
+    }
+  },
   "navigation": {
     "main": {
       "navigation": "Hoofdnavigatie"
@@ -319,6 +449,43 @@
       "server": "Er is iets misgegaan bij het laden of aanvragen van de dienst.",
       "network": "De server is niet bereikbaar. Controleer je verbinding en probeer opnieuw.",
       "csrf": "De beveiligingstoken kon niet worden opgehaald. Vernieuw de pagina en probeer opnieuw."
+    }
+  },
+  "employeeApplications": {
+    "title": "Mijn sollicitaties",
+    "description": "Bekijk de diensten waarvoor je hebt gesolliciteerd en de status van je aanvraag.",
+    "loading": "Sollicitaties laden...",
+    "retry": "Opnieuw proberen",
+    "emptyTitle": "Je hebt nog niet gesolliciteerd",
+    "emptyDescription": "Bekijk beschikbare diensten en solliciteer op een dienst die bij je past.",
+    "browseShifts": "Diensten bekijken",
+    "appliedAt": "Gesolliciteerd op {date}",
+    "total": "{count, plural, one {# sollicitatie} other {# sollicitaties}}",
+    "status": {
+      "pending": "In behandeling",
+      "accepted": "Geaccepteerd",
+      "rejected": "Afgewezen",
+      "cancelled": "Geannuleerd"
+    },
+    "pagination": {
+      "label": "Paginering van sollicitaties",
+      "previous": "Vorige pagina",
+      "next": "Volgende pagina",
+      "page": "Pagina {page} van {totalPages}"
+    },
+    "errors": {
+      "unauthorized": "Je sessie is verlopen. Log opnieuw in om je sollicitaties te bekijken.",
+      "forbidden": "Je hebt geen toestemming om deze sollicitaties te bekijken.",
+      "invalid": "De aanvraag kan niet worden verwerkt. Vernieuw de pagina en probeer opnieuw.",
+      "server": "Je sollicitaties konden niet worden geladen. Probeer het opnieuw.",
+      "network": "De server is niet bereikbaar. Controleer je verbinding en probeer opnieuw."
+    },
+    "dashboard": {
+      "description": "Bekijk je recente sollicitaties en hun actuele status.",
+      "recentTitle": "Recente sollicitaties",
+      "recentDescription": "De nieuwste aanvragen voor je diensten.",
+      "viewAll": "Alle sollicitaties",
+      "schedule": "Mijn rooster"
     }
   },
   "languages": {
