@@ -172,6 +172,17 @@ export default function JofraLanding() {
   return (
     <div ref={rootRef} className={`jofra-page ${dmSans.variable} ${manrope.variable}`} lang={locale} dir={isArabic ? "rtl" : "ltr"}>
       <header className="site-header">
+        <div className="header-art" aria-hidden="true">
+          <svg viewBox="0 0 1440 80" preserveAspectRatio="xMidYMax slice" fill="none">
+            <g className="hdr-diag">
+              <path d="M340 80L430 0M368 80L458 0M396 80L486 0M424 80L514 0" />
+            </g>
+            <path className="hdr-road" d="M-20 78C260 78 560 74 860 66S1260 54 1470 50" />
+            <path className="hdr-road" d="M-20 90C260 90 560 86 860 78S1260 66 1470 62" />
+            <path className="hdr-road hdr-road-dash" d="M-20 84C260 84 560 80 860 72S1260 60 1470 56" />
+            <path className="hdr-accent" d="M-20 78C260 78 560 74 860 66S1260 54 1470 50" />
+          </svg>
+        </div>
         <div className="container">
           <nav className="nav" aria-label={t("navigation.label")}>
             <a className="brand" href="#home">
@@ -184,6 +195,9 @@ export default function JofraLanding() {
                   {t(`navigation.${link.label}`)}
                 </a>
               ))}
+              <a className="btn orange nav-panel-quote" href={QUOTE_HREF} onClick={() => setMobileMenuOpen(false)}>
+                {t("navigation.quote")} <span className="arrow" aria-hidden="true">↗</span>
+              </a>
             </div>
             <a className="btn orange nav-quote" href={QUOTE_HREF}>
               {t("navigation.quote")} <span className="arrow" aria-hidden="true">↗</span>
