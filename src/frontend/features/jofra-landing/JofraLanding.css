@@ -3492,3 +3492,224 @@ html:has(.jofra-page) {
     display: none;
   }
 }
+
+/*Hero-to-expertise wave: asymmetric, low on the left, rising sweep on the right*/
+.jofra-page .hero-wave {
+  height: clamp(64px,8.4vw,124px);
+}
+.jofra-page .hero-wave .wave-back {
+  fill: #cdd0cd;
+}
+.jofra-page .hero .image-label {
+  bottom: clamp(70px,9.4vw,138px);
+}
+.jofra-page .route-divider {
+  border-bottom: 0;
+}
+.jofra-page #diensten {
+  background: linear-gradient(to bottom,var(--stone) 0,#f3f4f2 300px,var(--paper) 760px);
+  padding-top: 84px;
+}
+.jofra-page #diensten .section-head {
+  margin-bottom: 44px;
+}
+
+/*Expertise road illustration*/
+.jofra-page .road-art {
+  --rw: 54px;
+  position: relative;
+  width: 100%;
+  height: 220px;
+  margin: 0 0 -14px;
+  pointer-events: none;
+  z-index: 0;
+}
+.jofra-page .road-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.jofra-page .road-svg path {
+  vector-effect: non-scaling-stroke;
+}
+.jofra-page .road-hill {
+  fill: #e6e8e5;
+  vector-effect: none;
+}
+.jofra-page .road-shoulder {
+  stroke: #dcdfdb;
+  stroke-width: calc(var(--rw) + 10px);
+}
+.jofra-page .road-body {
+  stroke: #cfd3cf;
+  stroke-width: var(--rw);
+}
+.jofra-page .road-dash {
+  stroke: rgba(255,255,255,.92);
+  stroke-width: 1.6px;
+  stroke-dasharray: 9 12;
+}
+.jofra-page .road-edge path {
+  stroke: var(--orange);
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+.jofra-page .road-edge {
+  clip-path: inset(0 14% 0 4%);
+}
+.jofra-page.motion-enabled .road-art .road-edge {
+  clip-path: inset(0 100% 0 4%);
+  transition: clip-path 1.6s var(--ease) .2s;
+}
+.jofra-page.motion-enabled .road-art.visible .road-edge {
+  clip-path: inset(0 14% 0 4%);
+}
+.jofra-page .rd-obj,
+.jofra-page .rd-tree {
+  position: absolute;
+  transform: translate(-50%,-100%);
+}
+.jofra-page .rd-tree {
+  border-radius: 50%;
+  background: #d6d9d5;
+  opacity: .55;
+}
+.jofra-page .rd-tree:after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 90%;
+  width: 4px;
+  height: 36px;
+  margin-left: -2px;
+  background: #d6d9d5;
+}
+.jofra-page .rd-tree-a {
+  left: 26%;
+  top: calc(39% + 8px);
+  width: 56px;
+  height: 56px;
+}
+.jofra-page .rd-tree-b {
+  left: 40%;
+  top: calc(63% + 4px);
+  width: 40px;
+  height: 40px;
+}
+.jofra-page .rd-tree-c {
+  left: 94%;
+  top: calc(36.5% + 12px);
+  width: 66px;
+  height: 66px;
+}
+.jofra-page .rd-tree-d {
+  left: 72%;
+  top: calc(63% - 8px);
+  width: 40px;
+  height: 40px;
+}
+.jofra-page .rd-lamp {
+  left: 80.5%;
+  top: calc(55% - 20px);
+  width: 14px;
+  height: 90px;
+  stroke: #b9bdb9;
+  stroke-width: 3;
+  opacity: .8;
+}
+.jofra-page .rd-sign-left {
+  left: 4%;
+  top: calc(28.5% - 18px);
+  width: 26px;
+}
+.jofra-page .rd-cone {
+  left: 50%;
+  top: calc(77.5% + 10px);
+  width: 30px;
+}
+.jofra-page .rd-sign-right {
+  left: 88%;
+  top: calc(43% - 18px);
+  width: 34px;
+}
+.jofra-page #diensten .services,
+.jofra-page #diensten .services-after {
+  position: relative;
+  z-index: 1;
+}
+.jofra-page .services .service-row:hover .service-arrow,
+.jofra-page .services .service-row:focus-visible .service-arrow {
+  transform: translate(4px,-4px);
+}
+.jofra-page .services .service-row:hover {
+  background: rgba(234,236,233,.7);
+}
+@media (max-width:1000px) {
+  .jofra-page .road-art {
+    --rw: 42px;
+    height: 170px;
+    margin-bottom: -8px;
+  }
+  .jofra-page .rd-lamp,
+  .jofra-page .rd-tree-d {
+    display: none;
+  }
+  .jofra-page .rd-sign-left {
+    left: 6%;
+    width: 22px;
+  }
+  .jofra-page .rd-sign-right {
+    left: 86%;
+    width: 28px;
+  }
+  .jofra-page .rd-cone {
+    width: 26px;
+  }
+  .jofra-page .rd-tree-a {
+    width: 44px;
+    height: 44px;
+  }
+  .jofra-page .rd-tree-c {
+    width: 52px;
+    height: 52px;
+  }
+}
+@media (max-width:650px) {
+  .jofra-page #diensten {
+    padding-top: 56px;
+  }
+  .jofra-page .road-art {
+    --rw: 30px;
+    height: 124px;
+    margin-bottom: 0;
+  }
+  .jofra-page .rd-sign-left,
+  .jofra-page .rd-tree-a,
+  .jofra-page .rd-tree-b {
+    display: none;
+  }
+  .jofra-page .rd-sign-right {
+    left: 84%;
+    width: 24px;
+  }
+  .jofra-page .rd-cone {
+    width: 24px;
+  }
+  .jofra-page .rd-tree-c {
+    left: 94%;
+    width: 40px;
+    height: 40px;
+  }
+  .jofra-page .road-dash {
+    stroke-dasharray: 7 9;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .jofra-page .road-edge,
+  .jofra-page.motion-enabled .road-art .road-edge {
+    clip-path: inset(0 14% 0 4%);
+    transition: none;
+  }
+}

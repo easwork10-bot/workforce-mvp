@@ -31,6 +31,7 @@ const SECTION_LINKS = [
 
 const SERVICE_ITEMS = ["0", "1", "2"] as const;
 const BENEFIT_ITEMS = ["0", "1", "2"] as const;
+const ROAD_PATH = "M-20 62C150 42 290 84 410 130S640 168 760 124S930 64 1020 72";
 const PROCESS_STEPS = ["0", "1", "2", "3"] as const;
 
 const QUOTE_HREF = "mailto:info@jofraverkeer.nl?subject=Offerteaanvraag%20Jofra%20Verkeer";
@@ -250,9 +251,9 @@ export default function JofraLanding() {
             <path className="flow-draw" d="M1500 500C1370 506 1262 566 1110 604S820 640 400 622" stroke="url(#jofra-flow-fade)" />
             <circle className="flow-node" cx="1110" cy="604" r="5" />
           </svg>
-          <svg className="hero-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
-            <path className="wave-back" d="M0 52C250 18 500 12 760 42S1210 88 1440 36V91H0Z" />
-            <path className="wave-front" d="M0 76C270 52 530 42 810 68S1230 94 1440 64V91H0Z" />
+          <svg className="hero-wave" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+            <path className="wave-back" d="M0 70C210 84 360 38 620 34S960 72 1180 50S1370 16 1440 4V121H0Z" />
+            <path className="wave-front" d="M0 88C210 102 360 56 620 52S960 90 1180 68S1370 34 1440 22V121H0Z" />
           </svg>
           <div className="container hero-inner">
             <div className="hero-copy">
@@ -294,6 +295,41 @@ export default function JofraLanding() {
               </div>
               <p className="section-desc">{t("services.description")}</p>
             </div>
+          </div>
+          <div className="road-art reveal" aria-hidden="true">
+            <svg className="road-svg" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
+              <path className="road-hill" d="M640 200C760 150 860 118 1000 112V200Z" />
+              <path className="road-shoulder" d={ROAD_PATH} />
+              <path className="road-body" d={ROAD_PATH} />
+              <path className="road-dash" d={ROAD_PATH} />
+            </svg>
+            <svg className="road-svg road-edge" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
+              <path d={ROAD_PATH} transform="translate(0 -24)" />
+            </svg>
+            <span className="rd-tree rd-tree-a" />
+            <span className="rd-tree rd-tree-b" />
+            <span className="rd-tree rd-tree-c" />
+            <span className="rd-tree rd-tree-d" />
+            <svg className="rd-obj rd-lamp" viewBox="0 0 30 110" fill="none"><path d="M4 110V10C4 4 8 2 14 2H26" /></svg>
+            <svg className="rd-obj rd-sign-left" viewBox="0 0 36 104" fill="none">
+              <rect x="16" y="30" width="4" height="74" fill="#8e9390" />
+              <circle cx="18" cy="16" r="15" fill="#313332" />
+              <path d="M12 10L24 22M24 12V22H14" stroke="#fbffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="9" y="38" width="18" height="46" rx="1.5" fill="#fbffff" />
+              <path d="M9 44L27 38M9 58L27 52M9 72L27 66M9 84L27 78" stroke="#ef850d" strokeWidth="6" />
+            </svg>
+            <svg className="rd-obj rd-cone" viewBox="0 0 40 52" fill="none">
+              <path d="M20 2L33 42H7Z" fill="#ef850d" />
+              <path d="M14.5 24H25.5L28 33H12Z" fill="#fbffff" />
+              <rect x="2" y="42" width="36" height="7" rx="2" fill="#313332" opacity=".85" />
+            </svg>
+            <svg className="rd-obj rd-sign-right" viewBox="0 0 44 112" fill="none">
+              <rect x="20" y="40" width="4" height="72" fill="#8e9390" />
+              <rect x="2" y="2" width="40" height="42" rx="3" fill="#ef850d" />
+              <path d="M22 36V12M13 21L22 11L31 21" stroke="#fbffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div className="container">
             <div className="services">
               {SERVICE_ITEMS.map((item) => (
                 <a className="service-row reveal" key={item} href="#contact">
