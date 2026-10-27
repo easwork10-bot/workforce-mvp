@@ -208,15 +208,25 @@ export default function JofraLanding() {
       </header>
 
       <main>
-        <div className="container">
-          <section className="hero" id="home">
+        <section className="hero" id="home">
+          <div className="hero-image">
+            <Image
+              src={`${ASSET_BASE_PATH}/jofra/assets/worker.jpg`}
+              alt={t("hero.imageAlt")}
+              fill
+              unoptimized
+              priority
+              sizes="(max-width: 900px) 100vw, 55vw"
+            />
+            <div className="image-label">{t("hero.imageLabel")}</div>
+          </div>
+          <svg className="hero-flow" viewBox="0 0 1440 760" fill="none" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+            <path className="flow-lane" d="M1500 150C1290 168 1210 300 1080 470S830 690 560 790" />
+            <path className="flow-lane" d="M1500 190C1308 214 1236 340 1112 500S858 722 600 820" />
+            <path className="flow-draw" d="M1500 128C1272 142 1180 288 1048 458S800 668 520 770" />
+          </svg>
+          <div className="container hero-inner">
             <div className="hero-copy">
-              <svg className="hero-route-art" viewBox="0 0 350 220" fill="none" aria-hidden="true">
-                <path d="M-18 211C64 195 53 82 138 98S237 155 362 10" stroke="currentColor" strokeOpacity=".14" strokeWidth="1.5" />
-                <path d="M-18 190C60 178 70 56 151 74S261 158 362 -10" stroke="currentColor" strokeOpacity=".19" strokeWidth="1.5" />
-                <path className="hero-route-draw" d="M-18 190C60 178 70 56 151 74S261 158 362 -10" stroke="#FC651B" strokeWidth="2" />
-                <circle cx="151" cy="74" r="4" fill="#FC651B" />
-              </svg>
               <span className="eyebrow">{t("hero.eyebrow")}</span>
               <h1 className="hero-headline">
                 {t("hero.line1")} <span>{t("hero.line2")}<span className="headline-period">.</span></span>
@@ -234,25 +244,9 @@ export default function JofraLanding() {
                 <span className="dot" aria-hidden="true" />
                 {t("hero.foot1")} <span aria-hidden="true">·</span> {t("hero.foot2")}
               </div>
-              <span className="hero-scroll" aria-hidden="true">
-                <span className="scroll-bar" /> {t("hero.scroll")}
-              </span>
             </div>
-            <div className="hero-image">
-              <div className="hero-image-index" aria-hidden="true">{t("hero.imageIndex")}</div>
-              <Image
-                src={`${ASSET_BASE_PATH}/jofra/assets/worker.jpg`}
-                alt={t("hero.imageAlt")}
-                fill
-                unoptimized
-                priority
-                sizes="(max-width: 650px) 100vw, 50vw"
-              />
-              <div className="image-corner" aria-hidden="true" />
-              <div className="image-label">{t("hero.imageLabel")}</div>
-            </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
         <div className="route-divider" aria-hidden="true">
           <div className="container route-divider-inner">
@@ -401,6 +395,13 @@ export default function JofraLanding() {
       </main>
 
       <footer className="footer">
+        <div className="footer-art reveal" aria-hidden="true">
+          <svg viewBox="0 0 900 420" fill="none" preserveAspectRatio="xMaxYMin slice">
+            <path className="flow-lane" d="M920 40C720 60 640 190 520 300S260 420 60 440" />
+            <path className="flow-lane" d="M920 84C736 104 668 228 552 332S290 450 100 470" />
+            <path className="flow-draw" d="M920 0C700 24 610 160 490 276S230 392 20 410" />
+          </svg>
+        </div>
         <div className="container">
           <div className="footer-main">
             <div className="footer-intro">
