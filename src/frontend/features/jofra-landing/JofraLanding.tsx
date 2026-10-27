@@ -242,11 +242,17 @@ export default function JofraLanding() {
                 <stop offset="1" stopColor="#EF850D" stopOpacity="0" />
               </linearGradient>
             </defs>
-            <path className="flow-lane" d="M1500 596C1360 606 1250 676 1090 714S800 728 400 722" />
-            <path className="flow-lane" d="M1500 572C1360 582 1250 652 1090 690S800 704 400 698" />
-            <path className="flow-lane flow-lane-far" d="M1500 548C1360 558 1250 628 1090 666S800 680 400 674" />
-            <path className="flow-draw" d="M1500 620C1360 630 1250 700 1090 738S800 752 400 746" stroke="url(#jofra-flow-fade)" />
-            <circle className="flow-node" cx="1090" cy="738" r="5" />
+            <g className="hero-scratches">
+              <path d="M70 150L560 96" />
+              <path d="M150 640L620 590" />
+              <path d="M30 400L330 372" />
+            </g>
+            <path className="flow-draw" d="M1500 500C1370 506 1262 566 1110 604S820 640 400 622" stroke="url(#jofra-flow-fade)" />
+            <circle className="flow-node" cx="1110" cy="604" r="5" />
+          </svg>
+          <svg className="hero-wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+            <path className="wave-back" d="M0 52C250 18 500 12 760 42S1210 88 1440 36V91H0Z" />
+            <path className="wave-front" d="M0 76C270 52 530 42 810 68S1230 94 1440 64V91H0Z" />
           </svg>
           <div className="container hero-inner">
             <div className="hero-copy">

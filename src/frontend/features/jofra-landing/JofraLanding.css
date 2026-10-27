@@ -3423,3 +3423,72 @@ html:has(.jofra-page) {
 .jofra-page .site-header .navlinks .nav-panel-quote {
   padding-inline: 20px;
 }
+
+/*Hero refinements: single route line, soft scratches, dark-to-light wave*/
+.jofra-page .hero-scratches path {
+  stroke: rgba(251,255,255,.06);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+.jofra-page .hero-wave {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: clamp(44px,5.6vw,88px);
+  z-index: 1;
+  pointer-events: none;
+  display: block;
+}
+.jofra-page .hero-wave .wave-back {
+  fill: #c6cac7;
+}
+.jofra-page .hero-wave .wave-front {
+  fill: var(--stone);
+}
+.jofra-page[dir="rtl"] .hero-wave {
+  transform: scaleX(-1);
+}
+@media (max-width:900px) {
+  .jofra-page .hero-flow {
+    bottom: 0;
+    height: 55%;
+  }
+  .jofra-page .hero-wave {
+    height: clamp(34px,8vw,56px);
+  }
+}
+
+/*Header: stable logo on hover*/
+.jofra-page .site-header .brand:hover:after,
+.jofra-page .site-header .brand:focus-visible:after {
+  transform: scaleX(.3);
+}
+.jofra-page[dir="rtl"] .site-header .brand:hover:after {
+  transform: scaleX(.3);
+}
+.jofra-page .site-header .brand,
+.jofra-page .site-header .brand:hover .brandmark,
+.jofra-page .site-header .brand:hover .brandname {
+  transform: none;
+  opacity: 1;
+  filter: none;
+}
+.jofra-page .hero .image-label {
+  bottom: clamp(56px,7vw,104px);
+}
+@media (max-width:900px) {
+  .jofra-page .hero-flow {
+    height: 36%;
+  }
+  .jofra-page .hero .image-label {
+    bottom: auto;
+    top: 18px;
+    inset-inline-end: 16px;
+  }
+}
+@media (max-width:650px) {
+  .jofra-page .hero .image-label {
+    display: none;
+  }
+}
