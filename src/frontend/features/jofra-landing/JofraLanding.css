@@ -3574,8 +3574,8 @@ html:has(.jofra-page) {
 .jofra-page .road-scenery {
   position: absolute;
   inset: 0;
-  -webkit-mask-image: linear-gradient(to bottom,transparent 0,#000 55%);
-  mask-image: linear-gradient(to bottom,transparent 0,#000 55%);
+  -webkit-mask-image: linear-gradient(to bottom,transparent 0,#000 40%);
+  mask-image: linear-gradient(to bottom,transparent 0,#000 40%);
 }
 .jofra-page .rd-obj {
   position: absolute;
@@ -3584,18 +3584,18 @@ html:has(.jofra-page) {
   top: calc(var(--y) / 2 * 1% + var(--dy));
 }
 .jofra-page .rd-tree path {
-  fill: #dadddb;
+  fill: #bfc4bf;
 }
 .jofra-page .rd-lamp path {
   fill: none;
-  stroke: #cfd2cf;
-  stroke-width: 3;
+  stroke: #a9afa9;
+  stroke-width: 3.5;
 }
-.jofra-page .rd-tree-a { left: 17%; --y: 77; --dy: -6px; width: 30px; height: 52px; }
-.jofra-page .rd-tree-b { left: 34%; --y: 80; --dy: -10px; width: 24px; height: 42px; }
-.jofra-page .rd-tree-c { left: 91%; --y: 90; --dy: -8px; width: 34px; height: 60px; }
-.jofra-page .rd-lamp-a { left: 66%; --y: 156; --dy: -24px; width: 14px; height: 82px; }
-.jofra-page .rd-lamp-b { left: 78%; --y: 143; --dy: -22px; width: 14px; height: 76px; }
+.jofra-page .rd-tree-a { left: 17%; --y: 77; --dy: -6px; width: 44px; height: 77px; }
+.jofra-page .rd-tree-b { left: 34%; --y: 80; --dy: -10px; width: 34px; height: 60px; }
+.jofra-page .rd-tree-c { left: 91%; --y: 90; --dy: -8px; width: 48px; height: 84px; }
+.jofra-page .rd-lamp-a { left: 66%; --y: 156; --dy: -24px; width: 20px; height: 118px; }
+.jofra-page .rd-lamp-b { left: 78%; --y: 143; --dy: -22px; width: 19px; height: 110px; }
 .jofra-page .rd-sign-left { left: 5%; --y: 100; --dy: 14px; width: 26px; }
 .jofra-page .rd-cone { left: 57%; --y: 160; --dy: 6px; width: 28px; }
 .jofra-page .rd-sign-right { left: 85%; --y: 125; --dy: 14px; width: 32px; }
@@ -3647,7 +3647,7 @@ html:has(.jofra-page) {
   }
   .jofra-page .rd-cone { left: 56%; --y: 158; width: 22px; }
   .jofra-page .rd-sign-right { left: 84%; --y: 111; width: 24px; }
-  .jofra-page .rd-tree-c { left: 94%; --y: 88; width: 26px; height: 46px; }
+  .jofra-page .rd-tree-c { left: 94%; --y: 88; width: 36px; height: 63px; }
   .jofra-page .road-dash {
     stroke-dasharray: 6 9;
   }
