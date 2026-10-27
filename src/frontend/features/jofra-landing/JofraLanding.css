@@ -2730,3 +2730,431 @@ html:has(.jofra-page) {
   -webkit-mask-image: linear-gradient(to bottom,#000 45%,transparent);
   mask-image: linear-gradient(to bottom,#000 45%,transparent);
 }
+
+/*Creative refinement: one route geometry across hero, process and footer*/
+.jofra-page .flow-lane {
+  stroke: rgba(251,255,255,.12);
+  stroke-width: 1.5;
+}
+.jofra-page .flow-lane-far {
+  stroke: rgba(251,255,255,.07);
+}
+.jofra-page .flow-draw {
+  stroke-width: 3;
+}
+.jofra-page .flow-node {
+  fill: var(--orange);
+  stroke: var(--near-black);
+  stroke-width: 3;
+  animation: node-in .4s var(--ease) 1.5s backwards;
+}
+@keyframes node-in {
+  from {
+    opacity: 0;
+  }
+}
+.jofra-page .hero .hero-image {
+  animation: hero-photo-in .9s var(--ease) both;
+}
+@keyframes hero-photo-in {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 0 14%);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+.jofra-page[dir="rtl"] .hero .hero-image {
+  animation-name: hero-photo-in-rtl;
+}
+@keyframes hero-photo-in-rtl {
+  from {
+    opacity: 0;
+    clip-path: inset(0 14% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+
+/*Logo: entrance reveal, route accent, restrained hover*/
+.jofra-page .site-header .brand {
+  position: relative;
+}
+.jofra-page .site-header .brandmark {
+  animation: brand-reveal .7s var(--ease) backwards;
+}
+@keyframes brand-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+}
+.jofra-page .site-header .brand:after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -9px;
+  height: 2px;
+  background: var(--orange);
+  transform: scaleX(.3);
+  transform-origin: left;
+  transition: transform .22s var(--ease);
+  animation: brand-line .9s var(--ease) .35s backwards;
+}
+.jofra-page[dir="rtl"] .site-header .brand:after {
+  transform-origin: right;
+}
+.jofra-page .site-header .brand:hover:after,
+.jofra-page .site-header .brand:focus-visible:after {
+  transform: scaleX(1);
+}
+@keyframes brand-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/*Services: directional hover and a safety-zone corner*/
+.jofra-page #diensten {
+  position: relative;
+  overflow: hidden;
+}
+.jofra-page #diensten:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  width: min(34%,430px);
+  height: 190px;
+  background: repeating-linear-gradient(135deg,rgba(49,51,50,.09) 0 2px,transparent 2px 15px);
+  -webkit-mask-image: linear-gradient(to bottom left,#000,transparent 72%);
+  mask-image: linear-gradient(to bottom left,#000,transparent 72%);
+  pointer-events: none;
+}
+.jofra-page #diensten .container {
+  position: relative;
+}
+.jofra-page .services .service-row .service-title,
+.jofra-page .services .service-row .service-id {
+  transition: transform .22s var(--ease),color .22s var(--ease);
+}
+.jofra-page .services .service-row:hover .service-title,
+.jofra-page .services .service-row:focus-visible .service-title {
+  transform: translateX(6px);
+}
+.jofra-page[dir="rtl"] .services .service-row:hover .service-title,
+.jofra-page[dir="rtl"] .services .service-row:focus-visible .service-title {
+  transform: translateX(-6px);
+}
+.jofra-page .services .service-row:hover .service-id,
+.jofra-page .services .service-row:focus-visible .service-id {
+  color: var(--orange-ink);
+}
+.jofra-page .services .service-row:hover .service-arrow,
+.jofra-page .services .service-row:focus-visible .service-arrow {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: var(--near-black);
+}
+
+/*Why Jofra: a second lane ring echoing the roundabout*/
+.jofra-page .benefits:after {
+  outline: 1px solid rgba(251,255,255,.08);
+  outline-offset: 46px;
+}
+
+/*Story photo: a detail crop so the hero image is not simply repeated*/
+.jofra-page .field-photo img {
+  scale: 1.32;
+  transform-origin: 46% 74%;
+  object-position: 50% 70%;
+}
+
+/*Typographic band*/
+.jofra-page .type-band {
+  position: relative;
+  overflow: hidden;
+  background: var(--near-black);
+  color: var(--paper);
+  padding: clamp(56px,8vw,104px) 0 clamp(64px,9vw,120px);
+}
+.jofra-page .type-kicker {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: clamp(18px,3vw,36px);
+  font: 800 11px var(--font-manrope),sans-serif;
+  letter-spacing: .24em;
+  color: #aab1ad;
+}
+.jofra-page .type-kicker i {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(to right,var(--orange) 0,var(--orange) 18%,rgba(251,255,255,.14) 18%);
+}
+.jofra-page[dir="rtl"] .type-kicker {
+  letter-spacing: 0;
+}
+.jofra-page[dir="rtl"] .type-kicker i {
+  background: linear-gradient(to left,var(--orange) 0,var(--orange) 18%,rgba(251,255,255,.14) 18%);
+}
+.jofra-page .type-mask {
+  overflow: hidden;
+}
+.jofra-page .type-stack {
+  position: relative;
+  font-family: var(--font-manrope),Arial,sans-serif;
+  font-weight: 800;
+  font-size: clamp(40px,12.2vw,190px);
+  line-height: .96;
+  letter-spacing: -.065em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.jofra-page[dir="rtl"] .type-stack {
+  font-family: var(--font-arabic),Arial,sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.jofra-page .type-word {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+.jofra-page .type-disc {
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  width: .96em;
+  height: .96em;
+  margin-top: -.48em;
+  border-radius: 50%;
+  background: var(--orange);
+}
+.jofra-page .type-word-knock {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  color: var(--near-black);
+  clip-path: circle(.48em at calc(97% - .48em) 50%);
+}
+.jofra-page[dir="rtl"] .type-disc {
+  right: auto;
+  left: 3%;
+}
+.jofra-page[dir="rtl"] .type-word-knock {
+  clip-path: circle(.48em at calc(3% + .48em) 50%);
+}
+.jofra-page.motion-enabled .type-band .reveal {
+  transform: none;
+}
+.jofra-page.motion-enabled .type-stack {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 1s var(--ease) .1s;
+}
+.jofra-page.motion-enabled .reveal.visible .type-stack {
+  clip-path: inset(0);
+}
+.jofra-page[dir="rtl"].motion-enabled .type-stack {
+  clip-path: inset(0 0 0 100%);
+}
+.jofra-page[dir="rtl"].motion-enabled .reveal.visible .type-stack {
+  clip-path: inset(0);
+}
+
+/*Process: route through four coordinated steps*/
+.jofra-page #werkwijze {
+  background: var(--stone);
+}
+.jofra-page .process-grid {
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  margin-top: 40px;
+  padding-top: 112px;
+  border-top: 0;
+}
+.jofra-page .process-grid:after,
+.jofra-page[dir="rtl"] .process-grid:after {
+  content: none;
+}
+.jofra-page .process-route {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  width: 100%;
+  height: 112px;
+  overflow: visible;
+  pointer-events: none;
+}
+.jofra-page[dir="rtl"] .process-route {
+  transform: scaleX(-1);
+}
+.jofra-page .process-route path {
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+}
+.jofra-page .route-base {
+  stroke: rgba(49,51,50,.2);
+  stroke-width: 1.5;
+}
+.jofra-page .route-draw {
+  stroke: var(--orange);
+  stroke-width: 3;
+}
+.jofra-page.motion-enabled .route-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.6s var(--ease);
+}
+.jofra-page.motion-enabled .track-visible .route-draw {
+  stroke-dashoffset: 0;
+}
+.jofra-page .process-grid .step,
+.jofra-page[dir="rtl"] .process-grid .step {
+  border: 0;
+  margin: 0;
+  padding: 26px 28px 0 0;
+  min-height: 0;
+}
+.jofra-page[dir="rtl"] .process-grid .step {
+  padding: 26px 0 0 28px;
+}
+.jofra-page .process-grid .step:before,
+.jofra-page[dir="rtl"] .process-grid .step:before {
+  content: none;
+}
+.jofra-page .step-node {
+  position: absolute;
+  inset-inline-start: 6px;
+  top: -39px;
+  width: 15px;
+  height: 15px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: var(--orange);
+  border: 3px solid var(--stone);
+  box-shadow: 0 0 0 1px var(--orange);
+}
+.jofra-page[dir="rtl"] .step-node {
+  margin: -7px -7px 0 0;
+}
+.jofra-page .process-grid .step:nth-child(odd) .step-node {
+  top: -39px;
+}
+.jofra-page .process-grid .step:nth-child(even) .step-node {
+  top: -73px;
+}
+.jofra-page .process-grid .step:nth-child(1) .step-node {
+  top: -39px;
+}
+.jofra-page.motion-enabled .step-node {
+  opacity: 0;
+  transition: opacity .3s var(--ease);
+}
+.jofra-page.motion-enabled .track-visible .step-node {
+  opacity: 1;
+}
+.jofra-page.motion-enabled .track-visible .step:nth-child(2) .step-node {
+  transition-delay: .45s;
+}
+.jofra-page.motion-enabled .track-visible .step:nth-child(3) .step-node {
+  transition-delay: .8s;
+}
+.jofra-page.motion-enabled .track-visible .step:nth-child(4) .step-node {
+  transition-delay: 1.15s;
+}
+.jofra-page .process-grid .step:nth-child(n) {
+  transition-delay: 0s;
+}
+@media (max-width:1100px) {
+  .jofra-page .process-grid {
+    grid-template-columns: 1fr;
+    padding-top: 0;
+    padding-inline-start: 44px;
+    margin-top: 44px;
+  }
+  .jofra-page .process-route {
+    display: none;
+  }
+  .jofra-page .process-grid:after,
+  .jofra-page[dir="rtl"] .process-grid:after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 40px;
+    left: 7px;
+    right: auto;
+    inset-inline-start: 7px;
+    width: 2px;
+    height: auto;
+    background: var(--orange);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 1.4s var(--ease);
+  }
+  .jofra-page .process-grid.track-visible:after {
+    transform: scaleY(1);
+  }
+  .jofra-page:not(.motion-enabled) .process-grid:after {
+    transform: scaleY(1);
+  }
+  .jofra-page .process-grid .step,
+  .jofra-page[dir="rtl"] .process-grid .step,
+  .jofra-page .process-grid .step:nth-child(n),
+  .jofra-page[dir="rtl"] .process-grid .step:nth-child(n) {
+    padding: 0 0 38px;
+    border: 0;
+    margin: 0;
+  }
+  .jofra-page .step-node,
+  .jofra-page .process-grid .step:nth-child(n) .step-node {
+    inset-inline-start: -44px;
+    top: 2px;
+    margin: 0;
+    margin-inline-start: 0;
+    width: 16px;
+    height: 16px;
+    transform: translateX(-1px);
+  }
+  .jofra-page[dir="rtl"] .step-node {
+    transform: translateX(1px);
+  }
+  .jofra-page .step p {
+    max-width: 420px;
+  }
+  .jofra-page .step-number {
+    margin-bottom: 14px;
+  }
+}
+
+/*Footer: stronger hierarchy, route returns from the opposite side*/
+.jofra-page .footer-intro p {
+  font: 800 clamp(24px,2.5vw,34px)/1.15 var(--font-manrope),Arial,sans-serif;
+  letter-spacing: -.04em;
+  color: var(--paper);
+  max-width: 430px;
+  margin: 26px 0 32px;
+}
+.jofra-page[dir="rtl"] .footer-intro p {
+  font-family: var(--font-arabic),Arial,sans-serif;
+  letter-spacing: 0;
+}
+.jofra-page .footer-art .flow-lane {
+  stroke: rgba(251,255,255,.1);
+}
+@media (prefers-reduced-motion:reduce) {
+  .jofra-page .hero .hero-image,
+  .jofra-page .site-header .brandmark,
+  .jofra-page .site-header .brand:after,
+  .jofra-page .flow-node {
+    animation: none;
+  }
+  .jofra-page .type-stack,
+  .jofra-page .route-draw,
+  .jofra-page .step-node {
+    transition: none;
+  }
+}

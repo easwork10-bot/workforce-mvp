@@ -221,9 +221,18 @@ export default function JofraLanding() {
             <div className="image-label">{t("hero.imageLabel")}</div>
           </div>
           <svg className="hero-flow" viewBox="0 0 1440 760" fill="none" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
-            <path className="flow-lane" d="M1500 150C1290 168 1210 300 1080 470S830 690 560 790" />
-            <path className="flow-lane" d="M1500 190C1308 214 1236 340 1112 500S858 722 600 820" />
-            <path className="flow-draw" d="M1500 128C1272 142 1180 288 1048 458S800 668 520 770" />
+            <defs>
+              <linearGradient id="jofra-flow-fade" x1="1440" y1="0" x2="360" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="#EF850D" />
+                <stop offset=".72" stopColor="#EF850D" />
+                <stop offset="1" stopColor="#EF850D" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path className="flow-lane" d="M1500 596C1360 606 1250 676 1090 714S800 728 400 722" />
+            <path className="flow-lane" d="M1500 572C1360 582 1250 652 1090 690S800 704 400 698" />
+            <path className="flow-lane flow-lane-far" d="M1500 548C1360 558 1250 628 1090 666S800 680 400 674" />
+            <path className="flow-draw" d="M1500 620C1360 630 1250 700 1090 738S800 752 400 746" stroke="url(#jofra-flow-fade)" />
+            <circle className="flow-node" cx="1090" cy="738" r="5" />
           </svg>
           <div className="container hero-inner">
             <div className="hero-copy">
@@ -337,6 +346,19 @@ export default function JofraLanding() {
           </div>
         </section>
 
+        <section className="type-band" aria-hidden="true">
+          <div className="container reveal">
+            <div className="type-kicker"><span>JOFRA VERKEER</span><i /></div>
+            <div className="type-mask">
+              <div className="type-stack">
+                <span className="type-disc" />
+                <span className="type-word">{t("hero.line2")}</span>
+                <span className="type-word type-word-knock">{t("hero.line2")}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="section" id="werkwijze">
           <div className="container">
             <div className="process-intro">
@@ -349,11 +371,16 @@ export default function JofraLanding() {
             <div className="process-grid">
               {PROCESS_STEPS.map((step) => (
                 <div className="step reveal" key={step}>
+                  <span className="step-node" aria-hidden="true" />
                   <span className="step-number">{String(Number(step) + 1).padStart(2, "0")} /</span>
                   <h3>{t(`process.steps.${step}.title`)}</h3>
                   <p>{t(`process.steps.${step}.description`)}</p>
                 </div>
               ))}
+              <svg className="process-route" viewBox="0 0 1000 112" preserveAspectRatio="none" fill="none" aria-hidden="true">
+                <path className="route-base" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
+                <path className="route-draw" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
+              </svg>
             </div>
           </div>
         </section>
