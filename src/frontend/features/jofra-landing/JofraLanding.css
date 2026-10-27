@@ -3516,7 +3516,7 @@ html:has(.jofra-page) {
 
 /*Expertise road illustration*/
 .jofra-page .road-art {
-  --rw: 54px;
+  --rw: 38px;
   position: relative;
   width: 100%;
   height: 220px;
@@ -3534,106 +3534,71 @@ html:has(.jofra-page) {
 .jofra-page .road-svg path {
   vector-effect: non-scaling-stroke;
 }
-.jofra-page .road-hill {
-  fill: #e6e8e5;
-  vector-effect: none;
+.jofra-page .road-mobile {
+  display: none;
 }
 .jofra-page .road-shoulder {
-  stroke: #dcdfdb;
-  stroke-width: calc(var(--rw) + 10px);
+  stroke: #e0e3df;
+  stroke-width: calc(var(--rw) + 8px);
 }
 .jofra-page .road-body {
-  stroke: #cfd3cf;
+  stroke: #d0d4d0;
   stroke-width: var(--rw);
 }
+.jofra-page .road-core {
+  stroke: #c5c9c5;
+  stroke-width: calc(var(--rw) * .52);
+}
 .jofra-page .road-dash {
-  stroke: rgba(255,255,255,.92);
-  stroke-width: 1.6px;
-  stroke-dasharray: 9 12;
+  stroke: rgba(255,255,255,.9);
+  stroke-width: 1.4px;
+  stroke-dasharray: 8 11;
+}
+.jofra-page .road-edge {
+  transform: translateY(calc(var(--rw) / -2 - 5px));
+  -webkit-mask-image: linear-gradient(90deg,transparent 2%,#000 14%,#000 62%,transparent 94%);
+  mask-image: linear-gradient(90deg,transparent 2%,#000 14%,#000 62%,transparent 94%);
 }
 .jofra-page .road-edge path {
   stroke: var(--orange);
-  stroke-width: 2px;
+  stroke-width: 2.2px;
   stroke-linecap: round;
 }
-.jofra-page .road-edge {
-  clip-path: inset(0 14% 0 4%);
-}
 .jofra-page.motion-enabled .road-art .road-edge {
-  clip-path: inset(0 100% 0 4%);
-  transition: clip-path 1.6s var(--ease) .2s;
+  clip-path: inset(-20px 100% -20px 0);
+  transition: clip-path 1.8s var(--ease) .2s;
 }
 .jofra-page.motion-enabled .road-art.visible .road-edge {
-  clip-path: inset(0 14% 0 4%);
+  clip-path: inset(-20px 0 -20px 0);
 }
-.jofra-page .rd-obj,
-.jofra-page .rd-tree {
+.jofra-page .road-scenery {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(to bottom,transparent 0,#000 55%);
+  mask-image: linear-gradient(to bottom,transparent 0,#000 55%);
+}
+.jofra-page .rd-obj {
   position: absolute;
   transform: translate(-50%,-100%);
+  --dy: 0px;
+  top: calc(var(--y) / 2 * 1% + var(--dy));
 }
-.jofra-page .rd-tree {
-  border-radius: 50%;
-  background: #d6d9d5;
-  opacity: .55;
+.jofra-page .rd-tree path {
+  fill: #dadddb;
 }
-.jofra-page .rd-tree:after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 90%;
-  width: 4px;
-  height: 36px;
-  margin-left: -2px;
-  background: #d6d9d5;
-}
-.jofra-page .rd-tree-a {
-  left: 26%;
-  top: calc(39% + 8px);
-  width: 56px;
-  height: 56px;
-}
-.jofra-page .rd-tree-b {
-  left: 40%;
-  top: calc(63% + 4px);
-  width: 40px;
-  height: 40px;
-}
-.jofra-page .rd-tree-c {
-  left: 94%;
-  top: calc(36.5% + 12px);
-  width: 66px;
-  height: 66px;
-}
-.jofra-page .rd-tree-d {
-  left: 72%;
-  top: calc(63% - 8px);
-  width: 40px;
-  height: 40px;
-}
-.jofra-page .rd-lamp {
-  left: 80.5%;
-  top: calc(55% - 20px);
-  width: 14px;
-  height: 90px;
-  stroke: #b9bdb9;
+.jofra-page .rd-lamp path {
+  fill: none;
+  stroke: #cfd2cf;
   stroke-width: 3;
-  opacity: .8;
 }
-.jofra-page .rd-sign-left {
-  left: 4%;
-  top: calc(28.5% - 18px);
-  width: 26px;
-}
-.jofra-page .rd-cone {
-  left: 50%;
-  top: calc(77.5% + 10px);
-  width: 30px;
-}
-.jofra-page .rd-sign-right {
-  left: 88%;
-  top: calc(43% - 18px);
-  width: 34px;
-}
+.jofra-page .rd-tree-a { left: 17%; --y: 77; --dy: -6px; width: 30px; height: 52px; }
+.jofra-page .rd-tree-b { left: 34%; --y: 80; --dy: -10px; width: 24px; height: 42px; }
+.jofra-page .rd-tree-c { left: 91%; --y: 90; --dy: -8px; width: 34px; height: 60px; }
+.jofra-page .rd-lamp-a { left: 66%; --y: 156; --dy: -24px; width: 14px; height: 82px; }
+.jofra-page .rd-lamp-b { left: 78%; --y: 143; --dy: -22px; width: 14px; height: 76px; }
+.jofra-page .rd-sign-left { left: 5%; --y: 100; --dy: 14px; width: 26px; }
+.jofra-page .rd-cone { left: 57%; --y: 160; --dy: 6px; width: 28px; }
+.jofra-page .rd-sign-right { left: 85%; --y: 125; --dy: 14px; width: 32px; }
 .jofra-page #diensten .services,
 .jofra-page #diensten .services-after {
   position: relative;
@@ -3648,68 +3613,49 @@ html:has(.jofra-page) {
 }
 @media (max-width:1000px) {
   .jofra-page .road-art {
-    --rw: 42px;
+    --rw: 30px;
     height: 170px;
     margin-bottom: -8px;
   }
-  .jofra-page .rd-lamp,
-  .jofra-page .rd-tree-d {
+  .jofra-page .rd-lamp-b {
     display: none;
   }
-  .jofra-page .rd-sign-left {
-    left: 6%;
-    width: 22px;
-  }
-  .jofra-page .rd-sign-right {
-    left: 86%;
-    width: 28px;
-  }
-  .jofra-page .rd-cone {
-    width: 26px;
-  }
-  .jofra-page .rd-tree-a {
-    width: 44px;
-    height: 44px;
-  }
-  .jofra-page .rd-tree-c {
-    width: 52px;
-    height: 52px;
-  }
+  .jofra-page .rd-sign-left { width: 22px; left: 6%; }
+  .jofra-page .rd-sign-right { width: 27px; }
+  .jofra-page .rd-cone { width: 24px; }
 }
 @media (max-width:650px) {
   .jofra-page #diensten {
     padding-top: 56px;
   }
   .jofra-page .road-art {
-    --rw: 30px;
-    height: 124px;
+    --rw: 24px;
+    height: 120px;
     margin-bottom: 0;
+  }
+  .jofra-page .road-desktop {
+    display: none;
+  }
+  .jofra-page .road-mobile {
+    display: block;
   }
   .jofra-page .rd-sign-left,
   .jofra-page .rd-tree-a,
-  .jofra-page .rd-tree-b {
+  .jofra-page .rd-tree-b,
+  .jofra-page .rd-lamp {
     display: none;
   }
-  .jofra-page .rd-sign-right {
-    left: 84%;
-    width: 24px;
-  }
-  .jofra-page .rd-cone {
-    width: 24px;
-  }
-  .jofra-page .rd-tree-c {
-    left: 94%;
-    width: 40px;
-    height: 40px;
-  }
+  .jofra-page .rd-cone { left: 56%; --y: 158; width: 22px; }
+  .jofra-page .rd-sign-right { left: 84%; --y: 111; width: 24px; }
+  .jofra-page .rd-tree-c { left: 94%; --y: 88; width: 26px; height: 46px; }
   .jofra-page .road-dash {
-    stroke-dasharray: 7 9;
+    stroke-dasharray: 6 9;
   }
 }
 @media (prefers-reduced-motion:reduce) {
   .jofra-page .road-edge,
   .jofra-page.motion-enabled .road-art .road-edge {
-    clip-path: inset(0 14% 0 4%);
+    clip-path: none;
     transition: none;
   }
 }

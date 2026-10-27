@@ -31,7 +31,8 @@ const SECTION_LINKS = [
 
 const SERVICE_ITEMS = ["0", "1", "2"] as const;
 const BENEFIT_ITEMS = ["0", "1", "2"] as const;
-const ROAD_PATH = "M-20 62C150 42 290 84 410 130S640 168 760 124S930 64 1020 72";
+const ROAD_PATH = "M-20 110C60 108 150 66 250 64C350 62 440 160 570 160C700 160 840 140 900 104C940 78 990 72 1020 72";
+const ROAD_PATH_MOBILE = "M-20 100C60 100 140 60 220 66C330 74 400 160 560 158C720 156 850 100 1020 70";
 const PROCESS_STEPS = ["0", "1", "2", "3"] as const;
 
 const QUOTE_HREF = "mailto:info@jofraverkeer.nl?subject=Offerteaanvraag%20Jofra%20Verkeer";
@@ -297,34 +298,48 @@ export default function JofraLanding() {
             </div>
           </div>
           <div className="road-art reveal" aria-hidden="true">
-            <svg className="road-svg" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
-              <path className="road-hill" d="M640 200C760 150 860 118 1000 112V200Z" />
+            <div className="road-scenery">
+              <svg className="rd-obj rd-tree rd-tree-a" viewBox="0 0 40 70"><path d="M20 2C32 2 38 14 36 26 34 38 28 42 22 44V70H18V44C12 42 6 38 4 26 2 14 8 2 20 2Z" /></svg>
+              <svg className="rd-obj rd-tree rd-tree-b" viewBox="0 0 40 70"><path d="M20 2C32 2 38 14 36 26 34 38 28 42 22 44V70H18V44C12 42 6 38 4 26 2 14 8 2 20 2Z" /></svg>
+              <svg className="rd-obj rd-tree rd-tree-c" viewBox="0 0 40 70"><path d="M20 2C32 2 38 14 36 26 34 38 28 42 22 44V70H18V44C12 42 6 38 4 26 2 14 8 2 20 2Z" /></svg>
+              <svg className="rd-obj rd-lamp rd-lamp-a" viewBox="0 0 30 110"><path d="M4 110V10C4 4 8 2 14 2H26" /></svg>
+              <svg className="rd-obj rd-lamp rd-lamp-b" viewBox="0 0 30 110"><path d="M26 110V10C26 4 22 2 16 2H4" /></svg>
+            </div>
+            <svg className="road-svg road-desktop" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
               <path className="road-shoulder" d={ROAD_PATH} />
               <path className="road-body" d={ROAD_PATH} />
+              <path className="road-core" d={ROAD_PATH} />
               <path className="road-dash" d={ROAD_PATH} />
             </svg>
-            <svg className="road-svg road-edge" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
-              <path d={ROAD_PATH} transform="translate(0 -24)" />
+            <svg className="road-svg road-mobile" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
+              <path className="road-shoulder" d={ROAD_PATH_MOBILE} />
+              <path className="road-body" d={ROAD_PATH_MOBILE} />
+              <path className="road-core" d={ROAD_PATH_MOBILE} />
+              <path className="road-dash" d={ROAD_PATH_MOBILE} />
             </svg>
-            <span className="rd-tree rd-tree-a" />
-            <span className="rd-tree rd-tree-b" />
-            <span className="rd-tree rd-tree-c" />
-            <span className="rd-tree rd-tree-d" />
-            <svg className="rd-obj rd-lamp" viewBox="0 0 30 110" fill="none"><path d="M4 110V10C4 4 8 2 14 2H26" /></svg>
+            <svg className="road-svg road-edge road-desktop" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
+              <path d={ROAD_PATH} />
+            </svg>
+            <svg className="road-svg road-edge road-mobile" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
+              <path d={ROAD_PATH_MOBILE} />
+            </svg>
             <svg className="rd-obj rd-sign-left" viewBox="0 0 36 104" fill="none">
-              <rect x="16" y="30" width="4" height="74" fill="#8e9390" />
+              <ellipse cx="18" cy="101" rx="11" ry="2.6" fill="#313332" opacity=".18" />
+              <rect x="16" y="30" width="4" height="72" fill="#8e9390" />
               <circle cx="18" cy="16" r="15" fill="#313332" />
               <path d="M12 10L24 22M24 12V22H14" stroke="#fbffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               <rect x="9" y="38" width="18" height="46" rx="1.5" fill="#fbffff" />
               <path d="M9 44L27 38M9 58L27 52M9 72L27 66M9 84L27 78" stroke="#ef850d" strokeWidth="6" />
             </svg>
             <svg className="rd-obj rd-cone" viewBox="0 0 40 52" fill="none">
+              <ellipse cx="22" cy="49" rx="17" ry="3" fill="#313332" opacity=".18" />
               <path d="M20 2L33 42H7Z" fill="#ef850d" />
               <path d="M14.5 24H25.5L28 33H12Z" fill="#fbffff" />
-              <rect x="2" y="42" width="36" height="7" rx="2" fill="#313332" opacity=".85" />
+              <rect x="3" y="42" width="34" height="6" rx="2" fill="#313332" opacity=".8" />
             </svg>
             <svg className="rd-obj rd-sign-right" viewBox="0 0 44 112" fill="none">
-              <rect x="20" y="40" width="4" height="72" fill="#8e9390" />
+              <ellipse cx="22" cy="109" rx="12" ry="2.6" fill="#313332" opacity=".18" />
+              <rect x="20" y="40" width="4" height="70" fill="#8e9390" />
               <rect x="2" y="2" width="40" height="42" rx="3" fill="#ef850d" />
               <path d="M22 36V12M13 21L22 11L31 21" stroke="#fbffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
