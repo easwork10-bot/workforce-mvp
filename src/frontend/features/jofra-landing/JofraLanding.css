@@ -3698,3 +3698,119 @@ html:has(.jofra-page) {
     height: 36px;
   }
 }
+
+/*Section 02: abstract diagonal background artwork*/
+.jofra-page .benefits-art {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 72%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 1;
+  transform: none;
+  -webkit-mask-image: linear-gradient(90deg,transparent 0,rgba(0,0,0,.35) 26%,#000 58%);
+  mask-image: linear-gradient(90deg,transparent 0,rgba(0,0,0,.35) 26%,#000 58%);
+}
+.jofra-page .benefits-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.jofra-page .benefits > .container {
+  position: relative;
+  z-index: 1;
+}
+.jofra-page .ba-lines path {
+  stroke: rgba(251,255,255,.07);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.jofra-page .ba-orange {
+  stroke: var(--orange);
+  stroke-width: 1.6px;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  opacity: .85;
+}
+.jofra-page[dir="rtl"] .benefits-art {
+  right: auto;
+  left: 0;
+  transform: scaleX(-1);
+}
+.jofra-page.motion-enabled .benefits-art .ba-shapes,
+.jofra-page.motion-enabled .benefits-art .ba-lines,
+.jofra-page.motion-enabled .benefits-art .ba-glow {
+  opacity: 0;
+  transition: opacity 1.4s var(--ease);
+}
+.jofra-page.motion-enabled .benefits-art.visible .ba-shapes,
+.jofra-page.motion-enabled .benefits-art.visible .ba-lines,
+.jofra-page.motion-enabled .benefits-art.visible .ba-glow {
+  opacity: 1;
+}
+.jofra-page.motion-enabled .benefits-art .ba-orange {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 2s var(--ease) .4s;
+}
+.jofra-page.motion-enabled .benefits-art.visible .ba-orange {
+  stroke-dashoffset: 0;
+}
+.jofra-page .benefits .benefit {
+  transition: border-color .4s var(--ease),opacity .7s var(--ease),transform .7s var(--ease);
+}
+.jofra-page .benefits .benefit strong {
+  transition: transform .4s var(--ease),color .4s var(--ease);
+}
+.jofra-page .benefits .benefit:hover {
+  border-top-color: var(--orange);
+}
+.jofra-page .benefits .benefit:hover strong {
+  transform: translateX(4px);
+  color: #fff;
+}
+.jofra-page[dir="rtl"] .benefits .benefit:hover strong {
+  transform: translateX(-4px);
+}
+@media (max-width:1000px) {
+  .jofra-page .benefits-art {
+    width: 82%;
+    -webkit-mask-image: linear-gradient(90deg,transparent 0,rgba(0,0,0,.3) 35%,#000 72%);
+    mask-image: linear-gradient(90deg,transparent 0,rgba(0,0,0,.3) 35%,#000 72%);
+  }
+  .jofra-page .benefits-art svg {
+    transform: scale(.8);
+    transform-origin: 100% 0;
+  }
+  .jofra-page .ba-lines .ba-extra {
+    display: none;
+  }
+}
+@media (max-width:650px) {
+  .jofra-page .benefits-art {
+    width: 100%;
+    bottom: auto;
+    height: 300px;
+    opacity: .75;
+    -webkit-mask-image: linear-gradient(90deg,transparent 30%,#000 90%),linear-gradient(180deg,#000 40%,transparent);
+    mask-image: linear-gradient(90deg,transparent 30%,#000 90%),linear-gradient(180deg,#000 40%,transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+  .jofra-page .benefits-art svg {
+    transform: none;
+  }
+  .jofra-page .ba-extra,
+  .jofra-page .ba-lines {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .jofra-page .benefits-art .ba-orange {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+}

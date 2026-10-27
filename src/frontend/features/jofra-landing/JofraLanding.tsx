@@ -369,6 +369,38 @@ export default function JofraLanding() {
         </div>
 
         <section className="benefits" id="waarom">
+          <div className="benefits-art reveal" aria-hidden="true">
+            <svg viewBox="0 0 1000 700" preserveAspectRatio="xMaxYMid slice" fill="none">
+              <defs>
+                <radialGradient id="benefitsGlow" cx="1" cy=".2" r=".6">
+                  <stop offset="0" stopColor="#ef850d" stopOpacity=".2" />
+                  <stop offset="1" stopColor="#ef850d" stopOpacity="0" />
+                </radialGradient>
+                <linearGradient id="benefitsBandDark" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0" stopColor="#171a19" stopOpacity="0" />
+                  <stop offset=".55" stopColor="#171a19" stopOpacity=".7" />
+                  <stop offset="1" stopColor="#171a19" stopOpacity=".95" />
+                </linearGradient>
+                <linearGradient id="benefitsBandLight" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0" stopColor="#434644" stopOpacity="0" />
+                  <stop offset=".6" stopColor="#434644" stopOpacity=".55" />
+                  <stop offset="1" stopColor="#434644" stopOpacity=".8" />
+                </linearGradient>
+              </defs>
+              <rect className="ba-glow" x="300" y="-200" width="900" height="800" fill="url(#benefitsGlow)" />
+              <g className="ba-shapes">
+                <path className="ba-extra" d="M330 700H450L1284 0H1164Z" fill="url(#benefitsBandDark)" />
+                <path d="M540 700H730L1564 0H1374Z" fill="url(#benefitsBandLight)" />
+                <path className="ba-extra" d="M790 700H850L1684 0H1624Z" fill="url(#benefitsBandDark)" />
+                <path d="M900 700H1140L1974 0H1734Z" fill="url(#benefitsBandDark)" />
+              </g>
+              <g className="ba-lines">
+                <path className="ba-extra" d="M-440 700L394 0M-390 700L444 0M-330 700L504 0" />
+                <path d="M300 700L1134 0M690 700L1524 0" />
+              </g>
+              <path className="ba-orange" pathLength="1" d="M610 700L1444 0" />
+            </svg>
+          </div>
           <div className="container">
             <span className="eyebrow reveal">{t("benefits.eyebrow")}</span>
             <h2 className="reveal">{t("benefits.titleLine1")}</h2>
