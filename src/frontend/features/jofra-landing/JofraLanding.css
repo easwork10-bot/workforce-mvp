@@ -3192,15 +3192,15 @@ html:has(.jofra-page) {
   stroke-linecap: round;
 }
 .jofra-page .hdr-diag path {
-  stroke: rgba(49,51,50,.07);
-  stroke-width: 1;
-}
-.jofra-page .hdr-road {
-  stroke: rgba(49,51,50,.12);
+  stroke: rgba(49,51,50,.16);
   stroke-width: 1.2;
 }
+.jofra-page .hdr-road {
+  stroke: rgba(49,51,50,.38);
+  stroke-width: 1.6;
+}
 .jofra-page .hdr-road-dash {
-  stroke: rgba(49,51,50,.1);
+  stroke: rgba(49,51,50,.3);
   stroke-dasharray: 10 14;
 }
 .jofra-page .hdr-accent {
