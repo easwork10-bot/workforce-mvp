@@ -82,6 +82,30 @@ Only entries in `drizzle/meta/_journal.json` are part of the current migration c
 `drizzle/0000_melodic_spectrum.sql` is an unjournaled legacy file; do not apply it
 manually or rename/delete it as part of routine migration execution.
 
+## Jofra browser checks
+
+After building and verifying the static Pages output as described in
+[`showcase/README.md`](../../showcase/README.md), run:
+
+```powershell
+npm run test:e2e
+```
+
+The Playwright suite starts the local Next.js app and a loopback-only static export
+server. It forces the Jofra public origin and Resend configuration off for the app
+server, intercepts the form submission in the browser, and never sends email. It
+covers responsive navigation, public-form validation and mocked success, shared
+images, Arabic font loading and RTL overflow, the reversible process-line progress,
+and static Dutch/Arabic routes. Install the Playwright Chromium runtime once with
+`npx playwright install chromium` if it is not already present.
+
+The backend marks provider-accepted submissions as sent. Explicit local
+configuration failures and provider rejections release the pending idempotency
+reservation; an exception with an uncertain network delivery outcome keeps the
+reservation until its short pending TTL expires. Retrying uses the same provider
+idempotency key, avoiding an immediate duplicate when the provider accepted a
+message but the response was lost.
+
 ## Controlled Jofra email delivery
 
 Automated tests mock Resend and never deliver email. A manual delivery check requires

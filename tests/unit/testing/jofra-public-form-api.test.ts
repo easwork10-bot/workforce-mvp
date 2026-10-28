@@ -11,6 +11,15 @@ const mocks = vi.hoisted(() => ({
   markPublicSubmissionSent: vi.fn(async () => undefined),
   releasePublicSubmission: vi.fn(async () => undefined),
   sendJofraFormEmail: vi.fn(async () => undefined),
+  JofraEmailDeliveryError: class JofraEmailDeliveryError extends Error {
+    constructor(
+      message: string,
+      readonly reason: "not-configured" | "rejected",
+    ) {
+      super(message);
+      this.name = "JofraEmailDeliveryError";
+    }
+  },
 }));
 
 vi.mock("@/backend/security/clientIp", () => ({
@@ -24,6 +33,7 @@ vi.mock("@/backend/jofra/publicFormRedis", () => ({
 }));
 
 vi.mock("@/backend/jofra/publicFormsEmail", () => ({
+  JofraEmailDeliveryError: mocks.JofraEmailDeliveryError,
   sendJofraFormEmail: mocks.sendJofraFormEmail,
 }));
 
@@ -161,7 +171,7 @@ describe("Jofra public inquiry API", () => {
     expect(mocks.sendJofraFormEmail).not.toHaveBeenCalled();
   });
 
-  it("fails closed when the provider fails without logging submitted data or credentials", async () => {
+  it("retains the idempotency reservation when delivery outcome is uncertain", async () => {
     const logs: string[] = [];
     vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
       logs.push(args.join(" "));
@@ -178,6 +188,28 @@ describe("Jofra public inquiry API", () => {
     expect(body).not.toContain("secret-value");
     expect(logs.join(" ")).not.toContain("customer@example.com");
     expect(logs.join(" ")).not.toContain("secret-value");
+    expect(mocks.releasePublicSubmission).not.toHaveBeenCalled();
+  });
+
+  it("releases the idempotency reservation when the provider explicitly rejects delivery", async () => {
+    mocks.sendJofraFormEmail.mockRejectedValue(
+      new mocks.JofraEmailDeliveryError("provider rejection", "rejected"),
+    );
+
+    const response = await submit(request(JSON.stringify(inquiry)));
+
+    expect(response.status).toBe(502);
+    expect(mocks.releasePublicSubmission).toHaveBeenCalledWith("redis-key");
+  });
+
+  it("releases the idempotency reservation when email configuration is missing", async () => {
+    mocks.sendJofraFormEmail.mockRejectedValue(
+      new mocks.JofraEmailDeliveryError("not configured", "not-configured"),
+    );
+
+    const response = await submit(request(JSON.stringify(inquiry)));
+
+    expect(response.status).toBe(503);
     expect(mocks.releasePublicSubmission).toHaveBeenCalledWith("redis-key");
   });
 

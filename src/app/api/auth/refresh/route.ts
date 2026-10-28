@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
-import { rotateRefreshToken, revokeAllUserSessions } from '@/backend/auth/session';
-import { checkRateLimit } from '@/backend/auth/session';
+import {
+  RedisUnavailableError,
+  checkRateLimit,
+  rotateRefreshToken,
+  revokeAllUserSessions,
+} from '@/backend/auth/session';
 import { generateCsrfToken, setCsrfCookie } from '@/backend/security/csrf';
 import { getTrustedClientIp } from '@/backend/security/clientIp';
 
@@ -80,7 +84,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     return response;
   } catch (error) {
-    console.error('[Refresh] Error:', error);
+    if (error instanceof RedisUnavailableError) {
+      console.error('[Refresh] Authentication service unavailable');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      );
+    }
+    console.error('[Refresh] Error');
     return NextResponse.json(
       { error: 'Token refresh failed' },
       { status: 500 }

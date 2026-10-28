@@ -6,7 +6,10 @@ import {
   jobApplicationSchema,
   type JofraPublicFormType,
 } from "@/shared/jofra-public-form-schemas";
-import { sendJofraFormEmail } from "./publicFormsEmail";
+import {
+  JofraEmailDeliveryError,
+  sendJofraFormEmail,
+} from "./publicFormsEmail";
 import {
   markPublicSubmissionSent,
   releasePublicSubmission,
@@ -155,11 +158,21 @@ export async function submitJofraPublicForm(
   const requestId = randomUUID();
   try {
     await sendJofraFormEmail(type, validation.data, reservation.providerKey);
-  } catch {
-    await releasePublicSubmission(reservation.redisKey).catch(() => {
-      console.error(`[Jofra public forms] Submission reservation cleanup failed (${requestId})`);
-    });
-    console.error(`[Jofra public forms] Email delivery failed (${requestId})`);
+  } catch (error) {
+    if (error instanceof JofraEmailDeliveryError) {
+      await releasePublicSubmission(reservation.redisKey).catch(() => {
+        console.error(`[Jofra public forms] Submission reservation cleanup failed (${requestId})`);
+      });
+      if (error.reason === "not-configured") {
+        console.error(`[Jofra public forms] Email delivery is not configured (${requestId})`);
+        return jsonResponse({ error: "service_unavailable" }, 503);
+      }
+
+      console.error(`[Jofra public forms] Email provider rejected the request (${requestId})`);
+      return jsonResponse({ error: "delivery_failed" }, 502);
+    }
+
+    console.error(`[Jofra public forms] Email delivery outcome is uncertain (${requestId})`);
     return jsonResponse({ error: "delivery_failed" }, 502);
   }
 

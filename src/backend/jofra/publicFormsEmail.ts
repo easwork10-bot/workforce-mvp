@@ -15,6 +15,16 @@ const senderSchema = z.string().trim().max(320).refine((value) => {
 });
 const recipientSchema = z.string().trim().email().max(254).refine((value) => !/[\r\n]/.test(value));
 
+export class JofraEmailDeliveryError extends Error {
+  constructor(
+    message: string,
+    readonly reason: "not-configured" | "rejected",
+  ) {
+    super(message);
+    this.name = "JofraEmailDeliveryError";
+  }
+}
+
 const labels = {
   nl: {
     inquirySubject: "Aanvraag verkeersregelaars",
@@ -123,7 +133,7 @@ export async function sendJofraFormEmail(
   const configuredSender = senderSchema.safeParse(process.env.JOFRA_FORMS_FROM);
   const configuredRecipient = recipientSchema.safeParse(process.env.JOFRA_FORMS_TO);
   if (!apiKey || !configuredSender.success || !configuredRecipient.success) {
-    throw new Error("Jofra email delivery is not configured");
+    throw new JofraEmailDeliveryError("Jofra email delivery is not configured", "not-configured");
   }
 
   const email = toPlainTextEmail(type, values);
@@ -138,5 +148,7 @@ export async function sendJofraFormEmail(
     text: email.text,
   }, { idempotencyKey });
 
-  if (error) throw new Error("Email provider rejected the message");
+  if (error) {
+    throw new JofraEmailDeliveryError("Email provider rejected the message", "rejected");
+  }
 }

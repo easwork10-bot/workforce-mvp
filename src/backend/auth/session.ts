@@ -98,8 +98,8 @@ export async function createSession(
 }
 
 /**
- * Lookup session by JTI
- * Returns null if session not found or Redis unavailable (fail-safe)
+ * Lookup session by JTI. Missing or malformed session records are unauthenticated;
+ * Redis failures remain distinguishable so callers can return service unavailable.
  */
 export async function getSession(jti: string): Promise<{
   userId: string;
@@ -108,24 +108,34 @@ export async function getSession(jti: string): Promise<{
   userAgent: string;
   refreshHash: string;
 } | null> {
+  let data: Record<string, string>;
   try {
     const redis = await getRedis();
-    const data = await redis.hGetAll(`session:${jti}`);
+    data = await redis.hGetAll(`session:${jti}`);
+  } catch {
+    console.error('[getSession] Redis error while looking up a session');
+    throw new RedisUnavailableError('Authentication service is unavailable');
+  }
 
-    if (!data || Object.keys(data).length === 0) return null;
-
-    return {
-      userId: data.userId,
-      role: data.role as 'administrator' | 'supervisor' | 'employee',
-      ipHash: data.ipHash,
-      userAgent: data.userAgent,
-      refreshHash: data.refreshHash,
-    };
-  } catch (error) {
-    // Fail-safe: if Redis is unavailable, treat as session not found
-    console.error('[getSession] Redis error, failing safe:', error);
+  const role = data?.role;
+  if (
+    !data ||
+    !data.userId ||
+    (role !== 'administrator' && role !== 'supervisor' && role !== 'employee') ||
+    !data.ipHash ||
+    !data.userAgent ||
+    !data.refreshHash
+  ) {
     return null;
   }
+
+  return {
+    userId: data.userId,
+    role,
+    ipHash: data.ipHash,
+    userAgent: data.userAgent,
+    refreshHash: data.refreshHash,
+  };
 }
 
 /**
@@ -137,8 +147,8 @@ export async function deleteSession(jti: string, userId: string, refreshHash: st
     const redis = await getRedis();
     await redis.del(`session:${jti}`);
     await redis.del(`refresh:${userId}:${refreshHash}`);
-  } catch (error) {
-    console.error('[deleteSession] Redis error:', error);
+  } catch {
+    console.error('[deleteSession] Redis error');
     // Don't throw - best effort cleanup
   }
 }
@@ -158,46 +168,21 @@ export async function rotateRefreshToken(
   jti: string;
   role: 'administrator' | 'supervisor' | 'employee';
 } | null> {
-  let redis;
-  try {
-    redis = await getRedis();
-  } catch {
-    console.error('[rotateRefreshToken] Redis unavailable, failing safe');
-    return null;
-  }
-
+  const redis = await getRedis();
   const presentedHash = hashToken(presentedRefreshToken);
-
-  // Find the refresh token for this user
-  let keys: string[];
+  const refreshKey = `refresh:${userId}:${presentedHash}`;
+  let refreshData: Record<string, string>;
   try {
-    keys = await redis.keys(`refresh:${userId}:*`);
+    refreshData = await redis.hGetAll(refreshKey);
   } catch {
-    console.error('[rotateRefreshToken] Redis error during key lookup');
-    return null;
+    console.error('[rotateRefreshToken] Redis error reading refresh token');
+    throw new RedisUnavailableError('Authentication service is unavailable');
   }
 
-  let matchedKey: string | null = null;
-  let matchedSession: { sessionId: string; used: string } | null = null;
-
-  for (const key of keys) {
-    const storedHash = key.split(':').pop();
-    if (storedHash === presentedHash) {
-      matchedKey = key;
-      try {
-        const data = await redis.hGetAll(key);
-        if (data && Object.keys(data).length > 0) {
-          matchedSession = { sessionId: data.sessionId, used: data.used };
-        }
-      } catch {
-        console.error('[rotateRefreshToken] Redis error reading refresh token');
-        return null;
-      }
-      break;
-    }
-  }
-
-  if (!matchedKey || !matchedSession) {
+  if (
+    !refreshData.sessionId ||
+    (refreshData.used !== 'false' && refreshData.used !== 'true')
+  ) {
     return null; // Invalid refresh token
   }
 
@@ -210,15 +195,15 @@ export async function rotateRefreshToken(
       end
       redis.call('HSET', KEYS[1], 'used', 'true')
       return 1`,
-      { keys: [matchedKey], arguments: [] }
+      { keys: [refreshKey], arguments: [] }
     ));
   } catch {
     console.error('[rotateRefreshToken] Redis error claiming refresh token');
-    return null;
+    throw new RedisUnavailableError('Authentication service is unavailable');
   }
 
   // REUSE DETECTION: If another request already claimed the token, revoke the session family.
-  if (matchedSession.used === 'true' || claimed !== 1) {
+  if (refreshData.used === 'true' || claimed !== 1) {
     console.warn(`[Security] Refresh token reuse detected for user ${userId}, revoking all sessions`);
     try {
       await revokeAllUserSessions(userId);
@@ -229,14 +214,15 @@ export async function rotateRefreshToken(
   }
 
   // Get old session to retrieve role
-  const oldSession = await getSession(matchedSession.sessionId);
+  const oldSession = await getSession(refreshData.sessionId);
   if (!oldSession) return null;
 
   // Delete old session
   try {
-    await redis.del(`session:${matchedSession.sessionId}`);
+    await redis.del(`session:${refreshData.sessionId}`);
   } catch {
-    // Best effort
+    console.error('[rotateRefreshToken] Redis error deleting the previous session');
+    throw new RedisUnavailableError('Authentication service is unavailable');
   }
 
   // Create new session with rotated tokens
@@ -254,7 +240,7 @@ export async function rotateRefreshToken(
     await createSession(newJti, userId, oldSession.role, ip, userAgent, refreshToken);
   } catch {
     console.error('[rotateRefreshToken] Failed to create new session');
-    return null;
+    throw new RedisUnavailableError('Authentication service is unavailable');
   }
 
   return {
@@ -279,9 +265,10 @@ export async function revokeAllUserSessions(userId: string): Promise<void> {
   }
 
   try {
-    // Find all refresh tokens for this user
-    const keys = await redis.keys(`refresh:${userId}:*`);
-    for (const key of keys) {
+    for await (const key of redis.scanIterator({
+      MATCH: `refresh:${userId}:*`,
+      COUNT: 100,
+    })) {
       try {
         const data = await redis.hGetAll(key);
         if (data.sessionId) {
@@ -289,7 +276,7 @@ export async function revokeAllUserSessions(userId: string): Promise<void> {
         }
         await redis.del(key);
       } catch {
-        // Best effort per-key
+        console.error('[revokeAllUserSessions] Failed to revoke a session record');
       }
     }
   } catch {
