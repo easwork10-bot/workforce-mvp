@@ -1,12 +1,11 @@
 import 'server-only';
 import { createClient } from 'redis';
-import { hashToken, hashIp } from './tokens';
-import { decodeJwt } from './tokens';
+import { hashToken, hashIp, decodeJwt } from './tokens';
+import { requireRedisUrl } from '../redisUrl';
 
-// Redis client - lazy initialization
-// Use `any` to avoid complex generic type issues with redis v4
-let redisClient: any = null;
-let redisConnecting: Promise<any> | null = null;
+type RedisClient = ReturnType<typeof createClient>;
+let redisClient: RedisClient | null = null;
+let redisConnecting: Promise<RedisClient> | null = null;
 
 /**
  * Custom error for Redis unavailability - allows callers to fail safely
@@ -18,7 +17,7 @@ export class RedisUnavailableError extends Error {
   }
 }
 
-export async function getRedis(): Promise<any> {
+export async function getRedis(): Promise<RedisClient> {
   if (redisClient?.isOpen) return redisClient;
 
   // Prevent multiple simultaneous connection attempts
@@ -32,7 +31,7 @@ export async function getRedis(): Promise<any> {
 
   redisConnecting = (async () => {
     const client = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      url: requireRedisUrl(process.env.REDIS_URL),
       // Fail fast on connection issues
       socket: {
         connectTimeout: 3000,
@@ -40,8 +39,8 @@ export async function getRedis(): Promise<any> {
       },
     });
 
-    client.on('error', (err) => {
-      console.error('[Redis] Client error:', err);
+    client.on('error', () => {
+      console.error('[Redis] Client error');
     });
 
     await client.connect();
@@ -51,9 +50,9 @@ export async function getRedis(): Promise<any> {
   try {
     redisClient = await redisConnecting;
     return redisClient;
-  } catch (error) {
+  } catch {
     redisConnecting = null;
-    console.error('[Redis] Connection failed:', error);
+    console.error('[Redis] Connection failed');
     throw new RedisUnavailableError('Failed to connect to Redis');
   }
 }
@@ -301,7 +300,7 @@ export async function revokeAllUserSessions(userId: string): Promise<void> {
 /**
  * Rate limiting - returns true if allowed, false if rate limited
  * Uses simple counter with TTL (fixed window) for simplicity
- * Fail-open: if Redis unavailable, allow request (don't block users due to infra issues)
+ * Fail-closed: callers must not bypass authentication abuse controls when Redis is unavailable.
  */
 export async function checkRateLimit(
   ip: string,
@@ -313,8 +312,8 @@ export async function checkRateLimit(
   try {
     redis = await getRedis();
   } catch {
-    console.error('[checkRateLimit] Redis unavailable, fail-open');
-    return { allowed: true, remaining: maxRequests, resetAt: Date.now() + windowMs };
+    console.error('[checkRateLimit] Redis unavailable');
+    throw new RedisUnavailableError('Rate limiting is unavailable');
   }
 
   const key = `ratelimit:${ip}:${endpoint}`;
@@ -335,8 +334,8 @@ export async function checkRateLimit(
 
     return { allowed: true, remaining: maxRequests - count, resetAt: now + windowMs };
   } catch {
-    console.error('[checkRateLimit] Redis error during operation, fail-open');
-    return { allowed: true, remaining: maxRequests, resetAt: now + windowMs };
+    console.error('[checkRateLimit] Redis error during operation');
+    throw new RedisUnavailableError('Rate limiting is unavailable');
   }
 }
 

@@ -2,7 +2,8 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { logAuditEvent, sanitizeAuditValues, type AuditMetadata } from '@/backend/db/queries/audit';
-import { getClientIp, type AuthenticatedRequest } from './requireAuth';
+import { getTrustedClientIp } from './clientIp';
+import type { AuthenticatedRequest } from './requireAuth';
 
 type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';
 type AuditValue = Record<string, unknown> | null;
@@ -16,8 +17,11 @@ export type AuditLogOptions = {
 };
 
 export function getAuditMetadata(req: NextRequest): AuditMetadata {
+  const trustedIp = getTrustedClientIp(req);
   return {
-    ipAddress: createHash('sha256').update(getClientIp(req)).digest('hex').slice(0, 16),
+    ipAddress: trustedIp
+      ? createHash('sha256').update(trustedIp).digest('hex').slice(0, 16)
+      : null,
     userAgent: req.headers.get('user-agent'),
   };
 }

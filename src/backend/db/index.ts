@@ -2,10 +2,11 @@ import 'server-only';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from './schema';
+import { requireDatabaseUrl } from './databaseUrl';
 
 // Database connection pool
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: requireDatabaseUrl(process.env.DATABASE_URL),
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,

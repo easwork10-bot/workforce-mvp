@@ -37,6 +37,7 @@ vi.mock('@/backend/auth/tokens', () => tokens);
 describe('Redis-backed authentication security behavior', () => {
   beforeEach(() => {
     vi.resetModules();
+    process.env.REDIS_URL = 'redis://127.0.0.1:6379';
     redis.client.isOpen = false;
     redis.client.on.mockReset();
     redis.client.connect.mockReset().mockRejectedValue(new Error('Redis unavailable'));
@@ -69,13 +70,19 @@ describe('Redis-backed authentication security behavior', () => {
     expect(redis.client.hGetAll).not.toHaveBeenCalled();
   });
 
-  it('preserves the documented fail-open rate-limit behavior when Redis is unavailable', async () => {
+  it('fails closed when Redis is unavailable for rate limiting', async () => {
     const { checkRateLimit } = await import('@/backend/auth/session');
 
-    const result = await checkRateLimit('127.0.0.1', 'login', 5, 60_000);
+    await expect(checkRateLimit('127.0.0.1', 'login', 5, 60_000))
+      .rejects.toThrow('Rate limiting is unavailable');
+  });
 
-    expect(result).toMatchObject({ allowed: true, remaining: 5 });
-    expect(result.resetAt).toBeGreaterThan(Date.now());
+  it('does not create a Redis client when REDIS_URL is missing', async () => {
+    delete process.env.REDIS_URL;
+    const { getSession } = await import('@/backend/auth/session');
+
+    await expect(getSession('session-id')).resolves.toBeNull();
+    expect(redis.createClient).not.toHaveBeenCalled();
   });
 
   it('allows only one of two concurrent requests to rotate the same refresh token', async () => {

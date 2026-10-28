@@ -1,12 +1,14 @@
 import { startShiftReminderJob, stopShiftReminderJob } from '@/backend/jobs/shiftReminders';
 import { assertJwtKeyConfiguration } from '@/backend/auth/tokens';
 import { assertCsrfSecretConfiguration } from '@/backend/security/csrfSecret';
+import { assertTrustedClientIpConfiguration } from '@/backend/security/clientIp';
 
 let shutdownHandlersRegistered = false;
 
 export async function register(): Promise<void> {
   if (process.env.NEXT_PHASE === 'phase-production-build') return;
 
+  assertTrustedClientIpConfiguration();
   assertCsrfSecretConfiguration();
   await assertJwtKeyConfiguration();
   if (process.env.NODE_ENV !== 'production' || process.env.SHIFT_REMINDER_JOB_ENABLED !== 'true') return;

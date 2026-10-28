@@ -117,7 +117,7 @@ describe('Application review audit integration', () => {
 
   function makeReviewRequest(
     status: 'accepted' | 'rejected',
-    options: { clientIp?: string; csrf?: boolean; body?: string } = {}
+    options: { frameworkIp?: string; csrf?: boolean; body?: string } = {}
   ): NextRequest {
     const csrfToken = signCsrfToken('application-audit-csrf');
     const headers = new Headers({
@@ -126,13 +126,15 @@ describe('Application review audit integration', () => {
       'user-agent': 'application-audit-test',
     });
     if (options.csrf !== false) headers.set('x-csrf-token', csrfToken);
-    if (options.clientIp) headers.set('x-forwarded-for', options.clientIp);
+    if (options.frameworkIp) headers.set('x-forwarded-for', '192.0.2.30');
 
-    return new NextRequest(`http://localhost/api/admin/applications/${applicationId}/review`, {
+    const request = new NextRequest(`http://localhost/api/admin/applications/${applicationId}/review`, {
       method: 'POST',
       headers,
       body: options.body ?? JSON.stringify({ status }),
     });
+    if (options.frameworkIp) Object.defineProperty(request, 'ip', { value: options.frameworkIp });
+    return request;
   }
 
   function reviewRoute(request: NextRequest, id = applicationId) {
@@ -191,7 +193,7 @@ describe('Application review audit integration', () => {
 
   it('stores hashed client IP and user-agent for API decisions', async () => {
     const response = await reviewRoute(makeReviewRequest('rejected', {
-      clientIp: '198.51.100.22',
+      frameworkIp: '198.51.100.22',
     }));
     const { data, total } = await getAuditLogs({
       actorId: reviewerId,

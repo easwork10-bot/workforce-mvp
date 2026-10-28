@@ -210,6 +210,7 @@ describe('Audit log query, wrapper, and read API', () => {
         'user-agent': 'audit-wrapper-test',
       },
     }) as AuthenticatedRequest;
+    Object.defineProperty(req, 'ip', { value: '203.0.113.40' });
     req.auth = { userId: actorId, role: 'administrator', jti: 'audit-wrapper-jti' };
     const entityId = secondActorId;
 
@@ -229,7 +230,7 @@ describe('Audit log query, wrapper, and read API', () => {
       action: 'INSERT',
       entityType: 'shifts',
       entityId,
-      ipAddress: createHash('sha256').update('192.0.2.30').digest('hex').slice(0, 16),
+      ipAddress: createHash('sha256').update('203.0.113.40').digest('hex').slice(0, 16),
       userAgent: 'audit-wrapper-test',
       newValues: { title: 'Created shift', refreshToken: '[REDACTED]' },
     });

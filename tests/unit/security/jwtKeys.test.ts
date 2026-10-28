@@ -15,6 +15,7 @@ const environmentNames = [
   'NODE_ENV',
   'NEXT_PHASE',
   'SHIFT_REMINDER_JOB_ENABLED',
+  'DATABASE_URL',
 ] as const;
 type KeyPairPem = { privateKey: string; publicKey: string };
 
@@ -174,6 +175,7 @@ describe('JWT key configuration', () => {
   it('refuses Node runtime registration when JWT key files are unavailable', async () => {
     const directory = await createTemporaryDirectory();
     process.env.NODE_ENV = 'production';
+    process.env.DATABASE_URL = 'postgresql://workforce_test@127.0.0.1:5433/workforce_test';
     process.env.CSRF_SECRET = 'valid-production-csrf-secret-at-least-thirty-two-bytes';
     process.env.JWT_PRIVATE_KEY_FILE = path.join(directory, 'missing-private.pem');
     process.env.JWT_PUBLIC_KEY_FILE = path.join(directory, 'missing-public.pem');

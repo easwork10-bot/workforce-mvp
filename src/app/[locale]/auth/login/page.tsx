@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { Link, useRouter } from "@/shared/i18n-routing";
 import { useTranslations } from "next-intl";
 import { Button } from "@/frontend/ui/button";
 import { Input } from "@/frontend/ui/input";
 import { Label } from "@/frontend/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/frontend/ui/card";
-import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {

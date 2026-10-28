@@ -73,9 +73,8 @@ Pages are under `src/app/[locale]/`:
 - `/admin`, `/admin/shifts`, and `/admin/shifts/create`
 - `/attendance/check-in`
 
-The public `/[locale]` page is an integrated Jofra Verkeer marketing landing concept
-(hero, services, benefits, process, contact, and footer sections with static contact
-actions). The employee shift browser and employee applications page are connected to
+The public Jofra Verkeer site includes the landing page, localized inquiry and
+recruitment forms, and server-side Resend delivery. The employee shift browser and employee applications page are connected to
 their employee APIs. The employee dashboard shows the authenticated employee's
 recent applications from the same applications API. Login and registration use the
 self-hosted auth routes. Other screens remain presentation prototypes backed by
@@ -124,15 +123,16 @@ changing handlers.
 - Access and refresh tokens are delivered as HttpOnly cookies. The access cookie is
   SameSite Lax; the refresh cookie is SameSite Strict and scoped to
   `/api/auth/refresh`. Production cookies set `Secure`.
-- Redis holds the session record, refresh-token state, and revocation data. Login
-  and refresh endpoints apply IP-based rate limits. Session records have a
+- Redis holds the session record, refresh-token state, and revocation data. Login,
+  registration, and refresh endpoints apply IP-based rate limits. Session records have a
   seven-day Redis TTL; refresh-token records have a 30-day TTL. Refresh-token claims
   are single-use and atomically claimed; reuse can revoke the user's sessions.
 - Session lookup depends on Redis. Authentication fails closed when session state
   cannot be established.
-- The fixed-window rate limiter fails open if Redis is unavailable. This is a
-  current availability trade-off and must be considered in deployment threat
-  modeling.
+- The fixed-window rate limiter fails closed and returns HTTP 503 when Redis is
+  unavailable; authentication requests are not allowed to bypass abuse controls.
+- Runtime PostgreSQL and Redis connections require explicit `DATABASE_URL` and
+  `REDIS_URL` values; there is no implicit localhost connection fallback.
 
 ### Authorization and CSRF
 
@@ -151,9 +151,13 @@ Outside tests, `CSRF_SECRET` must be explicitly set and contain at least 32 byte
 Startup validates the CSRF secret and JWT material.
 
 The token payload includes an IP hash, but the request-time IP comparison in
-`requireAuth` is currently commented out; it is not an enforced binding. IP-based
-rate limiting reads forwarded headers, so any deployment proxy must overwrite and
-control those headers rather than accept client-supplied values.
+`requireAuth` is not an enforced binding. Production rate limiting and audit metadata
+prefer framework-provided `NextRequest.ip`. A self-hosted deployment may configure
+`TRUSTED_CLIENT_IP_HEADER` as `x-forwarded-for` or `x-real-ip` only when its trusted
+reverse proxy strips and overwrites that header. Forwarded headers are never trusted
+implicitly; without a trusted IP source, protected endpoints fail closed with HTTP
+503. The standalone Node deployment in this repository does not configure a trusted
+proxy header by default, so set it only after the ingress behavior has been verified.
 
 ## PostgreSQL and migration state
 
@@ -169,15 +173,24 @@ and `0003_damp_unus`. There is also an older `drizzle/0000_melodic_spectrum.sql`
 file that is not present in the current journal, plus the historical
 [Supabase initial schema](./history/database/supabase/001_initial_schema.sql).
 These artifacts represent different historical schema tracks; their presence
-does not establish the state of any existing database.
+does not establish the state of any existing database. The journaled sequence has
+been verified in a disposable PostgreSQL instance and applied to the confirmed empty
+Windows development database; no Linux database or legacy data volume was touched.
 
-**Unresolved operational concern:** reconcile the current schema, deployed/local
-database migration ledgers, and both historical SQL tracks before deciding how to
-bootstrap or upgrade a database. No reviewed first-run development database
-initialization procedure is provided. Do not run Drizzle push/migration commands
-against an existing `workforce` database. The isolated test runner is the only
-documented workflow here that initializes a database, and it does so only after
-verifying its disposable target identity and empty state.
+Specifically, the unjournaled `0000_melodic_spectrum.sql` baseline does not contain
+the two partial unique notification indexes present in the journaled
+`0000_wild_agent_zero.sql` baseline:
+`unique_notification_recipient_type_shift` and
+`unique_notification_recipient_type_application`. This remains a separate unresolved migration-history discrepancy. Do not apply the
+unjournaled file or alter the journal as part of routine migration execution.
+
+**Operational note:** the Windows development database was initialized only after
+verifying its Docker project ownership, loopback port 5433 mapping, database identity,
+empty schema, and absence of a Drizzle ledger. The read-only post-check confirmed all
+four journaled migrations and the expected notification/audit constraints. The safe
+integration runner initializes only its verified disposable database. Do not use
+`drizzle-kit push`; do not run migrations against another existing database without a
+separate identity and backup review.
 
 ## Attendance, applications, audit, and notifications
 
@@ -197,7 +210,10 @@ verifying its disposable target identity and empty state.
 - Audit records are written through shared query helpers. Audit values redact keys
   whose names resemble secrets, credentials, tokens, or cookies.
 - Notifications are in-app database records with recipient scoping and idempotent
-  creation support. There is no configured email or push-delivery integration.
+  creation support. Jofra public inquiries and job applications use a separate
+  server-side Resend integration configured by `RESEND_API_KEY`,
+  `JOFRA_FORMS_FROM`, and `JOFRA_FORMS_TO`, plus Redis-backed idempotency/rate
+  limiting. Automated tests mock the provider and do not deliver email.
 - The shift reminder scheduler is an in-process Node job started through
   [`src/instrumentation-node.ts`](../src/instrumentation-node.ts) only in production when
   `SHIFT_REMINDER_JOB_ENABLED=true`. It creates idempotent in-app reminders and
@@ -217,11 +233,11 @@ English message catalog in the active locale configuration.
 
 Use Node.js 24 as declared by [`.nvmrc`](../.nvmrc) and install the locked
 dependencies with `npm ci --legacy-peer-deps`. Copy [`.env.example`](../.env.example)
-to `.env.local`; configure `DATABASE_URL` for a disposable, separately provisioned
-local development database and `REDIS_URL` for a local Redis service. The repository
-does not provide a reviewed first-run development database bootstrap. Do not point
-initial setup at a shared/existing `workforce` database or run schema push/migration
-commands against one.
+to `.env.local`; configure `DATABASE_URL` for the dedicated local development
+database and `REDIS_URL` for its local Redis service. On the reviewed Windows
+workstation, the `work-force` development database is initialized from the journaled
+migrations; other existing databases require their own identity, state, and backup
+review before any migration.
 
 Configure exactly one matching RSA JWT key pair (file variables or base64 variables)
 with at least 2048-bit keys, and set `CSRF_SECRET` to a fresh random value of at
@@ -230,8 +246,17 @@ least 32 bytes. Keep private material outside version control. The
 before starting Next.js.
 
 The root [`docker-compose.yml`](../docker-compose.yml) is for local development, not
-production: it publishes PostgreSQL/Redis ports, uses persistent volumes, and has
-development defaults. Review existing local services and volumes before using it.
+production. It retains persistent `pgdata` and `redisdata` volumes and the
+directory-derived Compose project name; do not rename the project or volumes without
+identifying existing data. The configurable app/PostgreSQL/Redis host ports bind to
+loopback only, with PostgreSQL defaulting to host port 5433. A required local
+development database password and host-provided JWT secret files replace committed
+or machine-specific credential defaults. Compose must be passed `.env.local` with
+`--env-file`; the host app's Redis URL uses the loopback published port, while the
+Compose app uses service DNS (`redis:6379`) inside its project network.
+The smoke configuration requires a unique project name per run and uses an internal
+network with tmpfs-only PostgreSQL/Redis storage; the safe integration runner creates
+its own random project and refuses nonlocal Docker endpoints.
 
 ## Tests and isolated database workflow
 
@@ -283,8 +308,8 @@ against source and this document.
 This repository is an MVP codebase, not a production deployment runbook. Before a
 production launch:
 
-1. Resolve the migration-history discrepancy and establish a reviewed database
-   bootstrap, upgrade, rollback, backup, and restore procedure.
+1. Reconcile the unjournaled legacy migration file and establish a production
+   database bootstrap, upgrade, rollback, backup, and restore procedure.
 2. Design deployment-specific secret provisioning and rotation for the JWT key pair
    and `CSRF_SECRET`; never use sample or Compose development values.
 3. Treat the root `docker-compose.yml` as local development only: it publishes
@@ -297,8 +322,8 @@ production launch:
    fields, before storing real data.
 6. Decide how the in-process reminder job is operated in a multi-instance
    deployment; idempotent inserts alone do not provide distributed scheduling.
-7. Configure trusted reverse-proxy behavior for forwarded IP headers and deploy
-   behind HTTPS so secure cookies and rate limits have the intended properties.
+7. Configure a trusted hosting adapter that populates the framework client IP and
+   deploy behind HTTPS so secure cookies and rate limits have the intended properties.
 8. Replace sample-backed pages and validate end-to-end UI flows before representing
    them as implemented product workflows.
 9. Owner-review the seven root `test-*.ts` diagnostics. Previous static review

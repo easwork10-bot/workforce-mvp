@@ -1,13 +1,21 @@
 const { spawn } = require('node:child_process');
-const { loadJwtKeyMaterial } = require('../src/backend/auth/jwtKeyMaterial.js');
-const { assertCsrfSecretConfiguration } = require('../src/backend/security/csrfSecretConfig.js');
+const path = require('node:path');
+
+const projectRoot = path.resolve(__dirname, '..');
+const { loadDevelopmentEnv } = require('./load-dev-env.cjs');
 
 async function startDevelopmentServer() {
+  loadDevelopmentEnv(projectRoot);
+
+  const { loadJwtKeyMaterial } = require('../src/backend/auth/jwtKeyMaterial.js');
+  const { assertCsrfSecretConfiguration } = require('../src/backend/security/csrfSecretConfig.js');
+
   assertCsrfSecretConfiguration();
   await loadJwtKeyMaterial();
 
   const nextCli = require.resolve('next/dist/bin/next');
   const child = spawn(process.execPath, [nextCli, 'dev', ...process.argv.slice(2)], {
+    cwd: projectRoot,
     stdio: 'inherit',
     env: process.env,
   });
