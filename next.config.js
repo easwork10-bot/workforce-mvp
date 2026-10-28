@@ -1,7 +1,9 @@
 const withNextIntl = require('next-intl/plugin')('./src/i18n.ts');
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || undefined;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  ...(basePath ? { basePath } : {}),
   output: 'standalone',
   skipTrailingSlashRedirect: true,
   experimental: {

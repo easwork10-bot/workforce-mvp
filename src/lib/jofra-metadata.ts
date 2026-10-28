@@ -19,8 +19,12 @@ export function jofraMetadata(locale: string, page: "home" | "request" | "recrui
       const configuredUrl = new URL(appUrl);
       if (configuredUrl.protocol === "https:" || configuredUrl.protocol === "http:") {
         const origin = configuredUrl.origin;
-        const dutchUrl = new URL(pathname, origin).toString();
-        const arabicUrl = new URL(`/ar${pathname === "/" ? "" : pathname}`, origin).toString();
+        const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/+$/, "");
+        const dutchLocalePath = basePath ? "/nl" : "";
+        const dutchPath = `${basePath}${dutchLocalePath}${pathname === "/" ? "/" : pathname}`;
+        const arabicPath = `${basePath}/ar${pathname === "/" ? "" : pathname}`;
+        const dutchUrl = new URL(dutchPath, origin).toString();
+        const arabicUrl = new URL(arabicPath, origin).toString();
         alternates = {
           canonical: locale === "ar" ? arabicUrl : dutchUrl,
           languages: {

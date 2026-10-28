@@ -13,6 +13,7 @@ export default function JofraPublicPage({ recruitment = false }: { recruitment?:
   const t = useTranslations("jofraLanding");
   const home = getJofraPath(locale, "/");
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const staticPreview = Boolean(basePath);
   return (
     <div className={`jofra-page public-page ${dmSans.variable} ${manrope.variable}`} lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
       <a className="skip-link" href="#main-content">{t("public.skip")}</a>
@@ -21,17 +22,22 @@ export default function JofraPublicPage({ recruitment = false }: { recruitment?:
         <section className="public-hero">
           <p className="public-eyebrow">{t(recruitment ? "public.recruitmentKicker" : "public.requestKicker")}</p>
           <h1>{t(recruitment ? "recruitment.title" : "request.title")}</h1>
-          <p className="public-lead" id={recruitment ? undefined : "draft-notice"}>{t(recruitment ? "recruitment.description" : "request.notice")}</p>
+          <p className="public-lead" id={recruitment ? undefined : "draft-notice"}>
+            {recruitment
+              ? t(staticPreview ? "recruitment.staticDescription" : "recruitment.description")
+              : t(staticPreview ? "request.staticNotice" : "request.notice")}
+          </p>
         </section>
         {recruitment ? (
           <section className="public-card-stack">
-            <JofraPublicForm type="application" />
+            <JofraPublicForm type="application" staticPreview={staticPreview} />
             <aside className="public-card public-card-support">
               <div className="public-card-photo">
                 <Image
                   src={`${basePath}/jofra/assets/03_s02_waaromjofra_team_talk.jpg`}
                   alt={t("public.recruitmentImageAlt")}
                   fill
+                  unoptimized
                   sizes="(max-width: 650px) 100vw, 35vw"
                 />
               </div>
@@ -42,13 +48,14 @@ export default function JofraPublicPage({ recruitment = false }: { recruitment?:
           </section>
         ) : (
           <section className="public-request-grid">
-            <JofraPublicForm type="inquiry" />
+            <JofraPublicForm type="inquiry" staticPreview={staticPreview} />
             <aside className="public-card public-card-support">
               <div className="public-card-photo">
                 <Image
                   src={`${basePath}/jofra/assets/06_case_forklift_coordination.jpg`}
                   alt={t("public.requestImageAlt")}
                   fill
+                  unoptimized
                   sizes="(max-width: 650px) 100vw, 35vw"
                 />
               </div>

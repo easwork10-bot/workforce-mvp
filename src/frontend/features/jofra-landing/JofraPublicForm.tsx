@@ -57,7 +57,13 @@ const applicationFields: readonly FieldDefinition[] = [
   { name: "motivation", type: "textarea", maxLength: 2000 },
 ];
 
-export default function JofraPublicForm({ type }: { type: FormType }) {
+export default function JofraPublicForm({
+  type,
+  staticPreview = false,
+}: {
+  type: FormType;
+  staticPreview?: boolean;
+}) {
   const t = useTranslations("jofraLanding");
   const locale = useLocale() === "ar" ? "ar" : "nl";
   const idempotencyKey = useRef<string | null>(null);
@@ -68,6 +74,7 @@ export default function JofraPublicForm({ type }: { type: FormType }) {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (staticPreview) return;
     if (submitting) return;
 
     const form = event.currentTarget;
@@ -142,9 +149,12 @@ export default function JofraPublicForm({ type }: { type: FormType }) {
   return (
     <article className="public-card public-card-main">
       {type === "application" && <p>{t("recruitment.notice")}</p>}
+      {staticPreview && (
+        <p className="public-alert" role="note">{t("forms.staticUnavailable")}</p>
+      )}
       <form className="public-form" method="post" noValidate onSubmit={submit} onChange={clearFeedback}>
         <noscript><p className="public-alert">{t("forms.noScript")}</p></noscript>
-        <fieldset disabled={submitting}>
+        <fieldset disabled={staticPreview || submitting}>
           <legend className="sr-only">
             {t(type === "inquiry" ? "request.title" : "recruitment.title")}
           </legend>

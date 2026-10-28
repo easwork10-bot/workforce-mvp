@@ -17,6 +17,7 @@
     "request": {
       "title": "Verkeersregelaars aanvragen",
       "notice": "Vul uw projectgegevens in. Na verzending sturen we uw aanvraag naar Jofra Verkeer; uw gegevens worden niet in een account of database opgeslagen.",
+      "staticNotice": "Bekijk hier de aanvraagpagina. Dit is een statische voorbeeldsite; versturen is niet beschikbaar. Bel +31 6 41239337 of mail info@jofraverkeer.nl.",
       "quantity": "Aantal verkeersregelaars",
       "date": "Datum",
       "location": "Projectlocatie",
@@ -32,11 +33,13 @@
     "recruitment": {
       "title": "Werken bij Jofra",
       "description": "Interesse in werken als verkeersregelaar bij Jofra Verkeer? Laat uw contactgegevens en een korte toelichting op uw ervaring en beschikbaarheid achter.",
+      "staticDescription": "Bekijk hier de kennismakingspagina. Dit is een statische voorbeeldsite; solliciteren is niet beschikbaar. Bel +31 6 41239337 of mail info@jofraverkeer.nl.",
       "notice": "Dit is een open kennismaking, geen vacature of toezegging van werk. Neem contact op om de mogelijkheden te bespreken.",
       "action": "Interesse versturen"
     },
     "forms": {
       "website": "Website",
+      "staticUnavailable": "Dit is een statische voorbeeldsite. Formulieren kunnen hier niet worden verzonden. Bel +31 6 41239337 of mail info@jofraverkeer.nl.",
       "noScript": "Voor het versturen is JavaScript nodig. Bel ons of mail info@jofraverkeer.nl.",
       "fieldError": "Controleer dit veld.",
       "sending": "Verzenden...",

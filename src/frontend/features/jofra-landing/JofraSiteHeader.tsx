@@ -120,7 +120,7 @@ export default function JofraSiteHeader({ landing = false }: { landing?: boolean
       <div className="container">
         <nav className="nav" aria-label={t("navigation.label")}>
           <a className="brand" href={landing ? "#home" : home}>
-            <Image className="brandmark" src={`${ASSET_BASE_PATH}/jofra/assets/logo-source.png`} alt="" width={56} height={30} priority />
+            <Image className="brandmark" src={`${ASSET_BASE_PATH}/jofra/assets/logo-source.png`} alt="" width={56} height={30} priority unoptimized />
             <span className="brandname">JOFRA VERKEER</span>
           </a>
           <div className={`navlinks${menuOpen ? " open" : ""}`} id="jofra-navlinks">

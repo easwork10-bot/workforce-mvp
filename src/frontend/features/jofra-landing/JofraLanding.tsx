@@ -670,7 +670,7 @@ export default function JofraLanding() {
           <div className="footer-main">
             <div className="footer-intro">
               <a className="brand" href="#home">
-                <Image className="brandmark" src={`${ASSET_BASE_PATH}/jofra/assets/logo-source.png`} alt="" width={56} height={30} />
+                <Image className="brandmark" src={`${ASSET_BASE_PATH}/jofra/assets/logo-source.png`} alt="" width={56} height={30} unoptimized />
                 <span className="brandname">JOFRA VERKEER</span>
               </a>
               <span className="footer-statement">{t("footer.tagline")}</span>

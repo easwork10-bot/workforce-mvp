@@ -5160,7 +5160,8 @@ html:has(.jofra-page) {
   .jofra-page .practice-photo-day { aspect-ratio: .75; }
   .jofra-page .practice-photo-night {
     aspect-ratio: .95;
-    margin: 0 0 0 12%;
+    width: 88%;
+    margin: 0;
+    margin-inline-start: 12%;
   }
-  .jofra-page[dir="rtl"] .practice-photo-night { margin: 0 12% 0 0; }
 }
