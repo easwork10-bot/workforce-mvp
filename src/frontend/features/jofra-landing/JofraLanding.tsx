@@ -345,7 +345,7 @@ export default function JofraLanding() {
         <section className="hero" id="home">
           <div className="hero-image">
             <Image
-              src={`${ASSET_BASE_PATH}/jofra/assets/worker.jpg`}
+              src={`${ASSET_BASE_PATH}/jofra/assets/04_s03_mensen_portret.jpg`}
               alt={t("hero.imageAlt")}
               fill
               unoptimized
@@ -463,6 +463,26 @@ export default function JofraLanding() {
             </svg>
           </div>
           <div className="container">
+            <div className="expertise-photo-pair">
+              <figure className="expertise-photo expertise-photo-main reveal">
+                <Image
+                  src={`${ASSET_BASE_PATH}/jofra/assets/01_s01_expertise_site_overview.jpg`}
+                  alt={t("services.overviewAlt")}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 650px) 100vw, 58vw"
+                />
+              </figure>
+              <figure className="expertise-photo expertise-photo-detail reveal">
+                <Image
+                  src={`${ASSET_BASE_PATH}/jofra/assets/02_s01_expertise_close_control.jpg`}
+                  alt={t("services.detailAlt")}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 650px) 100vw, 36vw"
+                />
+              </figure>
+            </div>
             <div className="services">
               {SERVICE_ITEMS.map((item) => (
                 <a className="service-row reveal" key={item} href="#contact">
@@ -520,20 +540,33 @@ export default function JofraLanding() {
             </svg>
           </div>
           <div className="container">
-            <span className="eyebrow reveal">{t("benefits.eyebrow")}</span>
-            <h2 className="reveal">{t("benefits.titleLine1")}</h2>
-            <p className="benefits-statement reveal">{t("benefits.titleLine2")}</p>
-            <div className="benefit-grid">
-              {BENEFIT_ITEMS.map((item) => (
-                <div className="benefit reveal" key={item}>
-                  <span className="benefit-index" aria-hidden="true">{String(Number(item) + 1).padStart(2, "0")}</span>
-                  <strong>{t(`benefits.items.${item}.title`)}</strong>
-                  <p>{t(`benefits.items.${item}.description`)}</p>
+            <div className="benefits-layout">
+              <div className="benefits-copy">
+                <span className="eyebrow reveal">{t("benefits.eyebrow")}</span>
+                <h2 className="reveal">{t("benefits.titleLine1")}</h2>
+                <p className="benefits-statement reveal">{t("benefits.titleLine2")}</p>
+                <div className="benefit-grid">
+                  {BENEFIT_ITEMS.map((item) => (
+                    <div className="benefit reveal" key={item}>
+                      <span className="benefit-index" aria-hidden="true">{String(Number(item) + 1).padStart(2, "0")}</span>
+                      <strong>{t(`benefits.items.${item}.title`)}</strong>
+                      <p>{t(`benefits.items.${item}.description`)}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="benefits-signature reveal">
-              <span>JOFRA / VERKEER</span><span className="signature-line" /><span>{t("benefits.signature")}</span>
+                <div className="benefits-signature reveal">
+                  <span>JOFRA / VERKEER</span><span className="signature-line" /><span>{t("benefits.signature")}</span>
+                </div>
+              </div>
+              <figure className="benefits-photo reveal">
+                <Image
+                  src={`${ASSET_BASE_PATH}/jofra/assets/03_s02_waaromjofra_team_talk.jpg`}
+                  alt={t("benefits.imageAlt")}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 1000px) 100vw, 36vw"
+                />
+              </figure>
             </div>
           </div>
         </section>
@@ -637,20 +670,62 @@ export default function JofraLanding() {
             <h2 className="section-title process-head reveal">
               {t("process.titleLine1")}<br />{t("process.titleLine2")}
             </h2>
-            <div className="process-grid">
-              {PROCESS_STEPS.map((step) => (
-                <div className="step reveal" key={step}>
-                  <span className="step-node" aria-hidden="true" />
-                  <span className="step-number">{String(Number(step) + 1).padStart(2, "0")} /</span>
-                  <h3>{t(`process.steps.${step}.title`)}</h3>
-                  <p>{t(`process.steps.${step}.description`)}</p>
-                </div>
-              ))}
-              <svg className="process-route" viewBox="0 0 1000 112" preserveAspectRatio="none" fill="none" aria-hidden="true">
-                <path className="route-base" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
-                <path className="route-draw" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
-                <path className="route-preview" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
-              </svg>
+            <div className="process-feature">
+              <div className="process-grid">
+                {PROCESS_STEPS.map((step) => (
+                  <div className="step reveal" key={step}>
+                    <span className="step-node" aria-hidden="true" />
+                    <span className="step-number">{String(Number(step) + 1).padStart(2, "0")} /</span>
+                    <h3>{t(`process.steps.${step}.title`)}</h3>
+                    <p>{t(`process.steps.${step}.description`)}</p>
+                  </div>
+                ))}
+                <svg className="process-route" viewBox="0 0 1000 112" preserveAspectRatio="none" fill="none" aria-hidden="true">
+                  <path className="route-base" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
+                  <path className="route-draw" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
+                  <path className="route-preview" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
+                </svg>
+              </div>
+              <figure className="process-photo reveal">
+                <Image
+                  src={`${ASSET_BASE_PATH}/jofra/assets/05_s04_werkwijze_hand_signal.jpg`}
+                  alt={t("process.imageAlt")}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 1000px) 100vw, 30vw"
+                />
+              </figure>
+            </div>
+          </div>
+        </section>
+
+        <section className="practice-showcase">
+          <div className="container">
+            <div className="practice-heading reveal">
+              <h2>{t("practice.title")}</h2>
+              <p>{t("practice.description")}</p>
+            </div>
+            <div className="practice-grid">
+              <figure className="practice-photo practice-photo-day reveal">
+                <Image
+                  src={`${ASSET_BASE_PATH}/jofra/assets/06_case_forklift_coordination.jpg`}
+                  alt={t("practice.dayAlt")}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 650px) 100vw, 60vw"
+                />
+                <figcaption>{t("practice.dayCaption")}</figcaption>
+              </figure>
+              <figure className="practice-photo practice-photo-night reveal">
+                <Image
+                  src={`${ASSET_BASE_PATH}/jofra/assets/07_case_night_operation.jpg`}
+                  alt={t("practice.nightAlt")}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 650px) 100vw, 40vw"
+                />
+                <figcaption>{t("practice.nightCaption")}</figcaption>
+              </figure>
             </div>
           </div>
         </section>

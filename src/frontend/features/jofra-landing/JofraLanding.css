@@ -4824,3 +4824,163 @@ html:has(.jofra-page) {
   .jofra-page *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   .jofra-page .process-grid .route-draw { stroke-dashoffset: 0 !important; }
 }
+
+/* Curated Jofra field photography */
+.jofra-page .expertise-photo-pair {
+  display: grid;
+  grid-template-columns: minmax(0,1.35fr) minmax(0,.8fr);
+  gap: clamp(16px,2.4vw,34px);
+  align-items: end;
+  margin: 30px 0 58px;
+}
+.jofra-page .expertise-photo {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  background: #d3d8d2;
+}
+.jofra-page .expertise-photo-main { aspect-ratio: 1.72; }
+.jofra-page .expertise-photo-detail {
+  aspect-ratio: 1.28;
+  margin-bottom: -28px;
+}
+.jofra-page .expertise-photo img,
+.jofra-page .benefits-photo img,
+.jofra-page .process-photo img,
+.jofra-page .practice-photo img {
+  object-fit: cover;
+}
+.jofra-page .expertise-photo-main img { object-position: center 72%; }
+.jofra-page .expertise-photo-detail img { object-position: center 65%; }
+.jofra-page .benefits-layout {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(280px,35%);
+  align-items: center;
+  gap: clamp(32px,5vw,76px);
+}
+.jofra-page .benefits-copy { min-width: 0; }
+.jofra-page .benefits-photo {
+  position: relative;
+  margin: 0;
+  width: 100%;
+  aspect-ratio: .78;
+  max-height: 580px;
+  overflow: hidden;
+  background: #424744;
+}
+.jofra-page .benefits-photo img { object-position: center 52%; }
+.jofra-page .process-feature {
+  display: grid;
+  grid-template-columns: minmax(0,1.65fr) minmax(260px,.7fr);
+  gap: clamp(28px,4vw,58px);
+  align-items: center;
+}
+.jofra-page .process-feature .process-grid { min-width: 0; }
+.jofra-page .process-photo {
+  position: relative;
+  margin: 55px 0 0;
+  width: 100%;
+  aspect-ratio: .78;
+  max-height: 490px;
+  overflow: hidden;
+  background: #d3d8d2;
+}
+.jofra-page .process-photo img { object-position: center 57%; }
+.jofra-page .practice-showcase {
+  padding: clamp(60px,8vw,112px) 0;
+  background: var(--dark);
+  color: var(--paper);
+}
+.jofra-page .practice-heading {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(260px,.8fr);
+  align-items: end;
+  gap: 28px;
+  margin-bottom: clamp(26px,4vw,48px);
+}
+.jofra-page .practice-heading h2 {
+  margin: 0;
+  font: 800 clamp(38px,5.4vw,66px)/1.04 var(--font-manrope),sans-serif;
+  letter-spacing: -.06em;
+}
+.jofra-page .practice-heading p {
+  max-width: 500px;
+  margin: 0;
+  color: #d4d9d5;
+  font-size: 16px;
+  line-height: 1.7;
+}
+.jofra-page .practice-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1.15fr) minmax(0,.85fr);
+  gap: clamp(16px,2vw,28px);
+  align-items: start;
+}
+.jofra-page .practice-photo {
+  position: relative;
+  margin: 0;
+  width: 100%;
+  overflow: hidden;
+  background: #454a47;
+}
+.jofra-page .practice-photo-day { aspect-ratio: 1.12; }
+.jofra-page .practice-photo-night {
+  aspect-ratio: .9;
+  margin-top: 54px;
+}
+.jofra-page .practice-photo-day img { object-position: center 64%; }
+.jofra-page .practice-photo-night img { object-position: center 48%; }
+.jofra-page .practice-photo figcaption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 18px 22px;
+  background: var(--near-black);
+  color: var(--paper);
+  font: 700 14px/1.35 var(--font-manrope),sans-serif;
+}
+@media (max-width:1000px) {
+  .jofra-page .benefits-layout,
+  .jofra-page .process-feature {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .jofra-page .benefits-photo {
+    max-height: 560px;
+    aspect-ratio: 1.45;
+  }
+  .jofra-page .process-photo {
+    margin: 34px 0 0;
+    max-height: 530px;
+    aspect-ratio: 1.4;
+  }
+  .jofra-page .practice-heading { grid-template-columns: minmax(0,1fr) minmax(220px,.8fr); }
+}
+@media (max-width:650px) {
+  .jofra-page .expertise-photo-pair {
+    grid-template-columns: minmax(0,1fr);
+    gap: 14px;
+    margin: 14px 0 36px;
+  }
+  .jofra-page .expertise-photo-main { aspect-ratio: 1.18; }
+  .jofra-page .expertise-photo-detail {
+    aspect-ratio: 1.35;
+    margin: 0 0 0 18%;
+  }
+  .jofra-page .benefits-layout { gap: 30px; }
+  .jofra-page .benefits-photo { aspect-ratio: .9; }
+  .jofra-page .process-feature { gap: 0; }
+  .jofra-page .process-photo {
+    aspect-ratio: .92;
+    max-height: 480px;
+    margin-top: 28px;
+  }
+  .jofra-page .practice-heading { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .jofra-page .practice-heading h2 { font-size: clamp(36px,10vw,50px); }
+  .jofra-page .practice-grid { grid-template-columns: minmax(0,1fr); gap: 26px; }
+  .jofra-page .practice-photo-day { aspect-ratio: .95; }
+  .jofra-page .practice-photo-night {
+    aspect-ratio: .95;
+    margin: 0 0 0 12%;
+  }
+  .jofra-page[dir="rtl"] .practice-photo-night { margin: 0 12% 0 0; }
+}

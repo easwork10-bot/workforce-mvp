@@ -69,18 +69,21 @@ visibility is not a security boundary.
 Pages are under `src/app/[locale]/`:
 
 - `/`, `/auth/login`, and `/auth/register`
-- `/employee`, `/employee/shifts`, and `/employee/schedule`
+- `/employee`, `/employee/shifts`, `/employee/applications`, and `/employee/schedule`
 - `/admin`, `/admin/shifts`, and `/admin/shifts/create`
 - `/attendance/check-in`
 
-The employee shift browser is connected to the employee shift APIs. Login and
-registration use the self-hosted auth routes. Several other screens remain
-presentation prototypes backed by hard-coded sample data: employee dashboard,
-employee schedule, admin dashboard, admin shift list/create form, and attendance
-check-in/out page. In particular, the attendance page does not call the implemented
-attendance APIs, and GPS shown there is not a server-side geofence or location
-verification feature. Do not treat sample dashboard values or UI controls as
-persisted workflows.
+The public `/[locale]` page is an integrated Jofra Verkeer marketing landing concept
+(hero, services, benefits, process, contact, and footer sections with static contact
+actions). The employee shift browser and employee applications page are connected to
+their employee APIs. The employee dashboard shows the authenticated employee's
+recent applications from the same applications API. Login and registration use the
+self-hosted auth routes. Other screens remain presentation prototypes backed by
+hard-coded sample data: employee schedule, admin dashboard, admin shift list/create
+form, and attendance check-in/out page. In particular, the attendance page does not
+call the implemented attendance APIs, and GPS shown there is not a server-side
+geofence or location verification feature. Do not treat prototype screen data or
+controls as persisted workflows.
 
 ## API responsibilities
 

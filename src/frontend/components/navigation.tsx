@@ -47,7 +47,8 @@ export default function Navigation() {
       links.push(
         { href: "/employee", label: t("employee.dashboard"), icon: Home },
         { href: "/employee/shifts", label: t("shifts.title"), icon: Users },
-        { href: "/employee/schedule", label: t("employee.my.schedule"), icon: Users }
+        { href: "/employee/schedule", label: t("employee.my.schedule"), icon: Users },
+        { href: "/employee/applications", label: t("employee.my.applications"), icon: Users }
       );
     }
     return links;

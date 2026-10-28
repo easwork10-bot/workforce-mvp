@@ -65,6 +65,8 @@
       "titleLine1": "Voor elke situatie",
       "titleLine2": "de juiste aanpak.",
       "description": "Voor bouw, infrastructuur en evenementen zetten we gekwalificeerde verkeersregelaars in, met professionele werkkleding, de benodigde veiligheidsmiddelen en portofoons.",
+      "overviewAlt": "Wegwerkzaamheden met verkeersregelaars en afzettingen langs de weg.",
+      "detailAlt": "Verkeersregelaar begeleidt verkeer langs tijdelijke wegafzettingen.",
       "items": {
         "0": {
           "tag": "01 — BOUW / INFRA",
@@ -102,6 +104,7 @@
           "description": "Aandacht voor weggebruikers, medewerkers en bezoekers bij iedere opdracht."
         }
       },
+      "imageAlt": "Twee Jofra-collega's overleggen bij een werkbus over de verkeerssituatie.",
       "signature": "VEILIGHEID IN BEWEGING"
     },
     "story": {
@@ -117,6 +120,7 @@
     },
     "process": {
       "eyebrow": "04 / Onze werkwijze",
+      "imageAlt": "Verkeersregelaar geeft een handgebaar op een woonstraat.",
       "asideLine1": "EEN HELDERE ROUTE",
       "asideLine2": "VAN A TOT Z",
       "titleLine1": "Van eerste gesprek",
@@ -139,6 +143,14 @@
           "description": "Tijdens de opdracht blijven we bereikbaar voor afstemming."
         }
       }
+    },
+    "practice": {
+      "title": "Uit de praktijk",
+      "description": "Verkeerssituaties vragen om overzicht en duidelijke afstemming, overdag en in de avond.",
+      "dayAlt": "Verkeersregelaar stemt verkeer af naast een werkvoertuig bij een kruising.",
+      "dayCaption": "Afstemming op locatie",
+      "nightAlt": "Verkeersregelaar begeleidt bezoekers en verkeer tijdens een avondoperatie.",
+      "nightCaption": "Ook in de avond zichtbaar aanwezig"
     },
     "contact": {
       "leadIn": "05 / VOLGENDE STAP",

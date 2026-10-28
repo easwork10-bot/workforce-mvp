@@ -1,8 +1,8 @@
 # Jofra landing showcase
 
 This is a static-only showcase of the Dutch and Arabic Jofra marketing landing
-pages. It reuses the landing feature, locale copy, logo, and worker photo from
-the main project. It does not publish Workforce sign-in, employee/admin pages,
+pages. It reuses the landing feature, locale copy, logo, and curated Jofra
+photographs from the main project. It does not publish Workforce sign-in, employee/admin pages,
 API routes, database services, or runtime secrets.
 
 The public routes also include `/{locale}/aanvragen/` and
