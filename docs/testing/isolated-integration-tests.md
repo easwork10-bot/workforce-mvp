@@ -84,20 +84,22 @@ manually or rename/delete it as part of routine migration execution.
 
 ## Jofra browser checks
 
-After building and verifying the static Pages output as described in
-[`showcase/README.md`](../../showcase/README.md), run:
+Run the browser suite with:
 
 ```powershell
 npm run test:e2e
 ```
 
-The Playwright suite starts the local Next.js app and a loopback-only static export
-server. It forces the Jofra public origin and Resend configuration off for the app
-server, intercepts the form submission in the browser, and never sends email. It
-covers responsive navigation, public-form validation and mocked success, shared
+The Playwright script first builds and verifies the Pages export from the shared
+Jofra components, then starts the local Next.js app and a loopback-only static
+file server. It forces the Jofra public origin and Resend configuration off for the
+app server, intercepts the form submission in the browser, and never sends email.
+It covers responsive navigation, public-form validation and mocked success, shared
 images, Arabic font loading and RTL overflow, the reversible process-line progress,
-and static Dutch/Arabic routes. Install the Playwright Chromium runtime once with
-`npx playwright install chromium` if it is not already present.
+and static Dutch/Arabic routes. To build and verify Pages without running the
+browser suite, run `npm run build:jofra-pages` followed by
+`node scripts/verify-jofra-pages-export.mjs out`. Install the Playwright Chromium
+runtime once with `npx playwright install chromium` if it is not already present.
 
 The backend marks provider-accepted submissions as sent. Explicit local
 configuration failures and provider rejections release the pending idempotency

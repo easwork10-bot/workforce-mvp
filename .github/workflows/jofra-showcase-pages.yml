@@ -64,24 +64,21 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Copy public Jofra images
-        run: mkdir -p showcase/public/jofra/assets && cp public/jofra/assets/* showcase/public/jofra/assets/
-
       - name: Build static Jofra pages
-        run: npx next build showcase
+        run: npm run build:jofra-pages
         env:
           NEXT_PUBLIC_BASE_PATH: /workforce-mvp
           NEXT_PUBLIC_APP_URL: https://easwork10-bot.github.io
 
       - name: Verify static export routes and assets
-        run: node scripts/verify-jofra-pages-export.mjs showcase/out
+        run: node scripts/verify-jofra-pages-export.mjs out
         env:
           NEXT_PUBLIC_BASE_PATH: /workforce-mvp
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: showcase/out
+          path: out
 
   deploy:
     if: github.ref == 'refs/heads/jofra-showcase'

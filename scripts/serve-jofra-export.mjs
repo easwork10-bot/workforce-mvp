@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outputRoot = path.resolve(projectRoot, "showcase", "out");
+const outputRoot = path.resolve(projectRoot, "out");
 const basePath = "/workforce-mvp";
 const contentTypes = new Map([
   [".css", "text/css; charset=utf-8"],

@@ -1,9 +1,10 @@
 # Dependencies
 /node_modules/
 
-# Next.js build output
+# Next.js and static Pages build output
 /.next/
 /out/
+# Preserve ignores for output created by older local showcase builds.
 /showcase/.next/
 /showcase/out/
 /showcase/public/

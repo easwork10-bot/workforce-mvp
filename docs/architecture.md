@@ -75,13 +75,15 @@ Pages are under `src/app/[locale]/`:
 
 The public Jofra Verkeer site includes the landing page, localized inquiry and
 recruitment forms, and server-side Resend delivery. Dutch routes are unprefixed
-in the application; Arabic routes use `/ar`. The GitHub Pages adapter shares the
-same public components and exposes canonical Dutch routes at `/`,
-`/aanvragen/`, and `/werken-bij-jofra/`; Arabic routes use `/ar/`. Legacy static
-`/nl/...` paths remain available but shared links do not target them. The Pages
-export disables forms because static hosting cannot run the API or Resend service.
-Jofra typography is self-hosted and shared by both builds, including Noto Sans
-Arabic with its SIL Open Font License.
+in the application; Arabic routes use `/ar`. The GitHub Pages build adapter in
+[`scripts/jofra-pages/`](../scripts/jofra-pages/) statically renders and hydrates
+the same components from
+[`src/frontend/features/jofra-landing/`](../src/frontend/features/jofra-landing/).
+It emits canonical Dutch routes at `/`, `/aanvragen/`, and `/werken-bij-jofra/`,
+Arabic routes under `/ar/`, and compatibility files under `/nl/`. Shared links
+do not target legacy Dutch paths. Pages disables forms because static hosting
+cannot run the API or Resend service. Jofra typography is self-hosted and shared
+by both builds, including Noto Sans Arabic with its SIL Open Font License.
 
 The employee shift browser and employee applications page are connected to
 their employee APIs. The employee dashboard shows the authenticated employee's
@@ -301,9 +303,9 @@ The Playwright Chromium suite in [`tests/e2e/`](../tests/e2e/) checks the main
 Jofra routes, responsive navigation, image loading, form validation with
 intercepted submissions, Arabic font/RTL overflow, process-line scroll reversal,
 and static Pages routes. Run `npm run test:e2e` after building the Pages export as
-described in [`showcase/README.md`](../showcase/README.md). The app server starts
-with public email delivery disabled; the tests intercept requests and do not send
-real email. Generated artifacts are under `tests/results/playwright/`.
+described in the [root README](../README.md). The app server starts with public
+email delivery disabled; the tests intercept requests and do not send real email.
+Generated artifacts are under `tests/results/playwright/`.
 
 ## Historical records
 
@@ -347,7 +349,7 @@ production launch:
    until reviewed. If any value is live, revoke or rotate it through its owner.
 
 The [Jofra Pages workflow](../.github/workflows/jofra-showcase-pages.yml) runs a
-quality gate and deploys only the static public showcase; it is not a deployment
+quality gate and deploys only the static public Jofra site; it is not a deployment
 for the Workforce backend. No backend production topology or approved production
 migration procedure is defined in this repository. The Supabase migration is
 historical and must not be treated as an active deployment target.
