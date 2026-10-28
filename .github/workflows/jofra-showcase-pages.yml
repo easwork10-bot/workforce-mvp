@@ -1,18 +1,6 @@
 name: Publish Jofra landing showcase
 
 on:
-  push:
-    branches:
-      - jofra-showcase
-    paths:
-      - ".github/workflows/jofra-showcase-pages.yml"
-      - "showcase/**"
-      - "src/frontend/features/jofra-landing/**"
-      - "src/locales/ar.json"
-      - "src/locales/nl.json"
-      - "public/jofra/assets/**"
-      - "package.json"
-      - "package-lock.json"
   workflow_dispatch:
 
 permissions:

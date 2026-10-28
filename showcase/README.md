@@ -6,15 +6,15 @@ photographs from the main project. It does not publish Workforce sign-in, employ
 API routes, database services, or runtime secrets.
 
 The public routes also include `/{locale}/aanvragen/` and
-`/{locale}/werken-bij-jofra/` in Dutch and Arabic. Quote buttons lead to a
-validated personnel-request form. This form **only prepares an email draft**:
-it does not send, store, or confirm delivery of inquiries. Visitors must open
-their email application and send the draft themselves; phone/email alternatives
-are shown. Recruitment is an open email enquiry, not an advertised vacancy.
+`/{locale}/werken-bij-jofra/` in Dutch and Arabic. This static GitHub Pages
+export keeps `/nl` in its Dutch paths because GitHub Pages cannot run the
+Next.js locale middleware needed to redirect `/nl/...` to unprefixed production
+URLs. The production Next.js app uses Dutch without a locale prefix.
 
-Automatic delivery is not configured and cannot run on GitHub Pages alone.
-A server-side endpoint or approved form-delivery provider and a verified delivery
-test are required before presenting an automatically submitted request as sent.
+The forms are rendered for visual preview but cannot submit from GitHub Pages:
+the static export does not include the Next.js API routes or Resend server
+configuration. Use a Node-capable deployment for live submissions; the static
+demo must not be used to send real requests.
 
 The owner confirmed the existing postal address and KvK during the site QA pass;
 they were not independently checked against an external register.
@@ -34,5 +34,5 @@ files expect the repository path prefix `/workforce-mvp`; on GitHub Pages the
 entry page is `/workforce-mvp/`, with Dutch at `/workforce-mvp/nl/` and Arabic
 at `/workforce-mvp/ar/`.
 
-The `jofra-showcase` branch's GitHub Actions workflow builds this output and
-publishes it to GitHub Pages.
+The GitHub Actions workflow can build and publish this output only when manually
+started with `workflow_dispatch`; pushing to `jofra-showcase` does not deploy it.
