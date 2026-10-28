@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/shared/i18n-routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { CalendarDays, Clock3, MapPin } from 'lucide-react';
 import { Button } from '@/frontend/ui/button';

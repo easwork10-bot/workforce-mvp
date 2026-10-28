@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/ui/card';
 import { Button } from '@/frontend/ui/button';
 import { Users, Calendar, Clock, TrendingUp, Plus, Search } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/shared/i18n-routing';
 
 export default function AdminDashboard() {
   const tAdmin = useTranslations('admin');

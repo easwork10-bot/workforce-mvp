@@ -1,27 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { DM_Sans, Manrope } from "next/font/google";
 import Image from "next/image";
 import "./JofraLanding.css";
-import LanguageSwitch from "./LanguageSwitch";
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-  display: "swap",
-  preload: false,
-  weight: ["400", "500", "600", "700"],
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-  display: "swap",
-  preload: false,
-  weight: ["400", "500", "600", "700", "800"],
-});
+import JofraSiteHeader from "./JofraSiteHeader";
+import { dmSans, manrope } from "./jofraFonts";
+import { getJofraPath } from "./jofraRoutes";
 
 const SECTION_LINKS = [
   { href: "#diensten", label: "services" },
@@ -40,13 +25,11 @@ const ASSET_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export default function JofraLanding() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const locale = useLocale();
   const t = useTranslations("jofraLanding");
   const isArabic = locale === "ar";
-  const QUOTE_HREF = `${ASSET_BASE_PATH}/${locale}/aanvragen/`;
-  const recruitmentHref = `${ASSET_BASE_PATH}/${locale}/werken-bij-jofra/`;
+  const QUOTE_HREF = getJofraPath(locale, "/aanvragen");
+  const recruitmentHref = getJofraPath(locale, "/werken-bij-jofra");
 
   useEffect(() => {
     const root = rootRef.current;
@@ -72,43 +55,8 @@ export default function JofraLanding() {
       revealTargets.forEach((target) => target.classList.add("visible"));
     }
 
-    const navAnchors = Array.from(root.querySelectorAll<HTMLAnchorElement>(".navlinks a"));
-    const sections = navAnchors
-      .map((anchor) => {
-        const target = anchor.getAttribute("href");
-        return target?.startsWith("#") ? root.querySelector<HTMLElement>(target) : null;
-      })
-      .filter((section): section is HTMLElement => section !== null);
-
-    let sectionObserver: IntersectionObserver | null = null;
-    if (sections.length && "IntersectionObserver" in window) {
-      sectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          navAnchors.forEach((anchor) => {
-            const active = anchor.getAttribute("href") === `#${entry.target.id}`;
-            anchor.classList.toggle("active", active);
-            if (active) {
-              anchor.setAttribute("aria-current", "location");
-            } else {
-              anchor.removeAttribute("aria-current");
-            }
-          });
-        });
-      }, { rootMargin: "-25% 0px -60% 0px" });
-
-      sections.forEach((section) => sectionObserver?.observe(section));
-    }
-
-    const header = root.querySelector<HTMLElement>(".site-header");
-    const updateHeader = () => header?.classList.toggle("is-scrolled", window.scrollY > 30);
-    updateHeader();
-    window.addEventListener("scroll", updateHeader, { passive: true });
-
     return () => {
       revealObserver?.disconnect();
-      sectionObserver?.disconnect();
-      window.removeEventListener("scroll", updateHeader);
     };
   }, []);
 
@@ -238,108 +186,10 @@ export default function JofraLanding() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-
-    const root = rootRef.current;
-    const isMobile = window.matchMedia("(max-width: 1000px)").matches;
-    const previousOverflow = document.body.style.overflow;
-
-    if (isMobile) {
-      document.body.style.overflow = "hidden";
-      root?.querySelector<HTMLAnchorElement>(".navlinks a")?.focus();
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
-        menuButtonRef.current?.focus();
-        return;
-      }
-
-      if (event.key !== "Tab" || !isMobile || !root) return;
-
-      const focusable = Array.from(root.querySelectorAll<HTMLElement>(".site-header a, .menu"))
-        .filter((element) => element.getClientRects().length > 0);
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first?.focus();
-      }
-    };
-
-    const closeOnDesktopResize = () => {
-      if (window.innerWidth > 1000) setMobileMenuOpen(false);
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    window.addEventListener("resize", closeOnDesktopResize);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("resize", closeOnDesktopResize);
-    };
-  }, [mobileMenuOpen]);
-
   return (
     <div ref={rootRef} className={`jofra-page ${dmSans.variable} ${manrope.variable}`} lang={locale} dir={isArabic ? "rtl" : "ltr"}>
       <a className="skip-link" href="#main-content">{t("public.skip")}</a>
-      <header className="site-header">
-        <div className="header-art" aria-hidden="true">
-          <svg viewBox="0 0 1440 80" preserveAspectRatio="xMidYMax slice" fill="none">
-            <g className="hdr-diag">
-              <path d="M340 80L430 0M368 80L458 0M396 80L486 0M424 80L514 0" />
-            </g>
-            <path className="hdr-road" d="M-20 78C260 78 560 74 860 66S1260 54 1470 50" />
-            <path className="hdr-road" d="M-20 90C260 90 560 86 860 78S1260 66 1470 62" />
-            <path className="hdr-road hdr-road-dash" d="M-20 84C260 84 560 80 860 72S1260 60 1470 56" />
-            <path className="hdr-accent" d="M-20 78C260 78 560 74 860 66S1260 54 1470 50" />
-          </svg>
-        </div>
-        <div className="container">
-          <nav className="nav" aria-label={t("navigation.label")}>
-            <a className="brand" href="#home">
-              <Image className="brandmark" src={`${ASSET_BASE_PATH}/jofra/assets/logo-source.png`} alt="" width={56} height={30} priority />
-              <span className="brandname">JOFRA VERKEER</span>
-            </a>
-            <div className={`navlinks${mobileMenuOpen ? " open" : ""}`} id="jofra-navlinks">
-              {SECTION_LINKS.map((link) => (
-                <a key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)}>
-                  {t(`navigation.${link.label}`)}
-                </a>
-              ))}
-              <a className="btn orange nav-panel-quote" href={QUOTE_HREF} onClick={() => setMobileMenuOpen(false)}>
-                {t("navigation.quote")} <span className="arrow" aria-hidden="true">↗</span>
-              </a>
-            </div>
-            <a className="btn orange nav-quote" href={QUOTE_HREF}>
-              {t("navigation.quote")} <span className="arrow" aria-hidden="true">↗</span>
-            </a>
-            <LanguageSwitch />
-            <button
-              ref={menuButtonRef}
-              className="menu"
-              type="button"
-              aria-label={mobileMenuOpen ? t("navigation.menuClose") : t("navigation.menuOpen")}
-              aria-expanded={mobileMenuOpen}
-              aria-controls="jofra-navlinks"
-              onClick={() => setMobileMenuOpen((open) => !open)}
-            >
-              <span className={`menu-icon${mobileMenuOpen ? " is-open" : ""}`} aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-            </button>
-          </nav>
-        </div>
-      </header>
+      <JofraSiteHeader landing />
 
       <main id="main-content">
         <section className="hero" id="home">
@@ -692,7 +542,7 @@ export default function JofraLanding() {
                   alt={t("process.imageAlt")}
                   fill
                   unoptimized
-                  sizes="(max-width: 1000px) 100vw, 30vw"
+                  sizes="(max-width: 650px) 100vw, (max-width: 1000px) 480px, 30vw"
                 />
               </figure>
             </div>
@@ -712,7 +562,7 @@ export default function JofraLanding() {
                   alt={t("practice.dayAlt")}
                   fill
                   unoptimized
-                  sizes="(max-width: 650px) 100vw, 60vw"
+                  sizes="(max-width: 650px) 100vw, 50vw"
                 />
                 <figcaption>{t("practice.dayCaption")}</figcaption>
               </figure>
@@ -722,7 +572,7 @@ export default function JofraLanding() {
                   alt={t("practice.nightAlt")}
                   fill
                   unoptimized
-                  sizes="(max-width: 650px) 100vw, 40vw"
+                  sizes="(max-width: 650px) 100vw, 50vw"
                 />
                 <figcaption>{t("practice.nightCaption")}</figcaption>
               </figure>

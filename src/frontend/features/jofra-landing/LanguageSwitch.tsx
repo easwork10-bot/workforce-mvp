@@ -1,21 +1,42 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getAlternateJofraPath } from "./jofraRoutes";
 
 export default function LanguageSwitch() {
   const locale = useLocale();
+  const t = useTranslations("jofraLanding");
   const pathname = usePathname();
   const target = locale === "ar" ? "nl" : "ar";
-  const [hash, setHash] = useState("");
+  const [urlSuffix, setUrlSuffix] = useState({ search: "", hash: "" });
   useEffect(() => {
-    const update = () => setHash(window.location.hash);
+    const update = () => setUrlSuffix({
+      search: window.location.search,
+      hash: window.location.hash,
+    });
     update();
     window.addEventListener("hashchange", update);
-    return () => window.removeEventListener("hashchange", update);
+    window.addEventListener("popstate", update);
+    return () => {
+      window.removeEventListener("hashchange", update);
+      window.removeEventListener("popstate", update);
+    };
   }, []);
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-  const route = pathname.replace(new RegExp(`^${base}`), "").replace(/^\/(nl|ar)(?=\/|$)/, `/${target}`);
-  return <a className="language-switch" href={`${base}${route}${hash}`} hrefLang={target} lang={target} dir="auto">{target === "ar" ? "العربية" : "Nederlands"}</a>;
+  const href = getAlternateJofraPath(pathname, target, base);
+  return (
+    <a
+      className="language-switch"
+      href={`${href}${urlSuffix.search}${urlSuffix.hash}`}
+      hrefLang={target}
+      lang={target}
+      dir="auto"
+      aria-label={`${t("navigation.switchLanguage")}: ${t(target === "ar" ? "navigation.arabic" : "navigation.dutch")}`}
+    >
+      <span className="language-code" aria-hidden="true">{target === "ar" ? "ع" : "NL"}</span>
+      <span>{target === "ar" ? "العربية" : "Nederlands"}</span>
+    </a>
+  );
 }

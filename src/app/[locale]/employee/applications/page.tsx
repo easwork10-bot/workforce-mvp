@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/shared/i18n-routing';
 import { useTranslations } from 'next-intl';
 import EmployeeApplicationsList from '@/frontend/features/employee-applications/EmployeeApplicationsList';
 import { Button } from '@/frontend/ui/button';

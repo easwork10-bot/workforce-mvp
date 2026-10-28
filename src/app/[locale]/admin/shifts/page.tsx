@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/ui/card';
 import { Button } from '@/frontend/ui/button';
 import { Calendar, MapPin, Clock, Plus, MoreHorizontal } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/shared/i18n-routing';
 
 const mockShifts = [
   {

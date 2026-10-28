@@ -3,6 +3,7 @@ const withNextIntl = require('next-intl/plugin')('./src/i18n.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  skipTrailingSlashRedirect: true,
   experimental: {
     optimizePackageImports: ['drizzle-orm', 'jose', 'zod'],
     instrumentationHook: true

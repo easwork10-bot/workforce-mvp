@@ -8,11 +8,15 @@
       "alternative": "Liever rechtstreeks contact?",
       "skip": "Ga naar de inhoud",
       "recruitment": "Werken bij Jofra",
+      "requestKicker": "AANVRAAG / SAMENWERKEN",
+      "recruitmentKicker": "WERKEN BIJ / ONS TEAM",
+      "requestImageAlt": "Verkeersregelaar begeleidt verkeer bij een logistiek project",
+      "recruitmentImageAlt": "Collega's van Jofra Verkeer overleggen tijdens het werk",
       "website": "Website"
     },
     "request": {
       "title": "Verkeersregelaars aanvragen",
-      "notice": "Vul uw aanvraag in om een e-mailconcept te maken. Dit formulier verstuurt niets automatisch en bewaart uw gegevens niet. Verstuur het concept zelf vanuit uw e-mailprogramma.",
+      "notice": "Vul uw projectgegevens in. Na verzending sturen we uw aanvraag naar Jofra Verkeer; uw gegevens worden niet in een account of database opgeslagen.",
       "quantity": "Aantal verkeersregelaars",
       "date": "Datum",
       "location": "Projectlocatie",
@@ -20,17 +24,45 @@
       "name": "Naam / contactpersoon",
       "email": "E-mailadres",
       "phone": "Telefoonnummer",
-      "prepare": "E-mailconcept maken",
-      "noScript": "Voor het maken van een concept is JavaScript nodig. Bel ons of stuur uw aanvraag zelf naar info@jofraverkeer.nl.",
+      "prepare": "Aanvraag versturen",
+      "noScript": "Voor het versturen van dit formulier is JavaScript nodig. Bel ons of mail uw aanvraag naar info@jofraverkeer.nl.",
       "invalid": "Controleer alle velden: gebruik een geldig aantal, datum, e-mailadres en volledige contactgegevens.",
-      "ready": "Uw concept is klaar, maar nog niet verstuurd. Open uw e-mailprogramma en verstuur het zelf. Opent er geen e-mailprogramma? Bel ons of mail uw aanvraag naar info@jofraverkeer.nl.",
-      "open": "Concept openen in e-mailprogramma"
+      "ready": "Uw aanvraag is door onze e-mailservice aangenomen. Dit bevestigt niet dat de e-mail al in de inbox is bezorgd."
     },
     "recruitment": {
       "title": "Werken bij Jofra",
-      "description": "Interesse in werken als verkeersregelaar bij Jofra Verkeer? Stuur ons een e-mail met uw contactgegevens en een korte toelichting op uw ervaring en beschikbaarheid.",
+      "description": "Interesse in werken als verkeersregelaar bij Jofra Verkeer? Laat uw contactgegevens en een korte toelichting op uw ervaring en beschikbaarheid achter.",
       "notice": "Dit is een open kennismaking, geen vacature of toezegging van werk. Neem contact op om de mogelijkheden te bespreken.",
-      "action": "Mail uw interesse"
+      "action": "Interesse versturen"
+    },
+    "forms": {
+      "website": "Website",
+      "noScript": "Voor het versturen is JavaScript nodig. Bel ons of mail info@jofraverkeer.nl.",
+      "fieldError": "Controleer dit veld.",
+      "sending": "Verzenden...",
+      "submitInquiry": "Aanvraag versturen",
+      "submitApplication": "Interesse versturen",
+      "inquirySuccess": "Uw aanvraag is door onze e-mailservice aangenomen. Dit is geen bevestiging dat de e-mail al in de inbox is bezorgd. We nemen contact met u op.",
+      "applicationSuccess": "Uw bericht is door onze e-mailservice aangenomen. Dit is geen bevestiging dat de e-mail al in de inbox is bezorgd. Bedankt voor uw interesse.",
+      "failure": "Verzenden is nu niet gelukt. Probeer het later opnieuw of mail info@jofraverkeer.nl.",
+      "fields": {
+        "companyName": "Bedrijfsnaam",
+        "contactName": "Contactpersoon",
+        "email": "E-mailadres",
+        "phone": "Telefoonnummer",
+        "location": "Projectlocatie",
+        "startDate": "Startdatum",
+        "endDate": "Einddatum",
+        "workingHours": "Werktijden (van–tot, ook bij nachtdiensten)",
+        "quantity": "Aantal verkeersregelaars",
+        "additionalInformation": "Aanvullende informatie (optioneel)",
+        "fullName": "Volledige naam",
+        "city": "Woonplaats",
+        "experience": "Ervaring (optioneel)",
+        "qualifications": "Diploma's en kwalificaties (optioneel)",
+        "availability": "Beschikbaarheid (optioneel)",
+        "motivation": "Korte motivatie (optioneel)"
+      }
     },
     "navigation": {
       "label": "Hoofdnavigatie",
@@ -40,7 +72,10 @@
       "contact": "Contact",
       "quote": "Offerte aanvragen",
       "menuOpen": "Menu openen",
-      "menuClose": "Menu sluiten"
+      "menuClose": "Menu sluiten",
+      "switchLanguage": "Taal wijzigen",
+      "arabic": "Arabisch",
+      "dutch": "Nederlands"
     },
     "hero": {
       "eyebrow": "Verkeersveiligheid, goed geregeld",
@@ -120,7 +155,7 @@
     },
     "process": {
       "eyebrow": "04 / Onze werkwijze",
-      "imageAlt": "Verkeersregelaar geeft een handgebaar op een woonstraat.",
+      "imageAlt": "Verkeersregelaar geeft met duidelijke handgebaren aanwijzingen aan het verkeer op een woonstraat.",
       "asideLine1": "EEN HELDERE ROUTE",
       "asideLine2": "VAN A TOT Z",
       "titleLine1": "Van eerste gesprek",
@@ -147,8 +182,8 @@
     "practice": {
       "title": "Uit de praktijk",
       "description": "Verkeerssituaties vragen om overzicht en duidelijke afstemming, overdag en in de avond.",
-      "dayAlt": "Verkeersregelaar stemt verkeer af naast een werkvoertuig bij een kruising.",
-      "dayCaption": "Afstemming op locatie",
+      "dayAlt": "Verkeersregelaar begeleidt verkeer bij een zebrapad naast een bouwmachine.",
+      "dayCaption": "Verkeersbegeleiding bij een kruising",
       "nightAlt": "Verkeersregelaar begeleidt bezoekers en verkeer tijdens een avondoperatie.",
       "nightCaption": "Ook in de avond zichtbaar aanwezig"
     },

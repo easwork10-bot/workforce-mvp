@@ -1,21 +1,41 @@
 import createMiddleware from 'next-intl/middleware';
+import { NextRequest, NextResponse } from 'next/server';
 import { locales, localePrefix, pathnames } from './i18n';
 
-export default createMiddleware({
+const handleI18nRouting = createMiddleware({
   locales,
   localePrefix,
   pathnames,
   defaultLocale: 'nl',
+  localeDetection: false,
 });
+
+export default function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (pathname === '/api' || pathname.startsWith('/api/')) {
+    if (pathname.length > 1 && pathname.endsWith('/')) {
+      const url = new URL(request.url);
+      url.pathname = pathname.replace(/\/+$/, '');
+      return NextResponse.redirect(url, 308);
+    }
+    return NextResponse.next();
+  }
+
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    const url = new URL(request.url);
+    url.pathname = pathname.replace(/\/+$/, '');
+    return NextResponse.redirect(url, 308);
+  }
+
+  return handleI18nRouting(request);
+}
 
 export const config = {
   matcher: [
-    // Match all routes EXCEPT:
-    // - /api/... (including locale-prefixed /nl/api/..., /ar/api/...)
-    // - /_next/static/...
+    // Match app routes and explicitly bypass locale routing for /api.
+    // Exclude framework assets and public Jofra landing-page assets.
     // - /_next/image/...
     // - /favicon.ico
-    // - Public Jofra landing-page assets
-    '/((?!api|_next/static|_next/image|favicon.ico|jofra/assets/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|jofra/assets/).*)',
   ],
 };

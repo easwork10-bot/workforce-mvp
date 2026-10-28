@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname, useRouter } from "@/shared/i18n-routing";
 import { useTranslations } from "next-intl";
 import { Button } from "@/frontend/ui/button";
 import { Users, LogOut, Home, Menu, X } from "lucide-react";
@@ -14,6 +13,7 @@ export default function Navigation() {
   const t = useTranslations("navigation");
   const tCommon = useTranslations("common");
   const pathname = usePathname();
+  const router = useRouter();
   const { user, loading } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
@@ -24,7 +24,7 @@ export default function Navigation() {
   const handleLogout = async () => {
     const res = await fetch("/api/auth/logout", { method: "POST" });
     if (res.ok) {
-      window.location.href = "/auth/login";
+      router.push("/auth/login");
     }
   };
 
@@ -62,10 +62,7 @@ export default function Navigation() {
     );
   }
 
-  const isActive = (href: string) => {
-    if (href === "/") return pathname === `/${pathname.split("/")[1]}` || pathname === "/";
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

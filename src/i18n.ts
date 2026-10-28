@@ -1,10 +1,17 @@
 import { getRequestConfig } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-export const locales = ['nl', 'ar'] as const;
-export type Locale = (typeof locales)[number];
-
-export const localePrefix = 'always';
+import { locales, type Locale } from '@/shared/i18n-routing';
+export {
+  Link,
+  localePrefix,
+  locales,
+  permanentRedirect,
+  redirect,
+  usePathname,
+  useRouter,
+} from '@/shared/i18n-routing';
+export type { Locale } from '@/shared/i18n-routing';
 
 export const pathnames = {
   '/': '/',
