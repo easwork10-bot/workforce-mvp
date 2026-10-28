@@ -1,6 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const staticPagesUrl = "http://127.0.0.1:4173/workforce-mvp";
+
+async function expectArabicFont(page: Page, selector: string) {
+  await expect.poll(() => page.locator(selector).first().evaluate(
+    (element) => getComputedStyle(element).fontFamily,
+  )).toContain('"Jofra Noto Sans Arabic"');
+  const loaded = await page.evaluate(async () => {
+    const sample = "السلام عليكم";
+    await document.fonts.load('40px "Jofra Noto Sans Arabic"', sample);
+    return document.fonts.check('40px "Jofra Noto Sans Arabic"', sample);
+  });
+  expect(loaded).toBe(true);
+}
 
 test("main Jofra landing loads its images and the process line reverses with scroll", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -76,11 +88,6 @@ test("Arabic layout uses RTL typography without horizontal overflow", async ({ p
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.locator(".jofra-page")).toHaveAttribute("dir", "rtl");
-  const arabicFontLoaded = await page.evaluate(async () => {
-    await document.fonts.load('40px "Jofra Noto Sans Arabic"', "السلام عليكم");
-    return document.fonts.check('40px "Jofra Noto Sans Arabic"', "السلام عليكم");
-  });
-  expect(arabicFontLoaded).toBe(true);
   await expect.poll(() => page.evaluate(
     () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
   )).toBe(true);
@@ -89,6 +96,8 @@ test("Arabic layout uses RTL typography without horizontal overflow", async ({ p
   await expect(heading).toBeVisible();
   const textFits = await heading.evaluate((element) => element.scrollWidth <= element.clientWidth + 1);
   expect(textFits).toBe(true);
+  await expectArabicFont(page, ".hero-headline");
+  await expectArabicFont(page, ".site-header .navlinks a");
 
   const processPath = page.locator(".process-grid .route-draw");
   await expect.poll(() => processPath.evaluate(
@@ -142,4 +151,23 @@ test("static Pages export exposes canonical Dutch routes and a disabled Arabic p
   await expect(page.locator("a.language-switch")).toHaveAttribute("href", "/workforce-mvp/aanvragen/");
   await expect(page.locator('form input[name="companyName"]')).toBeDisabled();
   await expect(page.locator('form button[type="submit"]')).toBeDisabled();
+  await expectArabicFont(page, ".public-content h1");
+  await expectArabicFont(page, "form label");
+  await expect.poll(() => page.evaluate(
+    () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+  )).toBe(true);
+
+  await page.goto(`${staticPagesUrl}/ar/werken-bij-jofra/`);
+  await expect(page.locator("html")).toHaveAttribute("lang", "ar");
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.locator('form input[name="fullName"]')).toBeDisabled();
+  await expect(page.locator('form button[type="submit"]')).toBeDisabled();
+  await expect.poll(() => page.locator(".public-card-photo img").evaluate(
+    (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+  )).toBe(true);
+  await expectArabicFont(page, ".public-content h1");
+  await expectArabicFont(page, "form label");
+  await expect.poll(() => page.evaluate(
+    () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+  )).toBe(true);
 });

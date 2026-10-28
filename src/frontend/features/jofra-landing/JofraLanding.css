@@ -4705,6 +4705,24 @@ html:has(.jofra-page) {
   font-family: var(--font-dm-sans),Arial,sans-serif;
   background: #e9eeea;
 }
+.jofra-page.public-page[dir="rtl"] {
+  font-family: var(--font-arabic),Arial,sans-serif;
+}
+.jofra-page[dir="rtl"] .site-header .navlinks a:not(.btn),
+.jofra-page[dir="rtl"] .site-header .nav-quote,
+.jofra-page[dir="rtl"] .site-header .nav-panel-quote {
+  font-family: var(--font-arabic),Arial,sans-serif;
+  letter-spacing: 0;
+}
+.jofra-page.public-page[dir="rtl"] .public-eyebrow,
+.jofra-page.public-page[dir="rtl"] .public-content h1,
+.jofra-page.public-page[dir="rtl"] .public-card-support > p:first-of-type {
+  font-family: var(--font-arabic),Arial,sans-serif;
+  letter-spacing: 0;
+}
+.jofra-page.public-page[dir="rtl"] .public-content h1 {
+  line-height: 1.25;
+}
 .jofra-page .public-content {
   max-width: 1120px;
   padding-block: clamp(34px,7vw,86px);
