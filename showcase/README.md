@@ -5,6 +5,20 @@ pages. It reuses the landing feature, locale copy, logo, and worker photo from
 the main project. It does not publish Workforce sign-in, employee/admin pages,
 API routes, database services, or runtime secrets.
 
+The public routes also include `/{locale}/aanvragen/` and
+`/{locale}/werken-bij-jofra/` in Dutch and Arabic. Quote buttons lead to a
+validated personnel-request form. This form **only prepares an email draft**:
+it does not send, store, or confirm delivery of inquiries. Visitors must open
+their email application and send the draft themselves; phone/email alternatives
+are shown. Recruitment is an open email enquiry, not an advertised vacancy.
+
+Automatic delivery is not configured and cannot run on GitHub Pages alone.
+A server-side endpoint or approved form-delivery provider and a verified delivery
+test are required before presenting an automatically submitted request as sent.
+
+The owner confirmed the existing postal address and KvK during the site QA pass;
+they were not independently checked against an external register.
+
 ## Local preview
 
 From the repository root, run:

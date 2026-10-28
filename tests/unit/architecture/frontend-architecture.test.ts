@@ -40,6 +40,7 @@ describe('frontend foundation architecture', () => {
 
   it('keeps localized framework route shells and frontend component entry points', async () => {
     const requiredRoutes = [
+      'src/app/layout.tsx',
       'src/app/[locale]/layout.tsx',
       'src/app/[locale]/page.tsx',
       'src/app/[locale]/auth/login/page.tsx',
@@ -52,9 +53,13 @@ describe('frontend foundation architecture', () => {
     ];
     await Promise.all(requiredRoutes.map((file) => readFile(path.join(projectRoot, file), 'utf8')));
 
-    const layout = await readFile(path.join(projectRoot, 'src/app/[locale]/layout.tsx'), 'utf8');
-    expect(layout).toContain("dir={locale === 'ar' ? 'rtl' : 'ltr'}");
-    expect(layout).toContain("{ locale: 'nl' }, { locale: 'ar' }");
+    const [rootLayout, localeLayout] = await Promise.all([
+      readFile(path.join(projectRoot, 'src/app/layout.tsx'), 'utf8'),
+      readFile(path.join(projectRoot, 'src/app/[locale]/layout.tsx'), 'utf8'),
+    ]);
+    expect(rootLayout).toContain("lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}");
+    expect(rootLayout).toContain("export const dynamic = 'force-dynamic'");
+    expect(localeLayout).toContain("{ locale: 'nl' }, { locale: 'ar' }");
 
     const [sessionProvider, button, card, navigation] = await Promise.all([
       readFile(path.join(projectRoot, 'src/frontend/components/session-provider.tsx'), 'utf8'),

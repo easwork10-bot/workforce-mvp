@@ -15,6 +15,7 @@ export const config = {
     // - /_next/static/...
     // - /_next/image/...
     // - /favicon.ico
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // - Public Jofra landing-page assets
+    '/((?!api|_next/static|_next/image|favicon.ico|jofra/assets/).*)',
   ],
 };

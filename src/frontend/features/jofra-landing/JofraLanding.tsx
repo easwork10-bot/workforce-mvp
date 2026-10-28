@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { DM_Sans, Manrope } from "next/font/google";
 import Image from "next/image";
 import "./JofraLanding.css";
+import LanguageSwitch from "./LanguageSwitch";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -35,7 +36,6 @@ const ROAD_PATH = "M-20 110C60 108 150 66 250 64C350 62 440 160 570 160C700 160 
 const ROAD_PATH_MOBILE = "M-20 100C60 100 140 60 220 66C330 74 400 160 560 158C720 156 850 100 1020 70";
 const PROCESS_STEPS = ["0", "1", "2", "3"] as const;
 
-const QUOTE_HREF = "mailto:info@jofraverkeer.nl?subject=Offerteaanvraag%20Jofra%20Verkeer";
 const ASSET_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export default function JofraLanding() {
@@ -45,6 +45,8 @@ export default function JofraLanding() {
   const locale = useLocale();
   const t = useTranslations("jofraLanding");
   const isArabic = locale === "ar";
+  const QUOTE_HREF = `${ASSET_BASE_PATH}/${locale}/aanvragen/`;
+  const recruitmentHref = `${ASSET_BASE_PATH}/${locale}/werken-bij-jofra/`;
 
   useEffect(() => {
     const root = rootRef.current;
@@ -68,18 +70,6 @@ export default function JofraLanding() {
       revealTargets.forEach((target) => revealObserver?.observe(target));
     } else {
       revealTargets.forEach((target) => target.classList.add("visible"));
-    }
-
-    const processTrack = root.querySelector<HTMLElement>(".process-grid");
-    let processObserver: IntersectionObserver | null = null;
-    if (!reduceMotion && processTrack && "IntersectionObserver" in window) {
-      processObserver = new IntersectionObserver((entries) => {
-        if (entries[0]?.isIntersecting) {
-          processTrack.classList.add("track-visible");
-          processObserver?.disconnect();
-        }
-      }, { threshold: 0.25 });
-      processObserver.observe(processTrack);
     }
 
     const navAnchors = Array.from(root.querySelectorAll<HTMLAnchorElement>(".navlinks a"));
@@ -117,9 +107,134 @@ export default function JofraLanding() {
 
     return () => {
       revealObserver?.disconnect();
-      processObserver?.disconnect();
       sectionObserver?.disconnect();
       window.removeEventListener("scroll", updateHeader);
+    };
+  }, []);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const track = root?.querySelector<HTMLElement>(".process-grid");
+    const section = root?.querySelector<HTMLElement>("#werkwijze");
+    const svg = track?.querySelector<SVGSVGElement>(".process-route");
+    const base = svg?.querySelector<SVGPathElement>(".route-base");
+    const draw = svg?.querySelector<SVGPathElement>(".route-draw");
+    const preview = svg?.querySelector<SVGPathElement>(".route-preview");
+    if (!root || !track || !section || !svg || !base || !draw || !preview) return;
+
+    const steps = Array.from(track.querySelectorAll<HTMLElement>(".step"));
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const pointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const desktopPath = base.getAttribute("d") ?? "";
+    let thresholds: number[] = [];
+    let start = 0;
+    let end = 1;
+    let frame = 0;
+    let hovered = -1;
+    let focused = -1;
+    let progress = 1;
+
+    const paint = () => {
+      frame = 0;
+      progress = motion.matches ? 1 : Math.max(0, Math.min(1, (window.scrollY - start) / (end - start)));
+      // Scroll coordinates are rounded to device pixels at the range boundaries.
+      if (progress < 0.001) progress = 0;
+      if (progress > 0.999) progress = 1;
+      draw.style.strokeDashoffset = String(1 - progress);
+      let active = -1;
+      thresholds.forEach((value, index) => {
+        if (progress >= value) active = index;
+      });
+      const highlighted = focused >= 0 ? focused : hovered;
+      steps.forEach((step, index) => {
+        step.classList.toggle("step-complete", progress >= thresholds[index]);
+        step.classList.toggle("step-active", active === index);
+        step.classList.toggle("step-highlighted", highlighted === index);
+      });
+      preview.style.opacity = highlighted >= 0 ? "1" : "0";
+      if (highlighted >= 0) {
+        const from = Math.max(0, thresholds[highlighted] - 0.07);
+        const to = Math.min(1, thresholds[highlighted] + 0.07);
+        preview.style.strokeDasharray = `${to - from} 1`;
+        preview.style.strokeDashoffset = String(-from);
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    const measure = () => {
+      const vertical = window.innerWidth <= 1100;
+      const bounds = track.getBoundingClientRect();
+      const rtl = root.dir === "rtl";
+      let path = desktopPath;
+      if (vertical) {
+        steps.forEach((step) => step.querySelector<HTMLElement>(".step-node")?.style.removeProperty("top"));
+        svg.setAttribute("viewBox", `0 0 ${bounds.width} ${bounds.height}`);
+        const x = rtl ? bounds.width - 8 : 8;
+        const ys = steps.map((step) => step.offsetTop + 10);
+        path = `M${x} ${ys[0]}V${ys[ys.length - 1]}`;
+        thresholds = ys.map((y) => (y - ys[0]) / (ys[ys.length - 1] - ys[0]));
+        start = bounds.top + window.scrollY + ys[0] - window.innerHeight * 0.7;
+        end = bounds.top + window.scrollY + ys[ys.length - 1] - window.innerHeight * 0.45;
+      } else {
+        svg.setAttribute("viewBox", "0 0 1000 112");
+      }
+      [base, draw, preview].forEach((element) => element.setAttribute("d", path));
+      if (!vertical) {
+        const length = base.getTotalLength();
+        thresholds = steps.map((step) => {
+          const x = ((rtl ? bounds.width - step.offsetLeft - step.offsetWidth : step.offsetLeft) + 6) / bounds.width * 1000;
+          let lo = 0;
+          let hi = length;
+          for (let i = 0; i < 20; i++) {
+            const mid = (lo + hi) / 2;
+            if (base.getPointAtLength(mid).x < x) lo = mid;
+            else hi = mid;
+          }
+          const distance = (lo + hi) / 2;
+          const node = step.querySelector<HTMLElement>(".step-node");
+          if (node) node.style.top = `${base.getPointAtLength(distance).y - step.offsetTop}px`;
+          return distance / length;
+        });
+        start = section.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.8;
+        end = bounds.top + window.scrollY - window.innerHeight * 0.35;
+      }
+      track.classList.add("route-ready");
+      paint();
+    };
+    const handlers = steps.map((step, index) => {
+      const enter = () => { if (pointer.matches) hovered = index; schedule(); };
+      const leave = () => { hovered = -1; schedule(); };
+      const focus = () => { focused = index; schedule(); };
+      const blur = (event: FocusEvent) => {
+        if (!(event.relatedTarget instanceof Node) || !step.contains(event.relatedTarget)) focused = -1;
+        schedule();
+      };
+      step.addEventListener("pointerenter", enter);
+      step.addEventListener("pointerleave", leave);
+      step.addEventListener("focusin", focus);
+      step.addEventListener("focusout", blur);
+      return () => {
+        step.removeEventListener("pointerenter", enter);
+        step.removeEventListener("pointerleave", leave);
+        step.removeEventListener("focusin", focus);
+        step.removeEventListener("focusout", blur);
+      };
+    });
+    const resize = new ResizeObserver(measure);
+    resize.observe(track);
+    resize.observe(section);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", measure);
+    motion.addEventListener("change", measure);
+    measure();
+    return () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      handlers.forEach((cleanup) => cleanup());
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", measure);
+      motion.removeEventListener("change", measure);
     };
   }, []);
 
@@ -127,7 +242,7 @@ export default function JofraLanding() {
     if (!mobileMenuOpen) return;
 
     const root = rootRef.current;
-    const isMobile = window.matchMedia("(max-width: 780px)").matches;
+    const isMobile = window.matchMedia("(max-width: 1000px)").matches;
     const previousOverflow = document.body.style.overflow;
 
     if (isMobile) {
@@ -144,7 +259,8 @@ export default function JofraLanding() {
 
       if (event.key !== "Tab" || !isMobile || !root) return;
 
-      const focusable = Array.from(root.querySelectorAll<HTMLElement>(".navlinks a, .menu"));
+      const focusable = Array.from(root.querySelectorAll<HTMLElement>(".site-header a, .menu"))
+        .filter((element) => element.getClientRects().length > 0);
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
 
@@ -158,7 +274,7 @@ export default function JofraLanding() {
     };
 
     const closeOnDesktopResize = () => {
-      if (window.innerWidth > 780) setMobileMenuOpen(false);
+      if (window.innerWidth > 1000) setMobileMenuOpen(false);
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -173,6 +289,7 @@ export default function JofraLanding() {
 
   return (
     <div ref={rootRef} className={`jofra-page ${dmSans.variable} ${manrope.variable}`} lang={locale} dir={isArabic ? "rtl" : "ltr"}>
+      <a className="skip-link" href="#main-content">{t("public.skip")}</a>
       <header className="site-header">
         <div className="header-art" aria-hidden="true">
           <svg viewBox="0 0 1440 80" preserveAspectRatio="xMidYMax slice" fill="none">
@@ -204,6 +321,7 @@ export default function JofraLanding() {
             <a className="btn orange nav-quote" href={QUOTE_HREF}>
               {t("navigation.quote")} <span className="arrow" aria-hidden="true">↗</span>
             </a>
+            <LanguageSwitch />
             <button
               ref={menuButtonRef}
               className="menu"
@@ -223,7 +341,7 @@ export default function JofraLanding() {
         </div>
       </header>
 
-      <main>
+      <main id="main-content">
         <section className="hero" id="home">
           <div className="hero-image">
             <Image
@@ -444,7 +562,55 @@ export default function JofraLanding() {
               <a className="text-link" href="#contact">
                 {t("story.link")} <span aria-hidden="true">↗</span>
               </a>
-              <div className="field-coordinate" aria-hidden="true">{t("story.coordinate")}</div>
+              <div className="field-coordinate" aria-hidden="true">
+              {t("story.coordinate")}
+              <div className="story-art" aria-hidden="true">
+                <svg className="story-art-desktop" viewBox="0 -56 700 240" fill="none">
+              <path pathLength="1" className="ba3-main" d="M40 128V106Q40 98 48 96L88 88L106 56Q109 50 116 50H170V30H350V128H314A28 28 0 0 0 258 128H156A28 28 0 0 0 100 128H40Z" />
+              <path pathLength="1" className="ba3-main" d="M98 84L111 60H162V84Z" />
+              <path pathLength="1" className="ba3-main" d="M118 88V128M170 108H350M335 38V108" />
+              <circle pathLength="1" className="ba3-main" cx="128" cy="128" r="22" />
+              <circle pathLength="1" className="ba3-main" cx="286" cy="128" r="22" />
+              <path pathLength="1" className="ba3-main" d="M350 74H410L424 90V128H350M372 74V128M394 74V128" />
+              <path pathLength="1" className="ba3-main" d="M240 8V30M318 8V30" />
+              <path pathLength="1" className="ba3-orange" d="M208 -36H348V8H208Z" />
+              <path pathLength="1" className="ba3-fine" d="M224 -14H330M312 -28L332 -14L312 0" />
+              <circle pathLength="1" className="ba3-fine" cx="128" cy="128" r="9" />
+              <circle pathLength="1" className="ba3-fine" cx="286" cy="128" r="9" />
+              <path pathLength="1" className="ba3-fine" d="M40 112H48V120H40M148 100H160M136 50V44H150V50" />
+              <path pathLength="1" className="ba3-main" d="M470 98H566V132H470Z" />
+              <path pathLength="1" className="ba3-fine" d="M470 132L486 98M486 132L502 98M502 132L518 98M518 132L534 98M534 132L550 98M550 132L566 98" />
+              <path pathLength="1" className="ba3-main" d="M486 132L478 150M550 132L558 150" />
+              <path pathLength="1" className="ba3-main" d="M584 98H680V132H584Z" />
+              <path pathLength="1" className="ba3-fine" d="M584 132L600 98M600 132L616 98M616 132L632 98M632 132L648 98M648 132L664 98M664 132L680 98" />
+              <path pathLength="1" className="ba3-main" d="M600 132L592 150M664 132L672 150" />
+              <path pathLength="1" className="ba3-dim" d="M40 172H350M40 166V178M350 166V178M18 30V128M12 30H24M12 128H24" />
+              <path pathLength="1" className="ba3-ground" d="M-300 150H900" />
+                </svg>
+                <svg className="story-art-mobile" viewBox="176 -56 460 240" fill="none">
+              <path pathLength="1" className="ba3-main" d="M40 128V106Q40 98 48 96L88 88L106 56Q109 50 116 50H170V30H350V128H314A28 28 0 0 0 258 128H156A28 28 0 0 0 100 128H40Z" />
+              <path pathLength="1" className="ba3-main" d="M98 84L111 60H162V84Z" />
+              <path pathLength="1" className="ba3-main" d="M118 88V128M170 108H350M335 38V108" />
+              <circle pathLength="1" className="ba3-main" cx="128" cy="128" r="22" />
+              <circle pathLength="1" className="ba3-main" cx="286" cy="128" r="22" />
+              <path pathLength="1" className="ba3-main" d="M350 74H410L424 90V128H350M372 74V128M394 74V128" />
+              <path pathLength="1" className="ba3-main" d="M240 8V30M318 8V30" />
+              <path pathLength="1" className="ba3-orange" d="M208 -36H348V8H208Z" />
+              <path pathLength="1" className="ba3-fine" d="M224 -14H330M312 -28L332 -14L312 0" />
+              <circle pathLength="1" className="ba3-fine" cx="128" cy="128" r="9" />
+              <circle pathLength="1" className="ba3-fine" cx="286" cy="128" r="9" />
+              <path pathLength="1" className="ba3-fine" d="M40 112H48V120H40M148 100H160M136 50V44H150V50" />
+              <path pathLength="1" className="ba3-main" d="M470 98H566V132H470Z" />
+              <path pathLength="1" className="ba3-fine" d="M470 132L486 98M486 132L502 98M502 132L518 98M518 132L534 98M534 132L550 98M550 132L566 98" />
+              <path pathLength="1" className="ba3-main" d="M486 132L478 150M550 132L558 150" />
+              <path pathLength="1" className="ba3-main" d="M584 98H680V132H584Z" />
+              <path pathLength="1" className="ba3-fine" d="M584 132L600 98M600 132L616 98M616 132L632 98M632 132L648 98M648 132L664 98M664 132L680 98" />
+              <path pathLength="1" className="ba3-main" d="M600 132L592 150M664 132L672 150" />
+              <path pathLength="1" className="ba3-dim" d="M40 172H350M40 166V178M350 166V178M18 30V128M12 30H24M12 128H24" />
+              <path pathLength="1" className="ba3-ground" d="M-300 150H900" />
+                </svg>
+              </div>
+            </div>
             </div>
           </div>
         </section>
@@ -483,41 +649,75 @@ export default function JofraLanding() {
               <svg className="process-route" viewBox="0 0 1000 112" preserveAspectRatio="none" fill="none" aria-hidden="true">
                 <path className="route-base" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
                 <path className="route-draw" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
+                <path className="route-preview" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
               </svg>
             </div>
           </div>
         </section>
 
         <div className="contact-lead-in" aria-hidden="true">
-          <div className="container"><span>{t("contact.leadIn")}</span><span className="contact-lead-arrow">↘</span></div>
+          <div className="contact-boundary reveal">
+            {[
+              { size: "desktop", width: 1440, curve: "M0 22C250 26 610 76 936 76C1130 76 1320 42 1440 18", guides: "M1010 63C1180 58 1330 30 1450 6M1110 72C1230 60 1370 36 1450 20" },
+              { size: "tablet", width: 768, curve: "M0 20C160 24 318 64 500 64C610 64 706 40 768 22", guides: "M560 52C650 42 720 24 778 10" },
+              { size: "phone", width: 390, curve: "M0 18C90 20 164 46 248 46C306 46 354 32 390 20", guides: "M300 37C344 29 374 20 400 14" },
+            ].map(({ size, width, curve, guides }) => (
+              <svg className={`boundary-${size}`} key={size} viewBox={`0 0 ${width} 100`} preserveAspectRatio="none" fill="none">
+                <defs>
+                  <linearGradient id={`boundary-accent-${size}`} x1="0" x2="1">
+                    <stop offset=".36" stopColor="#ef850d" stopOpacity="0" />
+                    <stop offset=".59" stopColor="#ef850d" stopOpacity=".7" />
+                    <stop offset=".8" stopColor="#ef850d" stopOpacity=".7" />
+                    <stop offset=".98" stopColor="#ef850d" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path className="boundary-layer" d={`${curve}L${width} 101H0Z`} transform="translate(0 -7)" />
+                <path className="boundary-surface" d={`${curve}L${width} 101H0Z`} />
+                <path className="boundary-guides" d={guides} />
+                <path className="boundary-accent" pathLength="1" stroke={`url(#boundary-accent-${size})`} d={curve} />
+              </svg>
+            ))}
+          </div>
         </div>
 
         <section className="contact" id="contact">
+          <div className="contact-art" aria-hidden="true">
+            <svg viewBox="0 0 380 280" fill="none" preserveAspectRatio="xMaxYMin meet">
+              <path d="M0 266L242 28L380 16M28 280L270 42L380 32M112 280L350 46" />
+              <path className="contact-art-accent" d="M130 270L380 20" />
+              <path className="contact-art-guide" d="M224 88V116M210 102H238" />
+            </svg>
+          </div>
           <div className="container contact-grid">
             <div className="reveal">
               <span className="eyebrow">{t("contact.eyebrow")}</span>
               <h2>{t("contact.titleLine1")}<br /><span>{t("contact.titleLine2")}</span></h2>
               <p>{t("contact.description")}</p>
-              <a className="btn orange" href={QUOTE_HREF}>
-                {t("contact.quote")} <span className="arrow" aria-hidden="true">↗</span>
-              </a>
+              <div className="contact-actions">
+                <a className="btn orange" href={QUOTE_HREF}>
+                  {t("contact.quote")} <span className="arrow" aria-hidden="true">↗</span>
+                </a>
+                <a className="contact-direct" href="tel:+31641239337">
+                  {t("contact.direct")} <span className="arrow" aria-hidden="true">↗</span>
+                </a>
+              </div>
             </div>
-            <div className="contact-info reveal">
-              <div className="contact-line">
+            <div className="contact-info">
+              <div className="contact-line reveal">
                 <small>{t("contact.phone")}</small>
                 <a className="ltr" href="tel:+31641239337">+31 6 41239337 ↗</a>
               </div>
-              <div className="contact-line">
+              <div className="contact-line reveal">
                 <small>{t("contact.email")}</small>
                 <a className="ltr" href="mailto:info@jofraverkeer.nl">info@jofraverkeer.nl ↗</a>
               </div>
-              <div className="contact-line">
+              <div className="contact-line reveal">
                 <small>{t("contact.address")}</small>
-                <span>Hogeweg 30<br />6247 CJ Gronsveld</span>
+                <span dir="ltr">Hogeweg 30<br />6247 CJ Gronsveld</span>
               </div>
-              <div className="contact-line">
+              <div className="contact-line reveal">
                 <small>{t("contact.company")}</small>
-                <span>Jofra Verkeer B.V.</span>
+                <span dir="ltr">Jofra Verkeer B.V.</span>
               </div>
             </div>
           </div>
@@ -525,11 +725,20 @@ export default function JofraLanding() {
       </main>
 
       <footer className="footer">
+        <div className="footer-boundary" aria-hidden="true">
+          <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
+            <path d="M0 10C280 76 560 58 900 68C1110 74 1320 42 1440 0V81H0Z" />
+          </svg>
+        </div>
         <div className="footer-art reveal" aria-hidden="true">
-          <svg viewBox="0 0 900 420" fill="none" preserveAspectRatio="xMaxYMin slice">
-            <path className="flow-lane" d="M920 40C720 60 640 190 520 300S260 420 60 440" />
-            <path className="flow-lane" d="M920 84C736 104 668 228 552 332S290 450 100 470" />
-            <path className="flow-draw" d="M920 0C700 24 610 160 490 276S230 392 20 410" />
+          <svg viewBox="0 0 360 500" fill="none" preserveAspectRatio="xMaxYMin slice">
+            <path className="footer-plane-orange" d="M182 -30H270V242L182 330Z" />
+            <path className="footer-plane-grey" d="M80 310L296 94V220L80 436Z" />
+            <path className="footer-plane-charcoal" d="M208 408L390 208V500H208Z" />
+            <path className="footer-plane-orange" d="M298 350L390 248V500H298Z" />
+            <path className="footer-cutout" d="M182 242C280 242 312 342 270 420L232 462H182Z" />
+            <path className="footer-construction" d="M8 338L360 -14M38 500L360 178M0 438L360 78M270 0V500" />
+            <path className="footer-accent" pathLength="1" d="M82 372L270 184V40" />
           </svg>
         </div>
         <div className="container">
@@ -539,22 +748,32 @@ export default function JofraLanding() {
                 <Image className="brandmark" src={`${ASSET_BASE_PATH}/jofra/assets/logo-source.png`} alt="" width={56} height={30} />
                 <span className="brandname">JOFRA VERKEER</span>
               </a>
-              <p>{t("footer.tagline")}</p>
+              <span className="footer-statement">{t("footer.tagline")}</span>
+              <p className="footer-message reveal">{t("footer.closingLine1")}<br />{t("footer.closingLine2")}</p>
               <a className="footer-mail" href="mailto:info@jofraverkeer.nl">
                 {t("footer.emailCta")} <span aria-hidden="true">↗</span>
               </a>
             </div>
             <div className="footer-column">
+              <span className="footer-label">{t("navigation.services")}</span>
+              <a href="#diensten">{t("navigation.services")}</a>
+            </div>
+            <div className="footer-column">
               <span className="footer-label">{t("footer.explore")}</span>
-              {SECTION_LINKS.map((link) => (
+              {SECTION_LINKS.filter((link) => link.href !== "#diensten").map((link) => (
                 <a key={link.href} href={link.href}>{t(`navigation.${link.label}`)}</a>
               ))}
+              <a href={recruitmentHref}>{t("public.recruitment")}</a>
             </div>
             <div className="footer-column">
               <span className="footer-label">{t("footer.reach")}</span>
+              <small>{t("contact.phone")}</small>
               <a className="ltr" href="tel:+31641239337">+31 6 41239337</a>
+              <small>{t("contact.email")}</small>
               <a className="ltr" href="mailto:info@jofraverkeer.nl">info@jofraverkeer.nl</a>
-              <p>Hogeweg 30<br />6247 CJ Gronsveld</p>
+              <small>{t("contact.address")}</small>
+              <p dir="ltr">Hogeweg 30<br />6247 CJ Gronsveld</p>
+              <a className="ltr" href="https://www.jofraverkeer.nl">www.jofraverkeer.nl</a>
             </div>
           </div>
           <div className="footer-bottom">

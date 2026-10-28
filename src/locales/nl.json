@@ -3,6 +3,35 @@
     "name": "Workforce MVP"
   },
   "jofraLanding": {
+    "public": {
+      "home": "Terug naar de homepage",
+      "alternative": "Liever rechtstreeks contact?",
+      "skip": "Ga naar de inhoud",
+      "recruitment": "Werken bij Jofra",
+      "website": "Website"
+    },
+    "request": {
+      "title": "Verkeersregelaars aanvragen",
+      "notice": "Vul uw aanvraag in om een e-mailconcept te maken. Dit formulier verstuurt niets automatisch en bewaart uw gegevens niet. Verstuur het concept zelf vanuit uw e-mailprogramma.",
+      "quantity": "Aantal verkeersregelaars",
+      "date": "Datum",
+      "location": "Projectlocatie",
+      "hours": "Werktijden (van–tot, ook bij nachtdiensten)",
+      "name": "Naam / contactpersoon",
+      "email": "E-mailadres",
+      "phone": "Telefoonnummer",
+      "prepare": "E-mailconcept maken",
+      "noScript": "Voor het maken van een concept is JavaScript nodig. Bel ons of stuur uw aanvraag zelf naar info@jofraverkeer.nl.",
+      "invalid": "Controleer alle velden: gebruik een geldig aantal, datum, e-mailadres en volledige contactgegevens.",
+      "ready": "Uw concept is klaar, maar nog niet verstuurd. Open uw e-mailprogramma en verstuur het zelf. Opent er geen e-mailprogramma? Bel ons of mail uw aanvraag naar info@jofraverkeer.nl.",
+      "open": "Concept openen in e-mailprogramma"
+    },
+    "recruitment": {
+      "title": "Werken bij Jofra",
+      "description": "Interesse in werken als verkeersregelaar bij Jofra Verkeer? Stuur ons een e-mail met uw contactgegevens en een korte toelichting op uw ervaring en beschikbaarheid.",
+      "notice": "Dit is een open kennismaking, geen vacature of toezegging van werk. Neem contact op om de mogelijkheden te bespreken.",
+      "action": "Mail uw interesse"
+    },
     "navigation": {
       "label": "Hoofdnavigatie",
       "services": "Diensten",
@@ -35,7 +64,7 @@
       "eyebrow": "01 / Onze expertise",
       "titleLine1": "Voor elke situatie",
       "titleLine2": "de juiste aanpak.",
-      "description": "Van een tijdelijke wegafzetting tot de bezoekersstroom van een evenement: verkeersveiligheid vraagt om overzicht, voorbereiding en mensen die weten wat ze doen.",
+      "description": "Voor bouw, infrastructuur en evenementen zetten we gekwalificeerde verkeersregelaars in, met professionele werkkleding, de benodigde veiligheidsmiddelen en portofoons.",
       "items": {
         "0": {
           "tag": "01 — BOUW / INFRA",
@@ -62,7 +91,7 @@
       "items": {
         "0": {
           "title": "Betrouwbare inzet",
-          "description": "Heldere afspraken en verkeersregelaars die voorbereid op locatie verschijnen."
+          "description": "Flexibele, professionele inzet en heldere afspraken, afgestemd op uw project."
         },
         "1": {
           "title": "Korte lijnen",
@@ -118,13 +147,16 @@
       "titleLine2": "Onze aandacht.",
       "description": "Een project bespreken of een offerte aanvragen? Neem rechtstreeks contact op. We denken graag met u mee.",
       "quote": "Vraag een offerte aan",
+      "direct": "Direct contact",
       "phone": "Telefoon",
       "email": "E-mail",
       "address": "Adres",
       "company": "Onderneming"
     },
     "footer": {
-      "tagline": "Wij ontzorgen uw project volledig.",
+      "closingLine1": "Een veilige route",
+      "closingLine2": "naar uw doel.",
+      "tagline": "Professionele inzet en direct contact voor uw project.",
       "emailCta": "Laten we uw project bespreken",
       "explore": "VERKEN",
       "reach": "BEREIK ONS",
