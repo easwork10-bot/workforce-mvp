@@ -91,6 +91,7 @@ See [database and migration state](./docs/architecture.md#postgresql-and-migrati
 | `npm run dev` | Start the validated local development server |
 | `npm test` | Run database-free unit tests |
 | `npm run test:integration:safe` | Run database-backed tests on disposable isolated services |
+| `npm run test:e2e` | Run Chromium checks for the local Jofra app and static Pages export |
 | `npm run typecheck` | Run the TypeScript check |
 | `npm run lint` | Run the configured lint command |
 | `npm run build` | Create a production build |
@@ -98,3 +99,6 @@ See [database and migration state](./docs/architecture.md#postgresql-and-migrati
 Use only `npm run test:integration:safe` for database-backed tests. It verifies the
 disposable database identity and does not use the development or production
 database. See the [testing guide](./docs/testing/isolated-integration-tests.md).
+The browser suite requires the static export built using the steps in
+[`showcase/README.md`](./showcase/README.md) and a local development environment.
+It intercepts public-form requests and has no real email delivery configuration.

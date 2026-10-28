@@ -74,7 +74,16 @@ Pages are under `src/app/[locale]/`:
 - `/attendance/check-in`
 
 The public Jofra Verkeer site includes the landing page, localized inquiry and
-recruitment forms, and server-side Resend delivery. The employee shift browser and employee applications page are connected to
+recruitment forms, and server-side Resend delivery. Dutch routes are unprefixed
+in the application; Arabic routes use `/ar`. The GitHub Pages adapter shares the
+same public components and exposes canonical Dutch routes at `/`,
+`/aanvragen/`, and `/werken-bij-jofra/`; Arabic routes use `/ar/`. Legacy static
+`/nl/...` paths remain available but shared links do not target them. The Pages
+export disables forms because static hosting cannot run the API or Resend service.
+Jofra typography is self-hosted and shared by both builds, including Noto Sans
+Arabic with its SIL Open Font License.
+
+The employee shift browser and employee applications page are connected to
 their employee APIs. The employee dashboard shows the authenticated employee's
 recent applications from the same applications API. Login and registration use the
 self-hosted auth routes. Other screens remain presentation prototypes backed by
@@ -127,8 +136,11 @@ changing handlers.
   registration, and refresh endpoints apply IP-based rate limits. Session records have a
   seven-day Redis TTL; refresh-token records have a 30-day TTL. Refresh-token claims
   are single-use and atomically claimed; reuse can revoke the user's sessions.
-- Session lookup depends on Redis. Authentication fails closed when session state
-  cannot be established.
+- Refresh rotation looks up the deterministic token key directly; bulk session
+  revocation uses Redis cursor iteration instead of the blocking `KEYS` command.
+- Session lookup depends on Redis. Missing or malformed session records return
+  unauthenticated status, while Redis outages return HTTP 503 rather than appearing
+  as revoked sessions.
 - The fixed-window rate limiter fails closed and returns HTTP 503 when Redis is
   unavailable; authentication requests are not allowed to bypass abuse controls.
 - Runtime PostgreSQL and Redis connections require explicit `DATABASE_URL` and
@@ -285,9 +297,13 @@ Vitest suites plus typecheck, lint, boundary check, and production build, verifi
 protected fixture tables remain empty after the tests, and cleans up only its own
 resources. See [the test guide](./testing/isolated-integration-tests.md) and
 [safe runner](../scripts/test-integration-safe.mjs).
-Playwright is configured for future Chromium tests in `tests/e2e/`, with generated
-artifacts under `tests/results/playwright/`; no browser-test suite is currently
-maintained.
+The Playwright Chromium suite in [`tests/e2e/`](../tests/e2e/) checks the main
+Jofra routes, responsive navigation, image loading, form validation with
+intercepted submissions, Arabic font/RTL overflow, process-line scroll reversal,
+and static Pages routes. Run `npm run test:e2e` after building the Pages export as
+described in [`showcase/README.md`](../showcase/README.md). The app server starts
+with public email delivery disabled; the tests intercept requests and do not send
+real email. Generated artifacts are under `tests/results/playwright/`.
 
 ## Historical records
 
@@ -324,12 +340,14 @@ production launch:
    deployment; idempotent inserts alone do not provide distributed scheduling.
 7. Configure a trusted hosting adapter that populates the framework client IP and
    deploy behind HTTPS so secure cookies and rate limits have the intended properties.
-8. Replace sample-backed pages and validate end-to-end UI flows before representing
-   them as implemented product workflows.
+8. Replace sample-backed pages and validate remaining end-to-end Workforce flows
+   before representing them as implemented product workflows.
 9. Owner-review the seven root `test-*.ts` diagnostics. Previous static review
    found credential-like literals whose validity is unknown; do not execute them
    until reviewed. If any value is live, revoke or rotate it through its owner.
 
-No deployment topology, CI release workflow, or approved production migration
-procedure is defined in this repository. The Supabase migration is historical and
-must not be treated as an active deployment target.
+The [Jofra Pages workflow](../.github/workflows/jofra-showcase-pages.yml) runs a
+quality gate and deploys only the static public showcase; it is not a deployment
+for the Workforce backend. No backend production topology or approved production
+migration procedure is defined in this repository. The Supabase migration is
+historical and must not be treated as an active deployment target.

@@ -94,17 +94,36 @@ describe("Jofra public form contracts", () => {
     expect(getAlternateJofraPath("/aanvragen", "ar", "")).toBe("/ar/aanvragen");
   });
 
-  it("keeps the locale-prefixed path structure in the static showcase export", () => {
+  it("uses unprefixed Dutch and Arabic-prefixed Pages paths", () => {
+    expect(getJofraPath("nl", "/", "/workforce-mvp")).toBe("/workforce-mvp/");
     expect(getJofraPath("nl", "/aanvragen", "/workforce-mvp"))
-      .toBe("/workforce-mvp/nl/aanvragen/");
+      .toBe("/workforce-mvp/aanvragen/");
+    expect(getJofraPath("ar", "/aanvragen", "/workforce-mvp"))
+      .toBe("/workforce-mvp/ar/aanvragen/");
     expect(getAlternateJofraPath("/workforce-mvp/ar/werken-bij-jofra", "nl", "/workforce-mvp"))
-      .toBe("/workforce-mvp/nl/werken-bij-jofra/");
+      .toBe("/workforce-mvp/werken-bij-jofra/");
+    expect(getAlternateJofraPath("/workforce-mvp/aanvragen/", "ar", "/workforce-mvp"))
+      .toBe("/workforce-mvp/ar/aanvragen/");
   });
 
   it("generates canonical and hreflang URLs only when the configured app URL is available", () => {
     const previousAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const previousBasePath = process.env.NEXT_PUBLIC_BASE_PATH;
     process.env.NEXT_PUBLIC_APP_URL = "https://jofraverkeer.example";
     try {
+      process.env.NEXT_PUBLIC_BASE_PATH = "/workforce-mvp";
+      expect(jofraMetadata("nl", "request").alternates).toEqual({
+        canonical: "https://jofraverkeer.example/workforce-mvp/aanvragen/",
+        languages: {
+          nl: "https://jofraverkeer.example/workforce-mvp/aanvragen/",
+          ar: "https://jofraverkeer.example/workforce-mvp/ar/aanvragen/",
+          "x-default": "https://jofraverkeer.example/workforce-mvp/aanvragen/",
+        },
+      });
+      expect(jofraMetadata("ar", "home").alternates?.canonical)
+        .toBe("https://jofraverkeer.example/workforce-mvp/ar/");
+
+      delete process.env.NEXT_PUBLIC_BASE_PATH;
       expect(jofraMetadata("nl", "request").alternates).toEqual({
         canonical: "https://jofraverkeer.example/aanvragen",
         languages: {
@@ -113,11 +132,11 @@ describe("Jofra public form contracts", () => {
           "x-default": "https://jofraverkeer.example/aanvragen",
         },
       });
-      expect(jofraMetadata("ar", "home").alternates?.canonical)
-        .toBe("https://jofraverkeer.example/ar");
     } finally {
       if (previousAppUrl === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
       else process.env.NEXT_PUBLIC_APP_URL = previousAppUrl;
+      if (previousBasePath === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+      else process.env.NEXT_PUBLIC_BASE_PATH = previousBasePath;
     }
   });
 });

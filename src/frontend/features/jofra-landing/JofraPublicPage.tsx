@@ -6,7 +6,7 @@ import JofraSiteHeader from "./JofraSiteHeader";
 import JofraPublicForm from "./JofraPublicForm";
 import { getJofraPath } from "./jofraRoutes";
 import "./JofraLanding.css";
-import { dmSans, manrope } from "./jofraFonts";
+import { arabic, dmSans, manrope } from "./jofraFonts";
 
 export default function JofraPublicPage({ recruitment = false }: { recruitment?: boolean }) {
   const locale = useLocale();
@@ -15,7 +15,7 @@ export default function JofraPublicPage({ recruitment = false }: { recruitment?:
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const staticPreview = Boolean(basePath);
   return (
-    <div className={`jofra-page public-page ${dmSans.variable} ${manrope.variable}`} lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
+    <div className={`jofra-page public-page ${dmSans.variable} ${manrope.variable} ${arabic.variable}`} lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
       <a className="skip-link" href="#main-content">{t("public.skip")}</a>
       <JofraSiteHeader />
       <main id="main-content" className="container public-content">

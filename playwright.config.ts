@@ -19,10 +19,25 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: false,
-    timeout: 120 * 1000,
-  },
+  webServer: [
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: false,
+      timeout: 120 * 1000,
+      env: {
+        NEXT_PUBLIC_BASE_PATH: '',
+        JOFRA_PUBLIC_ORIGINS: '',
+        RESEND_API_KEY: '',
+        JOFRA_FORMS_FROM: '',
+        JOFRA_FORMS_TO: '',
+      },
+    },
+    {
+      command: 'node scripts/serve-jofra-export.mjs',
+      url: 'http://127.0.0.1:4173/workforce-mvp/',
+      reuseExistingServer: false,
+      timeout: 30 * 1000,
+    },
+  ],
 });

@@ -1910,11 +1910,6 @@ html:has(.jofra-page) {
     padding-right: 0;
     padding-left: 12px;
   }
-  .jofra-page[dir="rtl"] .step:nth-child(2),
-  .jofra-page[dir="rtl"] .step:nth-child(4) {
-    padding-right: 20px;
-    padding-left: 0;
-  }
   .jofra-page[dir="rtl"] .step:not(:last-child) {
     margin-left: 0;
   }
@@ -1985,9 +1980,6 @@ html:has(.jofra-page) {
   width: 100%;
   transform: scaleX(0);
   transition: transform 1.1s var(--motion);
-}
-.jofra-page .process-grid.track-visible:after {
-  transform: scaleX(1);
 }
 .jofra-page.motion-enabled .field-photo img {
   transform: scale(1.035);
@@ -2307,10 +2299,6 @@ html:has(.jofra-page) {
 .jofra-page[dir="rtl"] .text-link:hover span {
   transform: translateX(-4px);
 }
-.jofra-page[dir="rtl"] .hero-route-art {
-  right: auto;
-  left: 0;
-}
 @media (max-width: 1100px) {
   .jofra-page[dir="rtl"] .step:nth-child(2),
   .jofra-page[dir="rtl"] .step:nth-child(4) {
@@ -2417,9 +2405,6 @@ html:has(.jofra-page) {
 .jofra-page .btn:focus-visible .arrow {
   transform: translate(3px,-3px);
 }
-.jofra-page .btn.orange:hover {
-  background: var(--orange);
-}
 .jofra-page .btn.orange:active {
   background: var(--orange);
 }
@@ -2464,7 +2449,6 @@ html:has(.jofra-page) {
   margin: 28px 0 24px;
   max-width: 640px;
 }
-.jofra-page .hero .hero-headline>span,
 .jofra-page .hero .hero-headline>span {
   color: var(--orange);
 }

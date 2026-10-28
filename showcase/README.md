@@ -6,11 +6,11 @@ navigation, logo, and curated photographs as the main application. It does not
 publish Workforce sign-in, employee/admin pages, API routes, database services,
 or runtime secrets.
 
-The public routes also include `/{locale}/aanvragen/` and
-`/{locale}/werken-bij-jofra/` in Dutch and Arabic. This static GitHub Pages
-export keeps `/nl` in its Dutch paths because GitHub Pages cannot run the
-Next.js locale middleware needed to redirect `/nl/...` to unprefixed production
-URLs. The production Next.js app uses Dutch without a locale prefix.
+Dutch is published without a locale prefix at `/`, `/aanvragen/`, and
+`/werken-bij-jofra/`. Arabic uses `/ar/`, `/ar/aanvragen/`, and
+`/ar/werken-bij-jofra/`. The older `/nl/...` static routes remain available for
+existing links, but shared navigation and language switching use the canonical
+unprefixed Dutch paths.
 
 The forms are rendered for visual preview but disabled on GitHub Pages, with a
 localized notice explaining how to contact Jofra. Static export does not include
@@ -22,19 +22,28 @@ they were not independently checked against an external register.
 
 ## Local preview
 
-From the repository root, run:
+From the repository root in PowerShell, run:
 
-```sh
-mkdir -p showcase/public/jofra/assets
-cp public/jofra/assets/* showcase/public/jofra/assets/
-NEXT_PUBLIC_BASE_PATH=/workforce-mvp npx next build showcase
-NEXT_PUBLIC_BASE_PATH=/workforce-mvp node scripts/verify-jofra-pages-export.mjs showcase/out
+```powershell
+New-Item -ItemType Directory -Force .\showcase\public\jofra\assets | Out-Null
+Copy-Item .\public\jofra\assets\* .\showcase\public\jofra\assets\
+$env:NEXT_PUBLIC_BASE_PATH = "/workforce-mvp"
+$env:NEXT_PUBLIC_APP_URL = "https://easwork10-bot.github.io"
+npx next build showcase
+node scripts/verify-jofra-pages-export.mjs showcase/out
+Remove-Item Env:\NEXT_PUBLIC_BASE_PATH
+Remove-Item Env:\NEXT_PUBLIC_APP_URL
 ```
 
 Serve the contents of `showcase/out` with a static file server. The generated
 files expect the repository path prefix `/workforce-mvp`; on GitHub Pages the
-entry page is `/workforce-mvp/`, with Dutch at `/workforce-mvp/nl/` and Arabic
-at `/workforce-mvp/ar/`.
+entry page is `/workforce-mvp/`, Dutch subpages are
+`/workforce-mvp/aanvragen/` and `/workforce-mvp/werken-bij-jofra/`, and Arabic
+pages are below `/workforce-mvp/ar/`.
+
+The repeatable browser check is `npm run test:e2e`. It starts the main app with
+public-form email configuration disabled, serves the static export locally, and
+intercepts form API requests; it never sends email.
 
 The GitHub Actions workflow runs typecheck, lint, unit tests, frontend boundary
 checks, and the Workforce production build before building and publishing these

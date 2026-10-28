@@ -13,8 +13,10 @@ const routes = [
   { file: "index.html", locale: "nl", dir: "ltr" },
   { file: "nl/index.html", locale: "nl", dir: "ltr" },
   { file: "ar/index.html", locale: "ar", dir: "rtl" },
+  { file: "aanvragen/index.html", locale: "nl", dir: "ltr", form: "nl" },
   { file: "nl/aanvragen/index.html", locale: "nl", dir: "ltr", form: "nl" },
   { file: "ar/aanvragen/index.html", locale: "ar", dir: "rtl", form: "ar" },
+  { file: "werken-bij-jofra/index.html", locale: "nl", dir: "ltr", form: "nl" },
   { file: "nl/werken-bij-jofra/index.html", locale: "nl", dir: "ltr", form: "nl" },
   { file: "ar/werken-bij-jofra/index.html", locale: "ar", dir: "rtl", form: "ar" },
 ];
@@ -32,6 +34,8 @@ for (const route of routes) {
   assert.match(html, new RegExp(`<html[^>]*dir="${route.dir}"`), `${route.file} has the expected text direction`);
   assert.ok(html.includes(`${basePath}/_next/static/`), `${route.file} uses the Pages base path for Next assets`);
   assert.ok(!html.includes("/_next/image"), `${route.file} does not depend on the unavailable Next image optimizer`);
+  assert.ok(!new RegExp(`href="${basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/nl(?:/|")`).test(html),
+    `${route.file} does not link to the legacy Dutch locale path`);
 
   for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
     const url = match[1];
@@ -72,7 +76,7 @@ for (const stylesheet of stylesheetReferences) {
   }
 }
 
-assert.ok(fontReferences.size >= 8, "The shared self-hosted Jofra font subsets are present.");
+assert.ok(fontReferences.size >= 9, "The shared self-hosted Jofra font subsets, including Arabic, are present.");
 for (const font of fontReferences) {
   await access(path.join(outputRoot, "_next", "static", "media", font));
 }

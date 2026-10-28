@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import "./JofraLanding.css";
 import JofraSiteHeader from "./JofraSiteHeader";
-import { dmSans, manrope } from "./jofraFonts";
+import { arabic, dmSans, manrope } from "./jofraFonts";
 import { getJofraPath } from "./jofraRoutes";
 
 const SECTION_LINKS = [
@@ -187,7 +187,7 @@ export default function JofraLanding() {
   }, []);
 
   return (
-    <div ref={rootRef} className={`jofra-page ${dmSans.variable} ${manrope.variable}`} lang={locale} dir={isArabic ? "rtl" : "ltr"}>
+    <div ref={rootRef} className={`jofra-page ${dmSans.variable} ${manrope.variable} ${arabic.variable}`} lang={locale} dir={isArabic ? "rtl" : "ltr"}>
       <a className="skip-link" href="#main-content">{t("public.skip")}</a>
       <JofraSiteHeader landing />
 

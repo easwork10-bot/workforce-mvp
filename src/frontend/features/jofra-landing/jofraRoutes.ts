@@ -13,7 +13,7 @@ export function getJofraPath(
 ): string {
   const path = normalizedPath(pathname);
   const resolvedLocale = locale === "ar" ? "ar" : "nl";
-  const localePrefix = resolvedLocale === "ar" || basePath ? `/${resolvedLocale}` : "";
+  const localePrefix = resolvedLocale === "ar" ? "/ar" : "";
   const staticPath = basePath && path !== "/" ? `${path}/` : path;
   return `${basePath}${localePrefix}${staticPath}`;
 }
