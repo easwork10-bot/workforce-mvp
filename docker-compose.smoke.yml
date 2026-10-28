@@ -1,3 +1,5 @@
+name: ${WORKFORCE_SMOKE_COMPOSE_PROJECT:?Set a unique WORKFORCE_SMOKE_COMPOSE_PROJECT for this run}
+
 services:
   app:
     build:

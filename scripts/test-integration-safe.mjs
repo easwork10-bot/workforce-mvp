@@ -1,7 +1,19 @@
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { cp, mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { isLocalDockerEndpoint } = require('./docker-endpoint-safety.cjs');
+const {
+  createBuildIsolationEnvironment,
+  hasExactContainerName,
+  isOwnedRunnerContainer,
+  isSafePartialComposeProjectSnapshot,
+} = require('./docker-resource-safety.cjs');
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const composeFile = path.join(projectRoot, 'docker-compose.integration-test.yml');
@@ -23,6 +35,7 @@ const composeEnv = {
 };
 let composeStarted = false;
 let primaryError;
+let runtimeDirectory;
 
 function redact(text) {
   return text.replaceAll(dbPassword, '[redacted]');
@@ -62,6 +75,26 @@ async function compose(args) {
   });
 }
 
+async function prepareLinuxRuntime() {
+  runtimeDirectory = await mkdtemp(path.join(os.tmpdir(), 'workforce-safe-test-runtime-'));
+  await cp(path.join(projectRoot, 'package.json'), path.join(runtimeDirectory, 'package.json'));
+  await cp(path.join(projectRoot, 'package-lock.json'), path.join(runtimeDirectory, 'package-lock.json'));
+  console.log('Preparing Linux-compatible dependencies in temporary storage.');
+  await run(docker, [
+    'run',
+    '--rm',
+    '--network', 'bridge',
+    '--mount', `type=bind,src=${runtimeDirectory},dst=/runtime`,
+    nodeImage,
+    'npm',
+    'ci',
+    '--prefix',
+    '/runtime',
+    '--no-audit',
+    '--no-fund',
+  ]);
+}
+
 async function assertLocalDockerEndpoint() {
   const context = process.env.DOCKER_CONTEXT
     || (await run(docker, ['context', 'show'])).stdout.trim();
@@ -72,8 +105,8 @@ async function assertLocalDockerEndpoint() {
   const endpointHost = process.env.DOCKER_CONTEXT
     ? endpoint?.Host
     : process.env.DOCKER_HOST || endpoint?.Host;
-  if (typeof endpointHost !== 'string' || !endpointHost.startsWith('unix://')) {
-    throw new Error('The safe integration workflow only supports a local Unix-socket Docker daemon.');
+  if (!isLocalDockerEndpoint(endpointHost)) {
+    throw new Error('The safe integration workflow only supports a local Unix-socket or Docker Desktop named-pipe daemon.');
   }
 }
 
@@ -86,6 +119,36 @@ async function getContainer(service) {
 
   const inspected = await run(docker, ['inspect', id]);
   return JSON.parse(inspected.stdout)[0];
+}
+
+async function getComposeResourceSnapshot() {
+  const { stdout: containerOutput } = await run(docker, [
+    'ps', '-a', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.ID}}',
+  ]);
+  const containerIds = containerOutput.trim().split(/\r?\n/).filter(Boolean);
+  const containers = await Promise.all(containerIds.map(async (id) => {
+    const inspected = await run(docker, ['inspect', id]);
+    return JSON.parse(inspected.stdout)[0];
+  }));
+
+  const { stdout: networkOutput } = await run(docker, [
+    'network', 'ls', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.ID}}',
+  ]);
+  const networkIds = networkOutput.trim().split(/\r?\n/).filter(Boolean);
+  const networks = await Promise.all(networkIds.map(async (id) => {
+    const inspected = await run(docker, ['network', 'inspect', id]);
+    return JSON.parse(inspected.stdout)[0];
+  }));
+
+  const { stdout: volumeOutput } = await run(docker, [
+    'volume', 'ls', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.Name}}',
+  ]);
+
+  return {
+    containers,
+    networks,
+    volumeNames: volumeOutput.trim().split(/\r?\n/).filter(Boolean),
+  };
 }
 
 function assertOwnedContainer(container, service) {
@@ -174,7 +237,20 @@ try {
   if (existingNetwork.stdout.trim()) {
     throw new Error('A network with the generated Compose project label already exists; refusing to reuse resources.');
   }
+  const existingVolumes = await run(docker, [
+    'volume', 'ls', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.Name}}',
+  ]);
+  if (existingVolumes.stdout.trim()) {
+    throw new Error('A volume with the generated Compose project label already exists; refusing to reuse resources.');
+  }
+  const existingRunnerNames = await run(docker, [
+    'ps', '-a', '--filter', `name=${runnerName}`, '--format', '{{.Names}}',
+  ]);
+  if (hasExactContainerName(existingRunnerNames.stdout, runnerName)) {
+    throw new Error('The generated worker container name already exists; refusing to reuse resources.');
+  }
 
+  await prepareLinuxRuntime();
   composeStarted = true;
   await compose(['up', '-d', '--wait', '--wait-timeout', '90', 'db', 'redis']);
 
@@ -194,6 +270,7 @@ try {
     '--label', `com.workforce.safe-test-project=${projectName}`,
     '--network', `${projectName}_isolated`,
     '--mount', `type=bind,src=${projectRoot},dst=/workspace`,
+    '--mount', `type=bind,src=${path.join(runtimeDirectory, 'node_modules')},dst=/workspace/node_modules,readonly`,
     '--workdir', '/workspace',
     '--env', 'WORKFORCE_SAFE_DB_PASSWORD',
     '--env', 'WORKFORCE_TEST_DB_SERVER_ADDRESS',
@@ -214,24 +291,49 @@ try {
 } finally {
   if (composeStarted) {
     try {
-      await run(docker, ['rm', '-f', runnerName], {
-        env: { ...process.env, WORKFORCE_SAFE_DB_PASSWORD: dbPassword },
-      });
-    } catch (error) {
-      if (!/No such container/.test(error.message)) {
-        primaryError = primaryError
-          ? new AggregateError([primaryError, error], 'The isolated workflow failed and runner cleanup also failed.')
-          : error;
+      const { stdout } = await run(docker, [
+        'ps', '-a', '--filter', `name=${runnerName}`, '--format', '{{.Names}}',
+      ]);
+      if (hasExactContainerName(stdout, runnerName)) {
+        const inspected = await run(docker, ['inspect', runnerName]);
+        const runner = JSON.parse(inspected.stdout)[0];
+        if (!isOwnedRunnerContainer(
+          runner,
+          runnerName,
+          projectName,
+          `${projectName}_isolated`,
+        )) {
+          throw new Error('The worker container name is not owned by this isolated test run; refusing to remove it.');
+        }
+        await run(docker, ['rm', '-f', runner.Id]);
       }
+    } catch (error) {
+      primaryError = primaryError
+        ? new AggregateError([primaryError, error], 'The isolated workflow failed and runner cleanup also failed.')
+        : error;
     }
 
     try {
       console.log('\nCleaning up the isolated Compose project.');
-      await compose(['down', '--remove-orphans']);
+      const snapshot = await getComposeResourceSnapshot();
+      if (!isSafePartialComposeProjectSnapshot(snapshot, projectName)) {
+        throw new Error('The remaining Compose resources are not exclusively owned disposable resources; refusing cleanup.');
+      }
+      await compose(['down']);
     } catch (cleanupError) {
       primaryError = primaryError
         ? new AggregateError([primaryError, cleanupError], 'The isolated workflow failed and Compose cleanup also failed.')
         : cleanupError;
+    }
+  }
+
+  if (runtimeDirectory) {
+    try {
+      await rm(runtimeDirectory, { recursive: true, force: true });
+    } catch (error) {
+      primaryError = primaryError
+        ? new AggregateError([primaryError, error], 'The isolated workflow failed and temporary dependency cleanup also failed.')
+        : error;
     }
   }
 }
@@ -239,14 +341,10 @@ try {
 if (!primaryError) {
   try {
     console.log('\n> Production build (after disposable services are removed)');
-    const buildEnv = {
-      ...process.env,
-      DATABASE_URL: `postgresql://workforce_test:${dbPassword}@127.0.0.1:5432/workforce_test`,
-      REDIS_URL: 'redis://127.0.0.1:6379',
-      NODE_ENV: 'production',
-      CSRF_SECRET: randomBytes(32).toString('base64url'),
-      SHIFT_REMINDER_JOB_ENABLED: 'false',
-    };
+    const buildEnv = createBuildIsolationEnvironment(
+      process.env,
+      randomBytes(32).toString('base64url'),
+    );
     const build = await run(process.execPath, [
       'node_modules/next/dist/bin/next',
       'build',

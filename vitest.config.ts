@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    fsModuleCache: process.env.WORKFORCE_DISABLE_FS_MODULE_CACHE !== '1',
     include: ['tests/unit/**/*.test.ts'],
     setupFiles: ['./tests/support/setup.ts'],
     testTimeout: 30000,

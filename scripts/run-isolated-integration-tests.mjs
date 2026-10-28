@@ -213,6 +213,7 @@ try {
   process.env.NODE_ENV = 'test';
   process.env.CSRF_SECRET = randomBytes(32).toString('base64url');
   process.env.SHIFT_REMINDER_JOB_ENABLED = 'false';
+  process.env.WORKFORCE_DISABLE_FS_MODULE_CACHE = '1';
 
   const client = await waitForDatabase(databaseUrl);
   try {
@@ -223,11 +224,9 @@ try {
   }
 
   console.log('\n> Initialize the disposable database schema');
-  // The live identity and empty public schema were verified before approving schema changes.
   await run(process.execPath, [
     'node_modules/drizzle-kit/bin.cjs',
-    'push',
-    '--force',
+    'migrate',
     '--config=drizzle.config.ts',
   ]);
 
