@@ -48,6 +48,14 @@ for (const route of routes) {
     const assetMatch = url.match(new RegExp(`^${basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/jofra/assets/(.+)$`));
     if (assetMatch) assetReferences.add(decodeURIComponent(assetMatch[1]));
   }
+  for (const match of html.matchAll(/src[Ss]et="([^"]+)"/g)) {
+    for (const candidate of match[1].split(",")) {
+      const [url, width] = candidate.trim().split(/\s+/);
+      assert.ok(url.startsWith(`${basePath}/jofra/assets/`), `${route.file} responsive source uses the Pages base path`);
+      assert.match(width, /^\d+w$/, `${route.file} uses width-descriptor image sources`);
+      assetReferences.add(decodeURIComponent(url.slice(`${basePath}/jofra/assets/`.length)));
+    }
+  }
 
   if (route.form) {
     assert.ok(html.includes(staticFormNotice[route.form]), `${route.file} explains static form limitations`);

@@ -7,6 +7,8 @@ import "./JofraLanding.css";
 import JofraSiteHeader from "./JofraSiteHeader";
 import { arabic, dmSans, manrope } from "./jofraFonts";
 import { getJofraPath } from "./jofraRoutes";
+import ArrowIcon from "./ArrowIcon";
+import JofraPhoto from "./JofraPhoto";
 
 const SECTION_LINKS = [
   { href: "#diensten", label: "services" },
@@ -194,11 +196,9 @@ export default function JofraLanding() {
       <main id="main-content">
         <section className="hero" id="home">
           <div className="hero-image">
-            <Image
-              src={`${ASSET_BASE_PATH}/jofra/assets/04_s03_mensen_portret.jpg`}
+            <JofraPhoto
+              photo="04_s03_mensen_portret"
               alt={t("hero.imageAlt")}
-              fill
-              unoptimized
               priority
               sizes="(max-width: 900px) 100vw, 55vw"
             />
@@ -233,10 +233,10 @@ export default function JofraLanding() {
               <p className="lead">{t("hero.lead")}</p>
               <div className="hero-actions">
                 <a className="btn orange" href={QUOTE_HREF}>
-                  {t("hero.quote")} <span className="arrow" aria-hidden="true">↗</span>
+                  {t("hero.quote")} <span className="arrow"><ArrowIcon /></span>
                 </a>
                 <a className="btn outline" href="#diensten">
-                  {t("hero.discover")} <span className="arrow" aria-hidden="true">↓</span>
+                  {t("hero.discover")} <span className="arrow"><ArrowIcon direction="down" /></span>
                 </a>
               </div>
               <div className="hero-foot">
@@ -315,21 +315,17 @@ export default function JofraLanding() {
           <div className="container">
             <div className="expertise-photo-pair">
               <figure className="expertise-photo expertise-photo-main reveal">
-                <Image
-                  src={`${ASSET_BASE_PATH}/jofra/assets/01_s01_expertise_site_overview.jpg`}
+                <JofraPhoto
+                  photo="01_s01_expertise_site_overview"
                   alt={t("services.overviewAlt")}
-                  fill
-                  unoptimized
                   sizes="(max-width: 650px) 100vw, 58vw"
                 />
               </figure>
               <figure className="expertise-photo expertise-photo-detail reveal">
-                <Image
-                  src={`${ASSET_BASE_PATH}/jofra/assets/02_s01_expertise_close_control.jpg`}
+                <JofraPhoto
+                  photo="02_s01_expertise_close_control"
                   alt={t("services.detailAlt")}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 650px) 100vw, 36vw"
+                  sizes="(max-width: 650px) 82vw, 36vw"
                 />
               </figure>
             </div>
@@ -342,7 +338,7 @@ export default function JofraLanding() {
                     <strong className="service-title">{t(`services.items.${item}.title`)}</strong>
                   </div>
                   <span className="service-desc">{t(`services.items.${item}.description`)}</span>
-                  <span className="service-arrow" aria-hidden="true">↗</span>
+                  <span className="service-arrow"><ArrowIcon /></span>
                 </a>
               ))}
             </div>
@@ -395,46 +391,42 @@ export default function JofraLanding() {
                 <span className="eyebrow reveal">{t("benefits.eyebrow")}</span>
                 <h2 className="reveal">{t("benefits.titleLine1")}</h2>
                 <p className="benefits-statement reveal">{t("benefits.titleLine2")}</p>
-                <div className="benefit-grid">
-                  {BENEFIT_ITEMS.map((item) => (
-                    <div className="benefit reveal" key={item}>
-                      <span className="benefit-index" aria-hidden="true">{String(Number(item) + 1).padStart(2, "0")}</span>
-                      <strong>{t(`benefits.items.${item}.title`)}</strong>
-                      <p>{t(`benefits.items.${item}.description`)}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="benefits-signature reveal">
-                  <span>JOFRA / VERKEER</span><span className="signature-line" /><span>{t("benefits.signature")}</span>
-                </div>
               </div>
               <figure className="benefits-photo reveal">
-                <Image
-                  src={`${ASSET_BASE_PATH}/jofra/assets/03_s02_waaromjofra_team_talk.jpg`}
+                <JofraPhoto
+                  photo="03_s02_waaromjofra_team_talk"
                   alt={t("benefits.imageAlt")}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 1000px) 100vw, 36vw"
+                  sizes="(max-width: 650px) 82vw, 340px"
                 />
               </figure>
+              <div className="benefit-grid">
+                {BENEFIT_ITEMS.map((item) => (
+                  <div className="benefit reveal" key={item}>
+                    <span className="benefit-index" aria-hidden="true">{String(Number(item) + 1).padStart(2, "0")}</span>
+                    <strong>{t(`benefits.items.${item}.title`)}</strong>
+                    <p>{t(`benefits.items.${item}.description`)}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="benefits-signature reveal">
+                <span>JOFRA / VERKEER</span><span className="signature-line" /><span>{t("benefits.signature")}</span>
+              </div>
             </div>
           </div>
         </section>
 
-        <div className="dark-to-light" aria-hidden="true"><span>→</span></div>
+        <div className="dark-to-light" aria-hidden="true"><span><ArrowIcon direction="right" /></span></div>
 
         <section className="field-story">
           <div className="container field-grid">
             <div className="field-photo reveal">
-              <Image
-                src={`${ASSET_BASE_PATH}/jofra/assets/worker.jpg`}
+              <JofraPhoto
+                photo="worker"
                 alt={t("story.imageAlt")}
-                fill
-                unoptimized
-                sizes="(max-width: 650px) 100vw, 50vw"
+                sizes="(max-width: 1000px) min(100vw, 560px), 50vw"
               />
               <span className="field-photo-caption">
-                {t("story.caption")} <span aria-hidden="true">↗</span>
+                {t("story.caption")} <span><ArrowIcon /></span>
               </span>
             </div>
             <div className="field-copy reveal">
@@ -443,7 +435,7 @@ export default function JofraLanding() {
               <h2>{t("story.titleLine1")} <em>{t("story.titleLine2")}</em></h2>
               <p>{t("story.description")}</p>
               <a className="text-link" href="#contact">
-                {t("story.link")} <span aria-hidden="true">↗</span>
+                {t("story.link")} <span><ArrowIcon /></span>
               </a>
               <div className="field-coordinate" aria-hidden="true">
               {t("story.coordinate")}
@@ -517,10 +509,17 @@ export default function JofraLanding() {
               <span className="eyebrow reveal">{t("process.eyebrow")}</span>
               <span className="process-aside reveal">{t("process.asideLine1")}<br />{t("process.asideLine2")}</span>
             </div>
-            <h2 className="section-title process-head reveal">
-              {t("process.titleLine1")}<br />{t("process.titleLine2")}
-            </h2>
             <div className="process-feature">
+              <h2 className="section-title process-head reveal">
+                {t("process.titleLine1")}<br />{t("process.titleLine2")}
+              </h2>
+              <figure className="process-photo reveal">
+                <JofraPhoto
+                  photo="05_s04_werkwijze_hand_signal"
+                  alt={t("process.imageAlt")}
+                  sizes="(max-width: 650px) 70vw, 260px"
+                />
+              </figure>
               <div className="process-grid">
                 {PROCESS_STEPS.map((step) => (
                   <div className="step reveal" key={step}>
@@ -536,15 +535,6 @@ export default function JofraLanding() {
                   <path className="route-preview" pathLength="1" d="M0 73L5 73C130 73 130 39 255 39C380 39 380 73 505 73C630 73 630 39 755 39C880 39 900 39 1000 20" />
                 </svg>
               </div>
-              <figure className="process-photo reveal">
-                <Image
-                  src={`${ASSET_BASE_PATH}/jofra/assets/05_s04_werkwijze_hand_signal.jpg`}
-                  alt={t("process.imageAlt")}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 650px) 100vw, (max-width: 1000px) 480px, 30vw"
-                />
-              </figure>
             </div>
           </div>
         </section>
@@ -557,22 +547,18 @@ export default function JofraLanding() {
             </div>
             <div className="practice-grid">
               <figure className="practice-photo practice-photo-day reveal">
-                <Image
-                  src={`${ASSET_BASE_PATH}/jofra/assets/06_case_forklift_coordination.jpg`}
+                <JofraPhoto
+                  photo="06_case_forklift_coordination"
                   alt={t("practice.dayAlt")}
-                  fill
-                  unoptimized
                   sizes="(max-width: 650px) 100vw, 50vw"
                 />
                 <figcaption>{t("practice.dayCaption")}</figcaption>
               </figure>
               <figure className="practice-photo practice-photo-night reveal">
-                <Image
-                  src={`${ASSET_BASE_PATH}/jofra/assets/07_case_night_operation.jpg`}
+                <JofraPhoto
+                  photo="07_case_night_operation"
                   alt={t("practice.nightAlt")}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 650px) 100vw, 50vw"
+                  sizes="(max-width: 650px) 88vw, 50vw"
                 />
                 <figcaption>{t("practice.nightCaption")}</figcaption>
               </figure>
@@ -620,21 +606,21 @@ export default function JofraLanding() {
               <p>{t("contact.description")}</p>
               <div className="contact-actions">
                 <a className="btn orange" href={QUOTE_HREF}>
-                  {t("contact.quote")} <span className="arrow" aria-hidden="true">↗</span>
+                  {t("contact.quote")} <span className="arrow"><ArrowIcon /></span>
                 </a>
                 <a className="contact-direct" href="tel:+31641239337">
-                  {t("contact.direct")} <span className="arrow" aria-hidden="true">↗</span>
+                  {t("contact.direct")} <span className="arrow"><ArrowIcon /></span>
                 </a>
               </div>
             </div>
             <div className="contact-info">
               <div className="contact-line reveal">
                 <small>{t("contact.phone")}</small>
-                <a className="ltr" href="tel:+31641239337">+31 6 41239337 ↗</a>
+                <a className="ltr" href="tel:+31641239337">+31 6 41239337 <ArrowIcon /></a>
               </div>
               <div className="contact-line reveal">
                 <small>{t("contact.email")}</small>
-                <a className="ltr" href="mailto:info@jofraverkeer.nl">info@jofraverkeer.nl ↗</a>
+                <a className="ltr" href="mailto:info@jofraverkeer.nl">info@jofraverkeer.nl <ArrowIcon /></a>
               </div>
               <div className="contact-line reveal">
                 <small>{t("contact.address")}</small>
@@ -676,7 +662,7 @@ export default function JofraLanding() {
               <span className="footer-statement">{t("footer.tagline")}</span>
               <p className="footer-message reveal">{t("footer.closingLine1")}<br />{t("footer.closingLine2")}</p>
               <a className="footer-mail" href="mailto:info@jofraverkeer.nl">
-                {t("footer.emailCta")} <span aria-hidden="true">↗</span>
+                {t("footer.emailCta")} <span><ArrowIcon /></span>
               </a>
             </div>
             <div className="footer-column">
@@ -704,7 +690,7 @@ export default function JofraLanding() {
           <div className="footer-bottom">
             <small>© {new Date().getFullYear()} Jofra Verkeer B.V. · KvK 98843397</small>
             <span>{t("footer.slogan")} <span className="footer-orange-dot">●</span></span>
-            <a href="#home">{t("footer.backToTop")}</a>
+            <a href="#home">{t("footer.backToTop")} <ArrowIcon direction="up" /></a>
           </div>
         </div>
       </footer>

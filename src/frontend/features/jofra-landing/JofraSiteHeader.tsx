@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
+import ArrowIcon from "./ArrowIcon";
 import LanguageSwitch from "./LanguageSwitch";
 import { getJofraPath } from "./jofraRoutes";
 
@@ -130,12 +131,12 @@ export default function JofraSiteHeader({ landing = false }: { landing?: boolean
               </a>
             ))}
             <a className="btn orange nav-panel-quote" href={quoteHref} onClick={() => setMenuOpen(false)}>
-              {t("navigation.quote")} <span className="arrow" aria-hidden="true">↗</span>
+              {t("navigation.quote")} <span className="arrow"><ArrowIcon /></span>
             </a>
           </div>
           <div className="nav-actions">
             <a className="btn orange nav-quote" href={quoteHref}>
-              {t("navigation.quote")} <span className="arrow" aria-hidden="true">↗</span>
+              {t("navigation.quote")} <span className="arrow"><ArrowIcon /></span>
             </a>
             <LanguageSwitch />
           </div>

@@ -5,7 +5,7 @@ const staticPagesUrl = "http://127.0.0.1:4173/workforce-mvp";
 async function expectArabicFont(page: Page, selector: string) {
   await expect.poll(() => page.locator(selector).first().evaluate(
     (element) => getComputedStyle(element).fontFamily,
-  )).toContain('"Jofra Noto Sans Arabic"');
+  )).toMatch(/["']?Jofra Noto Sans Arabic["']?,/);
   const loaded = await page.evaluate(async () => {
     const sample = "السلام عليكم";
     await document.fonts.load('40px "Jofra Noto Sans Arabic"', sample);
@@ -30,13 +30,13 @@ test("main Jofra landing loads its images and the process line reverses with scr
   await expect.poll(() => drawPath.evaluate((path) => path.closest(".process-grid")?.classList.contains("route-ready")))
     .toBe(true);
 
-  const offsetAtTop = await drawPath.evaluate((path) => Number(path.style.strokeDashoffset));
+  const offsetAtTop = await drawPath.evaluate((path) => parseFloat(path.style.strokeDashoffset));
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(() => drawPath.evaluate((path) => Number(path.style.strokeDashoffset)))
+  await expect.poll(() => drawPath.evaluate((path) => parseFloat(path.style.strokeDashoffset)))
     .toBeLessThan(offsetAtTop);
-  const offsetAtBottom = await drawPath.evaluate((path) => Number(path.style.strokeDashoffset));
+  const offsetAtBottom = await drawPath.evaluate((path) => parseFloat(path.style.strokeDashoffset));
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect.poll(() => drawPath.evaluate((path) => Number(path.style.strokeDashoffset)))
+  await expect.poll(() => drawPath.evaluate((path) => parseFloat(path.style.strokeDashoffset)))
     .toBeGreaterThan(offsetAtBottom);
 });
 
@@ -112,13 +112,13 @@ test("Arabic layout uses RTL typography without horizontal overflow", async ({ p
   expect(verticalPathX.x).toBeGreaterThan(verticalPathX.width / 2);
   expect(verticalPathX.transform).toBe("none");
 
-  const offsetAtTop = await processPath.evaluate((path) => Number(path.style.strokeDashoffset));
+  const offsetAtTop = await processPath.evaluate((path) => parseFloat(path.style.strokeDashoffset));
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(() => processPath.evaluate((path) => Number(path.style.strokeDashoffset)))
+  await expect.poll(() => processPath.evaluate((path) => parseFloat(path.style.strokeDashoffset)))
     .toBeLessThan(offsetAtTop);
-  const offsetAtBottom = await processPath.evaluate((path) => Number(path.style.strokeDashoffset));
+  const offsetAtBottom = await processPath.evaluate((path) => parseFloat(path.style.strokeDashoffset));
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect.poll(() => processPath.evaluate((path) => Number(path.style.strokeDashoffset)))
+  await expect.poll(() => processPath.evaluate((path) => parseFloat(path.style.strokeDashoffset)))
     .toBeGreaterThan(offsetAtBottom);
 });
 
@@ -127,7 +127,7 @@ test("reduced motion leaves the process route fully drawn", async ({ page }) => 
   await page.goto("/");
 
   const drawPath = page.locator(".process-grid .route-draw");
-  await expect.poll(() => drawPath.evaluate((path) => Number(path.style.strokeDashoffset)))
+  await expect.poll(() => drawPath.evaluate((path) => parseFloat(path.style.strokeDashoffset)))
     .toBe(0);
 });
 

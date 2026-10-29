@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import Image from "next/image";
+import JofraPhoto from "./JofraPhoto";
 import JofraSiteHeader from "./JofraSiteHeader";
 import JofraPublicForm from "./JofraPublicForm";
 import { getJofraPath } from "./jofraRoutes";
@@ -33,12 +33,10 @@ export default function JofraPublicPage({ recruitment = false }: { recruitment?:
             <JofraPublicForm type="application" staticPreview={staticPreview} />
             <aside className="public-card public-card-support">
               <div className="public-card-photo">
-                <Image
-                  src={`${basePath}/jofra/assets/03_s02_waaromjofra_team_talk.jpg`}
+                <JofraPhoto
+                  photo="03_s02_waaromjofra_team_talk"
                   alt={t("public.recruitmentImageAlt")}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 650px) 100vw, 35vw"
+                  sizes="(max-width: 650px) calc(100vw - 66px), min(35vw, 400px)"
                 />
               </div>
               <p>{t("public.alternative")}</p>
@@ -51,12 +49,10 @@ export default function JofraPublicPage({ recruitment = false }: { recruitment?:
             <JofraPublicForm type="inquiry" staticPreview={staticPreview} />
             <aside className="public-card public-card-support">
               <div className="public-card-photo">
-                <Image
-                  src={`${basePath}/jofra/assets/06_case_forklift_coordination.jpg`}
+                <JofraPhoto
+                  photo="06_case_forklift_coordination"
                   alt={t("public.requestImageAlt")}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 650px) 100vw, 35vw"
+                  sizes="(max-width: 650px) calc(100vw - 66px), min(35vw, 400px)"
                 />
               </div>
               <p>{t("public.alternative")}</p>
