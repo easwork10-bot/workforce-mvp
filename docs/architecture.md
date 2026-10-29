@@ -1,9 +1,8 @@
 # Workforce MVP — Current Architecture
 
-This document describes the implementation currently present in the repository. It
-is the technical source of truth; dated plans and the original project handoff are
-historical records, not current implementation specifications. For onboarding, see
-the [root README](../README.md) and [documentation index](./README.md). For safe
+This document describes the implementation currently present in the repository.
+For onboarding and the maintained documentation map, see the
+[root README](../README.md). For safe
 database-backed tests, see the
 [isolated integration-test guide](./testing/isolated-integration-tests.md).
 
@@ -42,9 +41,11 @@ src/
 │   └── validation/     API request schemas
 ├── frontend/
 │   ├── components/     Navigation and client session context
-│   ├── features/       Connected employee shift-browser feature
+│   ├── features/       Jofra public site and connected Workforce features
 │   ├── lib/            Browser-safe shared utilities
 │   └── ui/             Reusable UI primitives
+├── shared/             Browser/server-safe validation contracts
+├── lib/                Framework-facing metadata helpers
 ├── locales/            Dutch and Arabic message catalogs
 ├── i18n.ts             Locale configuration and request messages
 ├── instrumentation.ts  Thin runtime gate
@@ -183,20 +184,21 @@ schema and writes migration artifacts to [`drizzle/`](../drizzle/).
 
 The current Drizzle journal records `0000_wild_agent_zero` and migrations
 `0001_notification_idempotency_expand`, `0002_retire_notification_legacy_indexes`,
-and `0003_damp_unus`. There is also an older `drizzle/0000_melodic_spectrum.sql`
-file that is not present in the current journal, plus the historical
-[Supabase initial schema](./history/database/supabase/001_initial_schema.sql).
-These artifacts represent different historical schema tracks; their presence
-does not establish the state of any existing database. The journaled sequence has
+and `0003_damp_unus`. The unjournaled `0000_melodic_spectrum.sql` and Supabase-era
+SQL were removed from the active checkout after reference inspection found no
+active journal/tooling/deployment consumer. They remain in Git history, not as
+alternate bootstrap scripts. The journaled sequence has
 been verified in a disposable PostgreSQL instance and applied to the confirmed empty
 Windows development database; no Linux database or legacy data volume was touched.
 
-Specifically, the unjournaled `0000_melodic_spectrum.sql` baseline does not contain
+Specifically, the removed `0000_melodic_spectrum.sql` baseline did not contain
 the two partial unique notification indexes present in the journaled
 `0000_wild_agent_zero.sql` baseline:
 `unique_notification_recipient_type_shift` and
-`unique_notification_recipient_type_application`. This remains a separate unresolved migration-history discrepancy. Do not apply the
-unjournaled file or alter the journal as part of routine migration execution.
+`unique_notification_recipient_type_application`. An earlier Linux test-environment
+record reported an extra legacy ledger row. Removing an unused source file does
+not reconcile an existing database's ledger. Preserve such databases and review
+their actual state separately; never replay the old baseline or rewrite a ledger.
 
 **Operational note:** the Windows development database was initialized only after
 verifying its Docker project ownership, loopback port 5433 mapping, database identity,
@@ -245,32 +247,10 @@ English message catalog in the active locale configuration.
 
 ## Development
 
-Use Node.js 24 as declared by [`.nvmrc`](../.nvmrc) and install the locked
-dependencies with `npm ci --legacy-peer-deps`. Copy [`.env.example`](../.env.example)
-to `.env.local`; configure `DATABASE_URL` for the dedicated local development
-database and `REDIS_URL` for its local Redis service. On the reviewed Windows
-workstation, the `work-force` development database is initialized from the journaled
-migrations; other existing databases require their own identity, state, and backup
-review before any migration.
-
-Configure exactly one matching RSA JWT key pair (file variables or base64 variables)
-with at least 2048-bit keys, and set `CSRF_SECRET` to a fresh random value of at
-least 32 bytes. Keep private material outside version control. The
-[development launcher](../scripts/start-dev.cjs) validates these requirements
-before starting Next.js.
-
-The root [`docker-compose.yml`](../docker-compose.yml) is for local development, not
-production. It retains persistent `pgdata` and `redisdata` volumes and the
-directory-derived Compose project name; do not rename the project or volumes without
-identifying existing data. The configurable app/PostgreSQL/Redis host ports bind to
-loopback only, with PostgreSQL defaulting to host port 5433. A required local
-development database password and host-provided JWT secret files replace committed
-or machine-specific credential defaults. Compose must be passed `.env.local` with
-`--env-file`; the host app's Redis URL uses the loopback published port, while the
-Compose app uses service DNS (`redis:6379`) inside its project network.
-The smoke configuration requires a unique project name per run and uses an internal
-network with tmpfs-only PostgreSQL/Redis storage; the safe integration runner creates
-its own random project and refuses nonlocal Docker endpoints.
+Use [development and safe operations](./development.md) for Windows/Linux setup,
+environment/key provisioning, service identity checks, loopback versus container
+endpoints and machine handoffs. The [development launcher](../scripts/start-dev.cjs)
+validates security configuration after loading the local environment.
 
 ## Tests and isolated database workflow
 
@@ -302,31 +282,25 @@ resources. See [the test guide](./testing/isolated-integration-tests.md) and
 The Playwright Chromium suite in [`tests/e2e/`](../tests/e2e/) checks the main
 Jofra routes, responsive navigation, image loading, form validation with
 intercepted submissions, Arabic font/RTL overflow, process-line scroll reversal,
-and static Pages routes. Run `npm run test:e2e` after building the Pages export as
-described in the [root README](../README.md). The app server starts with public
+and static Pages routes. `npm run test:e2e` builds the Pages export and then runs
+Chromium and WebKit serially to avoid competing cold Next.js development reloads.
+The app server starts with public
 email delivery disabled; the tests intercept requests and do not send real email.
 Generated artifacts are under `tests/results/playwright/`.
 
-## Historical records
+## Maintained operational knowledge
 
-- The [historical records index](./history/README.md) links to the dated
-  [implementation plans](./history/plans/) and original
-  [product handoff](./history/workforce-handoff.md).
-- The archived Supabase SQL is a historical artifact, not the active database or
-  runtime configuration. The unused Supabase environment templates and feature-flag
-  module were removed after confirming no current consumers. Use the root
-  `.env.example` for active variable names.
-
-Historical documents may contain unfinished tasks or obsolete implementation
-descriptions. Their original content is retained; verify all current behavior
-against source and this document.
+Use [development and safe operations](./development.md) for machine setup and
+handoffs, [deployment and CI/CD](./deployment.md) for runtime targets and release
+gates, and the [roadmap](./roadmap.md) for unimplemented product intent.
+Historical plans and Supabase SQL are retained in Git history only.
 
 ## Current limitations and deployment readiness
 
 This repository is an MVP codebase, not a production deployment runbook. Before a
 production launch:
 
-1. Reconcile the unjournaled legacy migration file and establish a production
+1. Reconcile any pre-existing legacy migration ledger and establish a production
    database bootstrap, upgrade, rollback, backup, and restore procedure.
 2. Design deployment-specific secret provisioning and rotation for the JWT key pair
    and `CSRF_SECRET`; never use sample or Compose development values.
@@ -351,5 +325,5 @@ production launch:
 The [Jofra Pages workflow](../.github/workflows/jofra-showcase-pages.yml) runs a
 quality gate and deploys only the static public Jofra site; it is not a deployment
 for the Workforce backend. No backend production topology or approved production
-migration procedure is defined in this repository. The Supabase migration is
-historical and must not be treated as an active deployment target.
+migration procedure is defined in this repository. Supabase is not an active
+deployment target.

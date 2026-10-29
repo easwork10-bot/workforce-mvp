@@ -79,8 +79,22 @@ Do not run a migration command with an unset URL or against the persistent devel
 database as a substitute for migration-chain verification.
 
 Only entries in `drizzle/meta/_journal.json` are part of the current migration chain.
-`drizzle/0000_melodic_spectrum.sql` is an unjournaled legacy file; do not apply it
-manually or rename/delete it as part of routine migration execution.
+The unjournaled `0000_melodic_spectrum.sql` was removed after confirming no active
+consumer. Its removal changes no journal hash or existing ledger. Never recover
+and apply that alternate baseline from Git to an existing database.
+
+For a persistent target, stop before writes: confirm project labels, exact
+container/mount ownership, endpoint and database/user identity; inspect schema and
+`drizzle.__drizzle_migrations` read-only; compare hashes/timestamps against the
+journaled SQL; obtain a backup/restore procedure and target-specific approval.
+Ambiguous ownership or legacy ledger rows block migration. Only then consider
+`npx drizzle-kit migrate`; never use `push`, reset a volume, or mark migrations as
+applied manually. The supported automated verification is the disposable runner.
+
+Drizzle hashes the SQL file bytes. A Windows `core.autocrlf=true` checkout can
+therefore produce different hashes from the same Git blobs on Linux. Record the
+deployment artifact's line endings when comparing ledgers; do not rewrite applied
+migrations, normalize their bytes or edit ledger rows to hide a discrepancy.
 
 ## Jofra browser checks
 
@@ -90,7 +104,7 @@ Run the browser suite with:
 npm run test:e2e
 ```
 
-The Playwright script first builds and verifies the Pages export from the shared
+The Playwright script first builds the Pages export from the shared
 Jofra components, then starts the local Next.js app and a loopback-only static
 file server. It forces the Jofra public origin and Resend configuration off for the
 app server, intercepts the form submission in the browser, and never sends email.
@@ -99,7 +113,8 @@ images, Arabic font loading and RTL overflow, the reversible process-line progre
 and static Dutch/Arabic routes. To build and verify Pages without running the
 browser suite, run `npm run build:jofra-pages` followed by
 `node scripts/verify-jofra-pages-export.mjs out`. Install the Playwright Chromium
-runtime once with `npx playwright install chromium` if it is not already present.
+runtime with `npx playwright install chromium webkit` if either engine is missing.
+The suite covers both engines; WebKit on Windows is not real iOS Safari.
 
 The backend marks provider-accepted submissions as sent. Explicit local
 configuration failures and provider rejections release the pending idempotency
