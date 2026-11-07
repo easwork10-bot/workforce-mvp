@@ -129,7 +129,7 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
       expect(shiftIds).toContain(testShiftId2);
     });
 
-    it('should exclude shifts with accepted application', async () => {
+    it('should exclude shifts with an active assignment after acceptance', async () => {
       // Create accepted application (and assignment)
       await db.insert(shiftApplications).values({
         shiftId: testShiftId2,
@@ -170,6 +170,11 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
       const shiftIds = result.data.map(s => s.id);
       // FIXED: Rejected applications should NOT block re-application
       expect(shiftIds).toContain(testShiftId);
+      expect(result.data.find((shift) => shift.id === testShiftId)).toMatchObject({
+        hasApplied: false,
+        canApply: true,
+        applicationStatus: 'rejected',
+      });
     });
 
     it('SHOULD INCLUDE shift with cancelled application', async () => {
@@ -188,6 +193,11 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
       const shiftIds = result.data.map(s => s.id);
       // FIXED: Cancelled applications should NOT block re-application
       expect(shiftIds).toContain(testShiftId2);
+      expect(result.data.find((shift) => shift.id === testShiftId2)).toMatchObject({
+        hasApplied: false,
+        canApply: true,
+        applicationStatus: 'cancelled',
+      });
     });
 
     it('should exclude shifts with active assignment', async () => {
@@ -200,6 +210,44 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
       const shiftIds = result.data.map(s => s.id);
       // testShiftIdFilled has active assignment for testEmployeeId
       expect(shiftIds).not.toContain(testShiftIdFilled);
+    });
+
+    it('does not count a cancelled assignment as active or block reapplication', async () => {
+      await db.insert(shiftAssignments).values({
+        shiftId: testShiftId,
+        employeeId: testEmployeeId,
+        status: 'cancelled',
+        assignedBy: testEmployeeId,
+      });
+
+      const result = await getAvailableShiftsForEmployee({
+        employeeId: testEmployeeId,
+        page: 1,
+        limit: 20,
+      });
+      const shift = result.data.find((item) => item.id === testShiftId);
+
+      expect(shift).toMatchObject({
+        assignedCount: 0,
+        hasActiveAssignment: false,
+        canApply: true,
+      });
+    });
+
+    it('does not list an open shift when active assignments have filled its capacity', async () => {
+      await db.insert(shiftAssignments).values({
+        shiftId: testShiftId2,
+        employeeId: testEmployeeId2,
+        status: 'assigned',
+        assignedBy: testEmployeeId,
+      });
+
+      const result = await getAvailableShiftsForEmployee({
+        employeeId: testEmployeeId,
+        page: 1,
+        limit: 20,
+      });
+      expect(result.data.map((shift) => shift.id)).not.toContain(testShiftId2);
     });
 
     it('SHOULD INCLUDE shift with completed assignment', async () => {
@@ -282,6 +330,7 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
       expect(result).not.toBeNull();
       expect(result!.hasApplied).toBe(true);
       expect(result!.applicationStatus).toBe('pending');
+      expect(result!.canApply).toBe(false);
     });
 
     it('SHOULD RETURN shift details for filled shift employee applied to', async () => {
@@ -296,8 +345,10 @@ describe('Phase 3 Employee API - Shift Browsing & Applications', () => {
 
       // FIXED: Employee should see shift they applied to even if filled
       expect(result).not.toBeNull();
-      expect(result!.hasApplied).toBe(true);
+      expect(result!.hasApplied).toBe(false);
+      expect(result!.hasActiveAssignment).toBe(true);
       expect(result!.applicationStatus).toBe('accepted');
+      expect(result!.canApply).toBe(false);
     });
 
     it('should return null for filled shift employee did not apply to', async () => {

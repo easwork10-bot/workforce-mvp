@@ -3,19 +3,41 @@
     "name": "Workforce MVP"
   },
   "navigation": {
+    "app": {
+      "name": "Workforce MVP"
+    },
     "main": {
       "navigation": "Hoofdnavigatie"
     },
+    "register": "Registreren",
     "dashboard": "Dashboard",
     "shifts": "Shifts",
     "employees": "Werknemers",
     "attendance": "Aanwezigheid",
+    "admin": {
+      "dashboard": "Dashboard",
+      "shifts": "Diensten",
+      "applications": "Sollicitaties",
+      "assignments": "Indelingen",
+      "employees": "Werknemers"
+    },
+    "supervisor": {
+      "dashboard": "Dashboard",
+      "attendance": "Aanwezigheid"
+    },
+    "employee": {
+      "dashboard": "Mijn dashboard",
+      "my": {
+        "schedule": "Mijn rooster",
+        "applications": "Mijn sollicitaties"
+      }
+    },
     "profile": "Profiel",
     "login": "Inloggen",
     "logout": "Uitloggen",
-    "admin": "Admin",
-    "supervisor": "Supervisor",
-    "employee": "Medewerker"
+    "roleAdmin": "Admin",
+    "roleSupervisor": "Supervisor",
+    "roleEmployee": "Medewerker"
   },
   "auth": {
     "login": {
@@ -211,6 +233,48 @@
       "rejected": "Je sollicitatie is afgewezen"
     }
   },
+  "adminShiftManagement": {
+    "description": "Maak concepten, publiceer toekomstige diensten en beheer de planning.",
+    "createDescription": "Maak een conceptdienst aan. Medewerkers zien deze pas nadat je hem publiceert.",
+    "fillDetails": "Vul de gegevens van de dienst in.",
+    "basicInfo": "Basisgegevens",
+    "schedule": "Datum en tijd",
+    "workersCompensation": "Werknemers en vergoeding",
+    "details": "Details",
+    "instructions": "Instructies voor medewerkers",
+    "titlePlaceholder": "bijv. Verkeersregelaar - Amsterdam",
+    "workTypePlaceholder": "bijv. Verkeersregeling, schoonmaak, logistiek",
+    "clientPlaceholder": "Naam van klant of project",
+    "locationPlaceholder": "bijv. Amsterdam Centraal",
+    "descriptionPlaceholder": "Beschrijf de dienst, taken en vereisten...",
+    "instructionsPlaceholder": "Verzamelpunt, kledingvoorschriften of andere instructies",
+    "compensationType": "Type vergoeding",
+    "hourly": "Per uur",
+    "fixed": "Vast bedrag",
+    "daily": "Per dag",
+    "amount": "Bedrag",
+    "submitError": "De dienst kon niet worden aangemaakt.",
+    "invalidLocalTime": "Controleer de datum en tijd. De gekozen tijd bestaat mogelijk niet door de overgang naar zomer- of wintertijd.",
+    "invalidNumber": "Vul geldige getallen in.",
+    "listDescription": "Diensten in je planning",
+    "statusFilter": "Filter op status",
+    "allStatuses": "Alle statussen",
+    "assignedWorkers": "Toegewezen / nodig",
+    "actions": "Acties",
+    "publish": "Publiceren",
+    "publishing": "Publiceren...",
+    "publishError": "De dienst kon niet worden gepubliceerd.",
+    "loading": "Diensten laden...",
+    "loadError": "De diensten konden niet worden geladen.",
+    "empty": "Geen diensten gevonden.",
+    "retry": "Opnieuw proberen",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "pageOf": "Pagina {page} van {total}",
+    "dashboardDescription": "Actuele diensten en hun status.",
+    "totalShifts": "Totaal",
+    "workers": "medewerkers"
+  },
   "employees": {
     "title": "Werknemers",
     "create": "Nieuwe werknemer",
@@ -259,7 +323,100 @@
       "absent": "Afwezig"
     }
   },
+  "adminAssignmentManagement": {
+    "title": "Indelingen bekijken",
+    "description": "Bekijk de huidige en eerdere indelingen van medewerkers.",
+    "filter": "Filter op status",
+    "all": "Alle",
+    "status": {
+      "assigned": "Ingedeeld",
+      "confirmed": "Bevestigd",
+      "cancelled": "Geannuleerd",
+      "completed": "Afgerond"
+    },
+    "list": "Indelingen",
+    "start": "Start:",
+    "end": "Einde:",
+    "assignedAt": "Ingedeeld op:",
+    "refresh": "Vernieuwen",
+    "loading": "Indelingen laden…",
+    "empty": "Geen indelingen gevonden voor dit filter.",
+    "loadError": "Indelingen konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.",
+    "unauthorized": "Je sessie is verlopen. Log opnieuw in.",
+    "forbidden": "Je hebt geen toegang tot deze indelingen.",
+    "unavailable": "De service is tijdelijk niet beschikbaar. Probeer het later opnieuw.",
+    "retry": "Opnieuw proberen",
+    "pagination": "Indelingspagina's",
+    "page": "Pagina {page} van {pages} · {total} indelingen",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "cancel": "Indeling annuleren",
+    "cancelTitle": "Indeling annuleren?",
+    "cancelFor": "Wil je de indeling van {name} voor de dienst “{shift}” annuleren?",
+    "cancelRules": "Annuleren is alleen toegestaan vóór de start van de dienst en zonder eerdere in- of uitcheckgegevens. De server controleert of annuleren nog mogelijk is. De indeling blijft in de historie staan.",
+    "keep": "Indeling behouden",
+    "confirmCancel": "Annulering bevestigen",
+    "cancelling": "Bezig met annuleren…",
+    "cancelled": "De indeling is geannuleerd.",
+    "cancelReplayed": "Deze indeling was al geannuleerd.",
+    "cancelError": "De annulering kon niet worden bevestigd. Controleer de vernieuwde gegevens voordat je opnieuw probeert.",
+    "errors": {
+      "ASSIGNMENT_NOT_FOUND": "De indeling bestaat niet meer. De gegevens worden opnieuw geladen.",
+      "ASSIGNMENT_STATE_CONFLICT": "De status van de indeling is gewijzigd. Controleer de vernieuwde gegevens.",
+      "SHIFT_STARTED": "De dienst is al begonnen. Annuleren is niet meer toegestaan.",
+      "ATTENDANCE_EXISTS": "Er zijn al in- of uitcheckgegevens voor deze indeling. Annuleren is niet toegestaan.",
+      "INVALID_REQUEST": "De annuleringsaanvraag is ongeldig. Controleer de vernieuwde gegevens en probeer opnieuw.",
+      "INTERNAL_ERROR": "De annulering is mislukt. Controleer de vernieuwde gegevens voordat je opnieuw probeert."
+    }
+  },
+  "adminApplicationManagement": {
+    "title": "Sollicitaties beheren",
+    "description": "Beoordeel sollicitaties en bekijk alle eerdere pogingen.",
+    "filter": "Filter op status",
+    "all": "Alle",
+    "status": {
+      "pending": "In afwachting",
+      "accepted": "Geaccepteerd",
+      "rejected": "Afgewezen",
+      "cancelled": "Geannuleerd"
+    },
+    "submitted": "Ingediend: {date}",
+    "capacity": "Ingedeeld: {assigned} / {required}",
+    "remaining": "Beschikbare plaatsen: {count}",
+    "review": "Beoordelen",
+    "reviewFor": "Sollicitatie van {name} beoordelen",
+    "reason": "Reden",
+    "reasonOptional": "Reden voor afwijzing (optioneel)",
+    "approve": "Goedkeuren",
+    "reject": "Afwijzen",
+    "close": "Sluiten",
+    "saving": "Bezig met opslaan…",
+    "approved": "Sollicitatie goedgekeurd. De indeling is opgeslagen.",
+    "rejected": "Sollicitatie afgewezen.",
+    "replayed": "Deze beoordeling was al opgeslagen. De gegevens zijn vernieuwd.",
+    "refresh": "Vernieuwen",
+    "loading": "Sollicitaties laden…",
+    "empty": "Geen sollicitaties gevonden voor dit filter.",
+    "loadError": "Sollicitaties konden niet worden geladen. Probeer het opnieuw.",
+    "reviewError": "De beoordeling kon niet worden bevestigd. Controleer de vernieuwde gegevens voordat je opnieuw probeert.",
+    "unauthorized": "Je sessie is verlopen. Log opnieuw in.",
+    "forbidden": "Geen toegang of ongeldige beveiligingstoken. Vernieuw de pagina en probeer opnieuw.",
+    "retry": "Opnieuw proberen",
+    "pagination": "Sollicitatiepagina's",
+    "page": "Pagina {page} van {pages} · {total} sollicitaties",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "errors": {
+      "APPLICATION_DECISION_CONFLICT": "Deze sollicitatie is inmiddels beoordeeld of geannuleerd. De gegevens worden vernieuwd.",
+      "SHIFT_UNAVAILABLE": "Deze dienst is niet meer beschikbaar voor goedkeuring. De gegevens worden vernieuwd.",
+      "CAPACITY_REACHED": "Alle plaatsen zijn bezet. De gegevens worden vernieuwd.",
+      "ACTIVE_ASSIGNMENT_EXISTS": "Deze medewerker is al ingedeeld voor de dienst. De gegevens worden vernieuwd.",
+      "APPLICATION_NOT_FOUND": "Deze sollicitatie bestaat niet meer. De gegevens worden vernieuwd."
+    }
+  },
   "admin": {
+    "applications": "Sollicitaties beheren",
+    "assignments": "Indelingen bekijken",
     "dashboard": "Admin dashboard",
     "title": "Admin dashboard",
     "employees": "Werknemers beheren",
@@ -325,5 +482,45 @@
     "nl": "Nederlands",
     "ar": "العربية",
     "en": "English"
+  },
+  "employeeApplications": {
+    "title": "Mijn sollicitaties",
+    "description": "Bekijk de diensten waarvoor je hebt gesolliciteerd en de status van je aanvraag.",
+    "loading": "Sollicitaties laden...",
+    "retry": "Opnieuw proberen",
+    "emptyTitle": "Je hebt nog niet gesolliciteerd",
+    "emptyDescription": "Bekijk beschikbare diensten en solliciteer op een dienst die bij je past.",
+    "browseShifts": "Diensten bekijken",
+    "appliedAt": "Gesolliciteerd op {date}",
+    "cancelApplication": "Sollicitatie annuleren",
+    "cancellingApplication": "Annuleren...",
+    "total": "{count, plural, one {# sollicitatie} other {# sollicitaties}}",
+    "status": {
+      "pending": "In behandeling",
+      "accepted": "Geaccepteerd",
+      "rejected": "Afgewezen",
+      "cancelled": "Geannuleerd"
+    },
+    "pagination": {
+      "label": "Paginering van sollicitaties",
+      "previous": "Vorige pagina",
+      "next": "Volgende pagina",
+      "page": "Pagina {page} van {totalPages}"
+    },
+    "errors": {
+      "unauthorized": "Je sessie is verlopen. Log opnieuw in om je sollicitaties te bekijken.",
+      "forbidden": "Je hebt geen toestemming om deze sollicitaties te bekijken.",
+      "invalid": "De aanvraag kan niet worden verwerkt. Vernieuw de pagina en probeer opnieuw.",
+      "server": "Je sollicitaties konden niet worden geladen. Probeer het opnieuw.",
+      "network": "De server is niet bereikbaar. Controleer je verbinding en probeer opnieuw.",
+      "csrf": "De beveiligingstoken kon niet worden opgehaald. Vernieuw de pagina en probeer opnieuw."
+    },
+    "dashboard": {
+      "description": "Bekijk je recente sollicitaties en hun actuele status.",
+      "recentTitle": "Recente sollicitaties",
+      "recentDescription": "De nieuwste aanvragen voor je diensten.",
+      "viewAll": "Alle sollicitaties",
+      "schedule": "Mijn rooster"
+    }
   }
 }

@@ -5,6 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { verifyApplicationHistoryUpgrade } from './verify-application-history-upgrade.mjs';
 
 const { Client } = pg;
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,6 +36,9 @@ const focusedTests = [
   'tests/integration/notification-api.test.ts',
   'tests/integration/core-audit-workflows.test.ts',
   'tests/integration/registration-audit.test.ts',
+  'tests/integration/admin-shift-management.test.ts',
+  'tests/integration/delivery-lifecycle.test.ts',
+  'tests/integration/admin-assignments.test.ts',
 ];
 let databaseUrl;
 let dbProxy;
@@ -84,7 +88,14 @@ function run(command, args, options = {}) {
 
 async function startLoopbackProxy(targetHost, targetPort) {
   const server = createServer((localSocket) => {
+    const started = Date.now();
     const remoteSocket = createConnection({ host: targetHost, port: targetPort });
+    remoteSocket.once('lookup', (error, address) => {
+      console.log(`[test proxy:${targetPort}] DNS ${Date.now() - started}ms ${error?.code || address}`);
+    });
+    remoteSocket.once('connect', () => {
+      console.log(`[test proxy:${targetPort}] connected ${Date.now() - started}ms`);
+    });
     localSocket.pipe(remoteSocket);
     remoteSocket.pipe(localSocket);
     localSocket.once('error', () => remoteSocket.destroy());
@@ -176,9 +187,10 @@ async function assertFixturesEmpty(client, stage) {
   }
 }
 
-async function runQualityCommand(label, command, args) {
+async function runQualityCommand(label, command, args, options = {}) {
   console.log(`\n> ${label}`);
   const result = await run(command, args, {
+    ...options,
     env: {
       ...process.env,
       DATABASE_URL: databaseUrl,
@@ -213,6 +225,7 @@ try {
   process.env.NODE_ENV = 'test';
   process.env.CSRF_SECRET = randomBytes(32).toString('base64url');
   process.env.SHIFT_REMINDER_JOB_ENABLED = 'false';
+  process.env.WORKFORCE_DISABLE_FS_MODULE_CACHE = '1';
 
   const client = await waitForDatabase(databaseUrl);
   try {
@@ -223,11 +236,10 @@ try {
   }
 
   console.log('\n> Initialize the disposable database schema');
-  // The live identity and empty public schema were verified before approving schema changes.
+  await verifyApplicationHistoryUpgrade(databaseUrl, projectRoot);
   await run(process.execPath, [
     'node_modules/drizzle-kit/bin.cjs',
-    'push',
-    '--force',
+    'migrate',
     '--config=drizzle.config.ts',
   ]);
 
@@ -236,6 +248,23 @@ try {
     await assertFixturesEmpty(fixtureClient, 'before tests');
   } finally {
     await fixtureClient.end();
+  }
+
+  if (process.env.WORKFORCE_SAFE_BROWSER_APP) {
+    const browserApp = process.env.WORKFORCE_SAFE_BROWSER_APP;
+    await verifyLiveDatabaseIdentity();
+    await runQualityCommand('Production Chromium/WebKit browser tests (real backend and UI regressions)',
+      process.execPath, [
+        path.join(browserApp, 'node_modules/@playwright/test/cli.js'),
+        'test', '--config', 'tests/real-backend/playwright.config.ts',
+      ], { cwd: browserApp });
+    const afterBrowser = await waitForDatabase(databaseUrl);
+    try {
+      await assertFixturesEmpty(afterBrowser, 'after real-backend browser tests');
+    } finally {
+      await afterBrowser.end();
+    }
+    console.log('Real-backend browser fixtures removed and protected tables verified empty.');
   }
 
   await runQualityCommand('Focused database safety, auth, and business tests',

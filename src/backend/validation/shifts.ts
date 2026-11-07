@@ -58,6 +58,14 @@ export const shiftQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
   sortBy: z.enum(['startAt', 'createdAt', 'title']).default('startAt'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
+}).refine((data) => {
+  if (data.startFrom && data.startTo) {
+    return new Date(data.startTo) >= new Date(data.startFrom);
+  }
+  return true;
+}, {
+  message: 'End of date range must not be before its start',
+  path: ['startTo'],
 });
 
 // Shift ID param

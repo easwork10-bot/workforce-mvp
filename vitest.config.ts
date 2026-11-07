@@ -10,6 +10,7 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
     fileParallelism: false,
+    fsModuleCache: process.env.WORKFORCE_DISABLE_FS_MODULE_CACHE !== '1',
     // Database test files share fixture tables and must not overlap.
     sequence: {
       hooks: 'list',
@@ -21,5 +22,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       'server-only': path.resolve(__dirname, './node_modules/next/dist/compiled/server-only/empty.js'),
     },
+  },
+  oxc: {
+    jsx: { runtime: 'automatic' },
   },
 });

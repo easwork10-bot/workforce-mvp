@@ -71,6 +71,11 @@ export async function upsertAttendance(
     const now = new Date();
 
     if (action === 'check_in') {
+      const [assignment] = await tx.select().from(shiftAssignments)
+        .where(eq(shiftAssignments.id, assignmentId)).for('update').limit(1);
+      if (!assignment || !['assigned', 'confirmed'].includes(assignment.status)) {
+        throw new Error('Cannot check in for an inactive assignment');
+      }
       const existing = await tx
         .select()
         .from(attendanceRecords)

@@ -13,6 +13,10 @@ export type EmployeeShift = {
   applicationCount: number;
   assignedCount: number;
   hasApplied: boolean;
+  hasActiveAssignment: boolean;
+  canApply: boolean;
+  applicationStatus: 'pending' | 'accepted' | 'rejected' | 'cancelled' | null;
+  applicationId: string | null;
 };
 
 export type EmployeeShiftPage = {
@@ -65,7 +69,12 @@ function isEmployeeShift(value: unknown): value is EmployeeShift {
     && (typeof value.description === 'string' || value.description === null)
     && typeof value.applicationCount === 'number'
     && typeof value.assignedCount === 'number'
-    && typeof value.hasApplied === 'boolean';
+    && typeof value.hasApplied === 'boolean'
+    && typeof value.hasActiveAssignment === 'boolean'
+    && typeof value.canApply === 'boolean'
+    && (value.applicationStatus === null
+      || ['pending', 'accepted', 'rejected', 'cancelled'].includes(String(value.applicationStatus)))
+    && (typeof value.applicationId === 'string' || value.applicationId === null);
 }
 
 function isEmployeeShiftPage(value: unknown): value is EmployeeShiftPage {
@@ -169,7 +178,10 @@ export async function applyForEmployeeShift(shiftId: string): Promise<void> {
     },
   });
 
-  if (!isRecord(body) || typeof body.message !== 'string' || typeof body.applicationId !== 'string') {
+  if (!isRecord(body)
+    || body.code !== 'APPLICATION_CREATED'
+    || typeof body.message !== 'string'
+    || typeof body.applicationId !== 'string') {
     throw new EmployeeShiftApiError('server', 'The application response was invalid.');
   }
 }

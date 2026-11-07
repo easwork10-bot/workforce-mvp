@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/shared/i18n-routing";
 import { useTranslations } from "next-intl";
 import { Button } from "@/frontend/ui/button";
 import { Users, LogOut, Home, Menu, X } from "lucide-react";
@@ -34,6 +33,8 @@ export default function Navigation() {
       links.push(
         { href: "/admin", label: t("admin.dashboard"), icon: Home },
         { href: "/admin/shifts", label: t("admin.shifts"), icon: Users },
+        { href: "/admin/applications", label: t("admin.applications"), icon: Users },
+        { href: "/admin/assignments", label: t("admin.assignments"), icon: Users },
         { href: "/admin/employees", label: t("admin.employees"), icon: Users }
       );
     }
@@ -47,7 +48,8 @@ export default function Navigation() {
       links.push(
         { href: "/employee", label: t("employee.dashboard"), icon: Home },
         { href: "/employee/shifts", label: t("shifts.title"), icon: Users },
-        { href: "/employee/schedule", label: t("employee.my.schedule"), icon: Users }
+        { href: "/employee/schedule", label: t("employee.my.schedule"), icon: Users },
+        { href: "/employee/applications", label: t("employee.my.applications"), icon: Users }
       );
     }
     return links;
@@ -61,10 +63,8 @@ export default function Navigation() {
     );
   }
 
-  const isActive = (href: string) => {
-    if (href === "/") return pathname === `/${pathname.split("/")[1]}` || pathname === "/";
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) => href === "/" || href === "/admin"
+    ? pathname === href : pathname.startsWith(href);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -81,7 +81,7 @@ export default function Navigation() {
         </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -141,7 +141,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Menu Button */}
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label={mobileMenuOpen ? tCommon("close") : tCommon("menu")}>

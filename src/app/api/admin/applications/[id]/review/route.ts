@@ -12,7 +12,7 @@ async function postReview(
 ): Promise<NextResponse> {
   const paramsValidation = applicationIdParamSchema.safeParse(params);
   if (!paramsValidation.success) {
-    return NextResponse.json({ error: 'Invalid application ID' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid application ID', code: 'INVALID_REQUEST' }, { status: 400 });
   }
 
   try {
@@ -30,13 +30,13 @@ async function postReview(
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request body', code: 'INVALID_REQUEST' }, { status: 400 });
     }
 
     const validation = reviewApplicationSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid review request', details: validation.error.flatten().fieldErrors },
+        { error: 'Invalid review request', code: 'INVALID_REQUEST', details: validation.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
@@ -52,21 +52,20 @@ async function postReview(
     );
 
     if (!result.success) {
-      const statusCode = result.conflict ? 409
-        : result.internalError ? 500
-        : result.message === 'Sollicitatie niet gevonden' ? 404
-        : 400;
-      return NextResponse.json({ error: result.message }, { status: statusCode });
+      const statusCode = result.code === 'APPLICATION_NOT_FOUND' ? 404
+        : result.code === 'INTERNAL_ERROR' ? 500 : 409;
+      return NextResponse.json({ error: result.message, code: result.code }, { status: statusCode });
     }
 
     return NextResponse.json({
       success: true,
+      code: result.code,
       message: result.message,
       replayed: result.replayed ?? false,
     });
   } catch (error) {
     console.error('[Admin Application Review POST] Error:', error);
-    return NextResponse.json({ error: 'Failed to review application' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to review application', code: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }
 

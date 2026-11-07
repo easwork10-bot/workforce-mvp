@@ -21,6 +21,10 @@ const shift = {
   applicationCount: 2,
   assignedCount: 1,
   hasApplied: false,
+  hasActiveAssignment: false,
+  canApply: true,
+  applicationStatus: null,
+  applicationId: null,
 };
 
 describe('employee shift browser API', () => {
@@ -73,6 +77,7 @@ describe('employee shift browser API', () => {
       .mockResolvedValueOnce(Response.json({ csrfToken: 'raw-csrf-token' }))
       .mockResolvedValueOnce(Response.json({
         message: 'Sollicitatie succesvol ingediend',
+        code: 'APPLICATION_CREATED',
         applicationId: 'application-1',
       }));
 

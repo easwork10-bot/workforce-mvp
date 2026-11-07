@@ -3,19 +3,41 @@
     "name": "Workforce MVP"
   },
   "navigation": {
+    "app": {
+      "name": "Workforce MVP"
+    },
     "main": {
       "navigation": "التنقل الرئيسي"
     },
+    "register": "إنشاء حساب",
     "dashboard": "لوحة التحكم",
     "shifts": "المناوبات",
     "employees": "الموظفون",
     "attendance": "الحضور",
+    "admin": {
+      "dashboard": "لوحة التحكم",
+      "shifts": "إدارة المناوبات",
+      "applications": "طلبات التوظيف",
+      "assignments": "التكليفات",
+      "employees": "إدارة الموظفين"
+    },
+    "supervisor": {
+      "dashboard": "لوحة التحكم",
+      "attendance": "الحضور"
+    },
+    "employee": {
+      "dashboard": "لوحة الموظف",
+      "my": {
+        "schedule": "جدولي",
+        "applications": "طلباتي"
+      }
+    },
     "profile": "الملف الشخصي",
     "login": "تسجيل الدخول",
     "logout": "تسجيل الخروج",
-    "admin": "مدير النظام",
-    "supervisor": "المشرف",
-    "employee": "الموظف"
+    "roleAdmin": "مدير النظام",
+    "roleSupervisor": "المشرف",
+    "roleEmployee": "الموظف"
   },
   "auth": {
     "login": {
@@ -211,6 +233,48 @@
       "rejected": "تم رفض طلبك"
     }
   },
+  "adminShiftManagement": {
+    "description": "أنشئ المسودات وانشر المناوبات القادمة وأدر الجدول.",
+    "createDescription": "أنشئ مناوبة كمسودة. لن يراها الموظفون حتى تنشرها.",
+    "fillDetails": "أدخل تفاصيل المناوبة.",
+    "basicInfo": "المعلومات الأساسية",
+    "schedule": "التاريخ والوقت",
+    "workersCompensation": "الموظفون والأجر",
+    "details": "التفاصيل",
+    "instructions": "تعليمات للموظفين",
+    "titlePlaceholder": "مثال: مراقب حركة المرور - أمستردام",
+    "workTypePlaceholder": "مثال: تنظيم المرور أو التنظيف أو الخدمات اللوجستية",
+    "clientPlaceholder": "اسم العميل أو المشروع",
+    "locationPlaceholder": "مثال: المحطة المركزية في أمستردام",
+    "descriptionPlaceholder": "صف المناوبة والمهام والمتطلبات...",
+    "instructionsPlaceholder": "نقطة الالتقاء أو الزي أو تعليمات أخرى",
+    "compensationType": "نوع الأجر",
+    "hourly": "بالساعة",
+    "fixed": "مبلغ ثابت",
+    "daily": "يومي",
+    "amount": "المبلغ",
+    "submitError": "تعذر إنشاء المناوبة.",
+    "invalidLocalTime": "تحقق من التاريخ والوقت. قد لا يكون الوقت المحدد موجودًا بسبب تغيير التوقيت الصيفي أو الشتوي.",
+    "invalidNumber": "أدخل أرقامًا صحيحة.",
+    "listDescription": "المناوبات في جدولك",
+    "statusFilter": "تصفية حسب الحالة",
+    "allStatuses": "كل الحالات",
+    "assignedWorkers": "المعيّنون / المطلوبون",
+    "actions": "الإجراءات",
+    "publish": "نشر",
+    "publishing": "جارٍ النشر...",
+    "publishError": "تعذر نشر المناوبة.",
+    "loading": "جارٍ تحميل المناوبات...",
+    "loadError": "تعذر تحميل المناوبات.",
+    "empty": "لم يتم العثور على مناوبات.",
+    "retry": "إعادة المحاولة",
+    "previous": "السابق",
+    "next": "التالي",
+    "pageOf": "الصفحة {page} من {total}",
+    "dashboardDescription": "المناوبات الحالية وحالاتها.",
+    "totalShifts": "الإجمالي",
+    "workers": "موظفون"
+  },
   "employees": {
     "title": "الموظفون",
     "create": "إضافة موظف",
@@ -259,7 +323,100 @@
       "absent": "غائب"
     }
   },
+  "adminAssignmentManagement": {
+    "title": "عرض التكليفات",
+    "description": "عرض تكليفات الموظفين الحالية والسابقة.",
+    "filter": "تصفية حسب الحالة",
+    "all": "الكل",
+    "status": {
+      "assigned": "معين",
+      "confirmed": "مؤكد",
+      "cancelled": "ملغى",
+      "completed": "مكتمل"
+    },
+    "list": "التكليفات",
+    "start": "البداية:",
+    "end": "النهاية:",
+    "assignedAt": "تاريخ التكليف:",
+    "refresh": "تحديث",
+    "loading": "جارٍ تحميل التكليفات…",
+    "empty": "لا توجد تكليفات لهذا المرشح.",
+    "loadError": "تعذر تحميل التكليفات. تحقق من الاتصال وحاول مرة أخرى.",
+    "unauthorized": "انتهت صلاحية الجلسة. سجل الدخول مرة أخرى.",
+    "forbidden": "ليس لديك صلاحية لعرض هذه التكليفات.",
+    "unavailable": "الخدمة غير متاحة مؤقتًا. حاول مرة أخرى لاحقًا.",
+    "retry": "إعادة المحاولة",
+    "pagination": "صفحات التكليفات",
+    "page": "الصفحة {page} من {pages} · {total} تكليفات",
+    "previous": "السابق",
+    "next": "التالي",
+    "cancel": "إلغاء التكليف",
+    "cancelTitle": "إلغاء التكليف؟",
+    "cancelFor": "هل تريد إلغاء تكليف {name} بالمناوبة «{shift}»؟",
+    "cancelRules": "يُسمح بالإلغاء فقط قبل بدء المناوبة ودون سجلات سابقة لتسجيل الحضور أو الانصراف. يتحقق الخادم من إمكانية الإلغاء. يبقى التكليف محفوظًا في السجل.",
+    "keep": "الاحتفاظ بالتكليف",
+    "confirmCancel": "تأكيد الإلغاء",
+    "cancelling": "جارٍ الإلغاء…",
+    "cancelled": "تم إلغاء التكليف.",
+    "cancelReplayed": "تم إلغاء هذا التكليف مسبقًا.",
+    "cancelError": "تعذر تأكيد الإلغاء. تحقق من البيانات المحدثة قبل المحاولة مرة أخرى.",
+    "errors": {
+      "ASSIGNMENT_NOT_FOUND": "لم يعد التكليف موجودًا. تُحمّل البيانات مجددًا.",
+      "ASSIGNMENT_STATE_CONFLICT": "تغيرت حالة التكليف. تحقق من البيانات المحدثة.",
+      "SHIFT_STARTED": "بدأت المناوبة بالفعل. لم يعد الإلغاء مسموحًا.",
+      "ATTENDANCE_EXISTS": "توجد سجلات حضور أو انصراف لهذا التكليف. الإلغاء غير مسموح.",
+      "INVALID_REQUEST": "طلب الإلغاء غير صالح. تحقق من البيانات المحدثة وحاول مرة أخرى.",
+      "INTERNAL_ERROR": "فشل الإلغاء. تحقق من البيانات المحدثة قبل المحاولة مرة أخرى."
+    }
+  },
+  "adminApplicationManagement": {
+    "title": "إدارة طلبات التوظيف",
+    "description": "راجع الطلبات واطلع على جميع المحاولات السابقة.",
+    "filter": "تصفية حسب الحالة",
+    "all": "الكل",
+    "status": {
+      "pending": "قيد الانتظار",
+      "accepted": "مقبول",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى"
+    },
+    "submitted": "تاريخ التقديم: {date}",
+    "capacity": "المعينون: {assigned} / {required}",
+    "remaining": "الأماكن المتاحة: {count}",
+    "review": "مراجعة",
+    "reviewFor": "مراجعة طلب {name}",
+    "reason": "السبب",
+    "reasonOptional": "سبب الرفض (اختياري)",
+    "approve": "قبول",
+    "reject": "رفض",
+    "close": "إغلاق",
+    "saving": "جارٍ الحفظ…",
+    "approved": "تم قبول الطلب وحفظ التكليف.",
+    "rejected": "تم رفض الطلب.",
+    "replayed": "تم حفظ هذا القرار مسبقًا. تم تحديث البيانات.",
+    "refresh": "تحديث",
+    "loading": "جارٍ تحميل الطلبات…",
+    "empty": "لا توجد طلبات لهذا المرشح.",
+    "loadError": "تعذر تحميل الطلبات. حاول مرة أخرى.",
+    "reviewError": "تعذر تأكيد القرار. تحقق من البيانات المحدثة قبل المحاولة مرة أخرى.",
+    "unauthorized": "انتهت صلاحية الجلسة. سجل الدخول مرة أخرى.",
+    "forbidden": "ليس لديك صلاحية أو رمز الأمان غير صالح. حدّث الصفحة وحاول مرة أخرى.",
+    "retry": "إعادة المحاولة",
+    "pagination": "صفحات الطلبات",
+    "page": "الصفحة {page} من {pages} · {total} طلبات",
+    "previous": "السابق",
+    "next": "التالي",
+    "errors": {
+      "APPLICATION_DECISION_CONFLICT": "تمت مراجعة هذا الطلب أو إلغاؤه بالفعل. جارٍ تحديث البيانات.",
+      "SHIFT_UNAVAILABLE": "لم تعد هذه المناوبة متاحة للقبول. جارٍ تحديث البيانات.",
+      "CAPACITY_REACHED": "جميع الأماكن مشغولة. جارٍ تحديث البيانات.",
+      "ACTIVE_ASSIGNMENT_EXISTS": "هذا الموظف معين بالفعل لهذه المناوبة. جارٍ تحديث البيانات.",
+      "APPLICATION_NOT_FOUND": "هذا الطلب لم يعد موجودًا. جارٍ تحديث البيانات."
+    }
+  },
   "admin": {
+    "applications": "إدارة طلبات التوظيف",
+    "assignments": "عرض التكليفات",
     "dashboard": "لوحة تحكم المدير",
     "title": "لوحة تحكم المدير",
     "employees": "إدارة الموظفين",
@@ -325,5 +482,45 @@
     "nl": "Nederlands",
     "ar": "العربية",
     "en": "English"
+  },
+  "employeeApplications": {
+    "title": "طلباتي",
+    "description": "اطّلع على المناوبات التي تقدمت إليها وحالة كل طلب.",
+    "loading": "جارٍ تحميل الطلبات...",
+    "retry": "إعادة المحاولة",
+    "emptyTitle": "لم تتقدم إلى أي مناوبة بعد",
+    "emptyDescription": "تصفح المناوبات المتاحة وقدّم طلباً إلى المناوبة المناسبة لك.",
+    "browseShifts": "تصفح المناوبات",
+    "appliedAt": "تاريخ التقديم: {date}",
+    "cancelApplication": "إلغاء الطلب",
+    "cancellingApplication": "جارٍ الإلغاء...",
+    "total": "{count, plural, zero {لا توجد طلبات} one {طلب واحد} two {طلبان} few {# طلبات} many {# طلباً} other {# طلب}}",
+    "status": {
+      "pending": "قيد المراجعة",
+      "accepted": "مقبول",
+      "rejected": "مرفوض",
+      "cancelled": "ملغي"
+    },
+    "pagination": {
+      "label": "صفحات الطلبات",
+      "previous": "الصفحة السابقة",
+      "next": "الصفحة التالية",
+      "page": "الصفحة {page} من {totalPages}"
+    },
+    "errors": {
+      "unauthorized": "انتهت جلستك. سجّل الدخول مجدداً لعرض طلباتك.",
+      "forbidden": "ليس لديك إذن لعرض هذه الطلبات.",
+      "invalid": "تعذر معالجة الطلب. حدّث الصفحة ثم حاول مجدداً.",
+      "server": "تعذر تحميل طلباتك. حاول مجدداً.",
+      "network": "تعذر الاتصال بالخادم. تحقق من اتصالك وحاول مجدداً.",
+      "csrf": "تعذر الحصول على رمز الأمان. حدّث الصفحة ثم حاول مجدداً."
+    },
+    "dashboard": {
+      "description": "اطّلع على أحدث طلباتك وحالتها الحالية.",
+      "recentTitle": "أحدث الطلبات",
+      "recentDescription": "أحدث طلبات المناوبات التي تقدمت إليها.",
+      "viewAll": "عرض كل الطلبات",
+      "schedule": "جدولي"
+    }
   }
 }

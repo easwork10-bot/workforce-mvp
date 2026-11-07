@@ -156,7 +156,9 @@ export const shiftApplications = pgTable(
     shiftIdIdx: index('idx_shift_applications_shift_id').on(table.shiftId),
     employeeIdIdx: index('idx_shift_applications_employee_id').on(table.employeeId),
     statusIdx: index('idx_shift_applications_status').on(table.status),
-    uniqueShiftEmployee: uniqueIndex('unique_shift_employee').on(table.shiftId, table.employeeId),
+    uniquePendingShiftEmployee: uniqueIndex('unique_pending_shift_employee')
+      .on(table.shiftId, table.employeeId)
+      .where(sql`${table.status} = 'pending'`),
   })
 );
 
@@ -181,7 +183,9 @@ export const shiftAssignments = pgTable(
   (table) => ({
     shiftIdIdx: index('idx_shift_assignments_shift_id').on(table.shiftId),
     employeeIdIdx: index('idx_shift_assignments_employee_id').on(table.employeeId),
-    uniqueShiftEmployee: uniqueIndex('unique_shift_assignment_employee').on(table.shiftId, table.employeeId),
+    uniqueActiveShiftEmployee: uniqueIndex('unique_active_shift_assignment_employee')
+      .on(table.shiftId, table.employeeId)
+      .where(sql`${table.status} IN ('assigned', 'confirmed')`),
   })
 );
 

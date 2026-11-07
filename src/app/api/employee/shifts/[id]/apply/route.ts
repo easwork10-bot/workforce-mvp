@@ -26,7 +26,7 @@ async function applyShiftHandler(
     const validation = applyShiftSchema.safeParse({ shiftId: id });
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid shift ID', details: validation.error.flatten().fieldErrors },
+        { error: 'Invalid shift ID', code: 'INVALID_REQUEST', details: validation.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
@@ -35,20 +35,25 @@ async function applyShiftHandler(
     const result = await applyForShiftWithLock(validation.data.shiftId, userId, getAuditMetadata(req));
 
     if (!result.success) {
+      const status = result.code === 'SHIFT_NOT_FOUND' ? 404
+        : result.code === 'LOCK_UNAVAILABLE' ? 503
+        : result.code === 'INTERNAL_ERROR' ? 500
+        : 409;
       return NextResponse.json(
-        { error: result.message },
-        { status: 400 }
+        { error: result.message, code: result.code },
+        { status }
       );
     }
 
     return NextResponse.json({
       message: result.message,
+      code: result.code,
       applicationId: result.applicationId,
-    });
+    }, { status: 201 });
   } catch (error) {
     console.error('[Employee Shift Apply POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to apply for shift' },
+      { error: 'Failed to apply for shift', code: 'INTERNAL_ERROR' },
       { status: 500 }
     );
   }

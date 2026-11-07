@@ -29,6 +29,20 @@
       "when": 1792609989209,
       "tag": "0003_damp_unus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793546653398,
+      "tag": "0004_application_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793560699186,
+      "tag": "0005_assignment_history",
+      "breakpoints": true
     }
   ]
 }

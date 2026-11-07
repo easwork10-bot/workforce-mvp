@@ -1,12 +1,28 @@
-import { randomBytes } from 'node:crypto';
+import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { isLocalDockerEndpoint } = require('./docker-endpoint-safety.cjs');
+const {
+  createBuildIsolationEnvironment,
+  hasExactContainerName,
+  isOwnedRunnerContainer,
+  isSafePartialComposeProjectSnapshot,
+} = require('./docker-resource-safety.cjs');
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const composeFile = path.join(projectRoot, 'docker-compose.integration-test.yml');
 const docker = process.env.DOCKER_BIN || 'docker';
 const nodeImage = 'node:24-bookworm-slim';
+const browserEnabled = process.argv.includes('--browser');
+if (process.argv.slice(2).some(argument => argument !== '--browser')) {
+  throw new Error('Only the optional --browser argument is supported.');
+}
 const majorNodeVersion = Number(process.versions.node.split('.')[0]);
 if (majorNodeVersion !== 24) {
   console.error('The isolated integration workflow requires Node.js 24.');
@@ -15,6 +31,7 @@ if (majorNodeVersion !== 24) {
 
 const projectName = `wf-safe-test-${randomBytes(16).toString('hex')}`;
 const runnerName = `${projectName}-runner`;
+const browserImage = `${projectName}-browser`;
 const dbPassword = randomBytes(32).toString('base64url');
 const composeEnv = {
   ...process.env,
@@ -23,6 +40,9 @@ const composeEnv = {
 };
 let composeStarted = false;
 let primaryError;
+let runtimeDirectory;
+let browserImageCreated = false;
+let browserKeys = {};
 
 function redact(text) {
   return text.replaceAll(dbPassword, '[redacted]');
@@ -62,6 +82,78 @@ async function compose(args) {
   });
 }
 
+async function prepareLinuxRuntime() {
+  runtimeDirectory = await mkdtemp(path.join(os.tmpdir(), 'workforce-safe-test-runtime-'));
+  await cp(path.join(projectRoot, 'package.json'), path.join(runtimeDirectory, 'package.json'));
+  await cp(path.join(projectRoot, 'package-lock.json'), path.join(runtimeDirectory, 'package-lock.json'));
+  console.log('Preparing Linux-compatible dependencies in temporary storage.');
+  await run(docker, [
+    'run',
+    '--rm',
+    '--network', 'bridge',
+    '--mount', `type=bind,src=${runtimeDirectory},dst=/runtime`,
+    nodeImage,
+    'npm',
+    'ci',
+    '--prefix',
+    '/runtime',
+    '--no-audit',
+    '--no-fund',
+  ]);
+  if (!browserEnabled) return;
+
+  const lock = JSON.parse(await readFile(path.join(projectRoot, 'package-lock.json'), 'utf8'));
+  const version = lock.packages['node_modules/playwright'].version;
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('A locked Playwright version is required.');
+  const imageDirectory = path.join(runtimeDirectory, 'browser-image');
+  await mkdir(imageDirectory);
+  await writeFile(path.join(imageDirectory, 'Dockerfile'), [
+    `FROM ${nodeImage}`,
+    'RUN apt-get update && apt-get install -y --no-install-recommends openssl',
+    `RUN npx --yes playwright@${version} install --with-deps chromium webkit`,
+    '',
+  ].join('\n'));
+  console.log('Preparing isolated browser tooling and a secret-free Linux production build.');
+  await run(docker, [
+    'build', '--label', `com.workforce.safe-test-project=${projectName}`,
+    '--tag', browserImage, imageDirectory,
+  ]);
+  browserImageCreated = true;
+
+  const appDirectory = path.join(runtimeDirectory, 'app');
+  await mkdir(appDirectory);
+  for (const entry of [
+    'src', 'scripts', 'tests', 'package.json', 'package-lock.json',
+    'next.config.js', 'next-env.d.ts', 'tsconfig.json', 'tailwind.config.js',
+    'postcss.config.js', '.eslintrc.json',
+  ]) {
+    await cp(path.join(projectRoot, entry), path.join(appDirectory, entry), {
+      recursive: true,
+      filter: source => source !== path.join(projectRoot, 'tests', 'results'),
+    });
+  }
+  const keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  browserKeys = {
+    JWT_PRIVATE_KEY_FILE: '',
+    JWT_PUBLIC_KEY_FILE: '',
+    JWT_PRIVATE_KEY_B64: Buffer.from(keys.privateKey.export({ format: 'pem', type: 'pkcs8' })).toString('base64'),
+    JWT_PUBLIC_KEY_B64: Buffer.from(keys.publicKey.export({ format: 'pem', type: 'spki' })).toString('base64'),
+  };
+  const buildEnv = createBuildIsolationEnvironment({ ...process.env, ...browserKeys }, randomBytes(32).toString('base64url'));
+  const environmentNames = [
+    'DATABASE_URL', 'REDIS_URL', 'CSRF_SECRET', 'SHIFT_REMINDER_JOB_ENABLED',
+    ...Object.keys(browserKeys),
+  ];
+  await run(docker, [
+    'run', '--rm', '--network', 'bridge',
+    '--mount', `type=bind,src=${appDirectory},dst=/app`,
+    '--mount', `type=bind,src=${path.join(runtimeDirectory, 'node_modules')},dst=/app/node_modules,readonly`,
+    '--workdir', '/app',
+    ...environmentNames.flatMap(name => ['--env', name]),
+    browserImage, 'node', 'node_modules/next/dist/bin/next', 'build',
+  ], { env: buildEnv });
+}
+
 async function assertLocalDockerEndpoint() {
   const context = process.env.DOCKER_CONTEXT
     || (await run(docker, ['context', 'show'])).stdout.trim();
@@ -72,8 +164,8 @@ async function assertLocalDockerEndpoint() {
   const endpointHost = process.env.DOCKER_CONTEXT
     ? endpoint?.Host
     : process.env.DOCKER_HOST || endpoint?.Host;
-  if (typeof endpointHost !== 'string' || !endpointHost.startsWith('unix://')) {
-    throw new Error('The safe integration workflow only supports a local Unix-socket Docker daemon.');
+  if (!isLocalDockerEndpoint(endpointHost)) {
+    throw new Error('The safe integration workflow only supports a local Unix-socket or Docker Desktop named-pipe daemon.');
   }
 }
 
@@ -86,6 +178,36 @@ async function getContainer(service) {
 
   const inspected = await run(docker, ['inspect', id]);
   return JSON.parse(inspected.stdout)[0];
+}
+
+async function getComposeResourceSnapshot() {
+  const { stdout: containerOutput } = await run(docker, [
+    'ps', '-a', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.ID}}',
+  ]);
+  const containerIds = containerOutput.trim().split(/\r?\n/).filter(Boolean);
+  const containers = await Promise.all(containerIds.map(async (id) => {
+    const inspected = await run(docker, ['inspect', id]);
+    return JSON.parse(inspected.stdout)[0];
+  }));
+
+  const { stdout: networkOutput } = await run(docker, [
+    'network', 'ls', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.ID}}',
+  ]);
+  const networkIds = networkOutput.trim().split(/\r?\n/).filter(Boolean);
+  const networks = await Promise.all(networkIds.map(async (id) => {
+    const inspected = await run(docker, ['network', 'inspect', id]);
+    return JSON.parse(inspected.stdout)[0];
+  }));
+
+  const { stdout: volumeOutput } = await run(docker, [
+    'volume', 'ls', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.Name}}',
+  ]);
+
+  return {
+    containers,
+    networks,
+    volumeNames: volumeOutput.trim().split(/\r?\n/).filter(Boolean),
+  };
 }
 
 function assertOwnedContainer(container, service) {
@@ -174,7 +296,20 @@ try {
   if (existingNetwork.stdout.trim()) {
     throw new Error('A network with the generated Compose project label already exists; refusing to reuse resources.');
   }
+  const existingVolumes = await run(docker, [
+    'volume', 'ls', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.Name}}',
+  ]);
+  if (existingVolumes.stdout.trim()) {
+    throw new Error('A volume with the generated Compose project label already exists; refusing to reuse resources.');
+  }
+  const existingRunnerNames = await run(docker, [
+    'ps', '-a', '--filter', `name=${runnerName}`, '--format', '{{.Names}}',
+  ]);
+  if (hasExactContainerName(existingRunnerNames.stdout, runnerName)) {
+    throw new Error('The generated worker container name already exists; refusing to reuse resources.');
+  }
 
+  await prepareLinuxRuntime();
   composeStarted = true;
   await compose(['up', '-d', '--wait', '--wait-timeout', '90', 'db', 'redis']);
 
@@ -186,6 +321,7 @@ try {
     WORKFORCE_SAFE_DB_PASSWORD: dbPassword,
     WORKFORCE_TEST_DB_SERVER_ADDRESS: dbAddress,
     WORKFORCE_TEST_DB_SERVER_PORT: '5432',
+    ...browserKeys,
   };
   const workerArgs = [
     'run',
@@ -194,11 +330,18 @@ try {
     '--label', `com.workforce.safe-test-project=${projectName}`,
     '--network', `${projectName}_isolated`,
     '--mount', `type=bind,src=${projectRoot},dst=/workspace`,
+    '--mount', `type=bind,src=${path.join(runtimeDirectory, 'node_modules')},dst=/workspace/node_modules,readonly`,
     '--workdir', '/workspace',
     '--env', 'WORKFORCE_SAFE_DB_PASSWORD',
     '--env', 'WORKFORCE_TEST_DB_SERVER_ADDRESS',
     '--env', 'WORKFORCE_TEST_DB_SERVER_PORT',
-    nodeImage,
+    ...(browserEnabled ? [
+      '--mount', `type=bind,src=${path.join(runtimeDirectory, 'app')},dst=/browser-app`,
+      '--mount', `type=bind,src=${path.join(runtimeDirectory, 'node_modules')},dst=/browser-app/node_modules,readonly`,
+      '--env', 'WORKFORCE_SAFE_BROWSER_APP=/browser-app',
+      ...Object.keys(browserKeys).flatMap(name => ['--env', name]),
+    ] : []),
+    browserEnabled ? browserImage : nodeImage,
     'node',
     'scripts/run-isolated-integration-tests.mjs',
   ];
@@ -214,24 +357,68 @@ try {
 } finally {
   if (composeStarted) {
     try {
-      await run(docker, ['rm', '-f', runnerName], {
-        env: { ...process.env, WORKFORCE_SAFE_DB_PASSWORD: dbPassword },
-      });
-    } catch (error) {
-      if (!/No such container/.test(error.message)) {
-        primaryError = primaryError
-          ? new AggregateError([primaryError, error], 'The isolated workflow failed and runner cleanup also failed.')
-          : error;
+      const { stdout } = await run(docker, [
+        'ps', '-a', '--filter', `name=${runnerName}`, '--format', '{{.Names}}',
+      ]);
+      if (hasExactContainerName(stdout, runnerName)) {
+        const inspected = await run(docker, ['inspect', runnerName]);
+        const runner = JSON.parse(inspected.stdout)[0];
+        if (!isOwnedRunnerContainer(
+          runner,
+          runnerName,
+          projectName,
+          `${projectName}_isolated`,
+        )) {
+          throw new Error('The worker container name is not owned by this isolated test run; refusing to remove it.');
+        }
+        await run(docker, ['rm', '-f', runner.Id]);
       }
+    } catch (error) {
+      primaryError = primaryError
+        ? new AggregateError([primaryError, error], 'The isolated workflow failed and runner cleanup also failed.')
+        : error;
     }
 
     try {
       console.log('\nCleaning up the isolated Compose project.');
-      await compose(['down', '--remove-orphans']);
+      const snapshot = await getComposeResourceSnapshot();
+      if (!isSafePartialComposeProjectSnapshot(snapshot, projectName)) {
+        throw new Error('The remaining Compose resources are not exclusively owned disposable resources; refusing cleanup.');
+      }
+      if (primaryError) {
+        const diagnostics = await compose(['logs', '--no-color', '--tail', '100', 'db']);
+        process.stdout.write(redact(diagnostics.stdout));
+        process.stderr.write(redact(diagnostics.stderr));
+      }
+      await compose(['down']);
     } catch (cleanupError) {
       primaryError = primaryError
         ? new AggregateError([primaryError, cleanupError], 'The isolated workflow failed and Compose cleanup also failed.')
         : cleanupError;
+    }
+  }
+
+  if (browserImageCreated) {
+    try {
+      const inspected = JSON.parse((await run(docker, ['image', 'inspect', browserImage])).stdout)[0];
+      if (inspected.Config?.Labels?.['com.workforce.safe-test-project'] !== projectName) {
+        throw new Error('The temporary browser image is not owned by this run; refusing cleanup.');
+      }
+      await run(docker, ['image', 'rm', inspected.Id]);
+    } catch (error) {
+      primaryError = primaryError
+        ? new AggregateError([primaryError, error], 'Browser image cleanup failed after the isolated workflow.')
+        : error;
+    }
+  }
+
+  if (runtimeDirectory) {
+    try {
+      await rm(runtimeDirectory, { recursive: true, force: true });
+    } catch (error) {
+      primaryError = primaryError
+        ? new AggregateError([primaryError, error], 'The isolated workflow failed and temporary dependency cleanup also failed.')
+        : error;
     }
   }
 }
@@ -239,14 +426,10 @@ try {
 if (!primaryError) {
   try {
     console.log('\n> Production build (after disposable services are removed)');
-    const buildEnv = {
-      ...process.env,
-      DATABASE_URL: `postgresql://workforce_test:${dbPassword}@127.0.0.1:5432/workforce_test`,
-      REDIS_URL: 'redis://127.0.0.1:6379',
-      NODE_ENV: 'production',
-      CSRF_SECRET: randomBytes(32).toString('base64url'),
-      SHIFT_REMINDER_JOB_ENABLED: 'false',
-    };
+    const buildEnv = createBuildIsolationEnvironment(
+      process.env,
+      randomBytes(32).toString('base64url'),
+    );
     const build = await run(process.execPath, [
       'node_modules/next/dist/bin/next',
       'build',

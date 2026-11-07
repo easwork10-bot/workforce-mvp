@@ -8,8 +8,8 @@ import {
   shiftApplications,
   shiftAssignments,
 } from '../schema';
-import { eq, and, desc, asc, gte, lte, ilike, count, notInArray, inArray, or } from 'drizzle-orm';
-import type { Shift, NewShift } from '../schema';
+import { eq, and, desc, asc, gte, lte, ilike, count, notInArray, inArray, or, sql } from 'drizzle-orm';
+import type { Shift, ShiftApplication, NewShift } from '../schema';
 import { logAuditEvent, type AuditMetadata } from './audit';
 
 /**
@@ -22,14 +22,16 @@ export async function getShifts({
   startTo,
   page = 1,
   limit = 20,
+  sortBy = 'startAt',
   sortOrder = 'asc',
 }: {
-  status?: string;
+  status?: Shift['status'];
   workType?: string;
   startFrom?: string;
   startTo?: string;
   page?: number;
   limit?: number;
+  sortBy?: 'startAt' | 'createdAt' | 'title';
   sortOrder?: 'asc' | 'desc';
 }): Promise<{ data: (Shift & { applicationCount: number; assignedCount: number })[]; total: number }> {
   const offset = (page - 1) * limit;
@@ -38,7 +40,7 @@ export async function getShifts({
   const conditions = [];
 
   if (status) {
-    conditions.push(eq(shifts.status, status as any));
+    conditions.push(eq(shifts.status, status));
   }
 
   if (workType) {
@@ -66,7 +68,11 @@ export async function getShifts({
     .select()
     .from(shifts)
     .where(whereClause)
-    .orderBy(sortOrder === 'desc' ? desc(shifts.startAt) : asc(shifts.startAt))
+    .orderBy(
+      sortOrder === 'desc'
+        ? desc(shifts[sortBy])
+        : asc(shifts[sortBy])
+    )
     .limit(limit)
     .offset(offset);
 
@@ -81,7 +87,10 @@ export async function getShifts({
       const [{ assignedCount }] = await db
         .select({ assignedCount: count() })
         .from(shiftAssignments)
-        .where(eq(shiftAssignments.shiftId, shift.id));
+        .where(and(
+          eq(shiftAssignments.shiftId, shift.id),
+          inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+        ));
 
       return {
         ...shift,
@@ -92,6 +101,64 @@ export async function getShifts({
   );
 
   return { data, total };
+}
+
+export type PublishShiftResult =
+  | { status: 'published'; shift: Shift }
+  | { status: 'not-found' }
+  | { status: 'conflict' }
+  | { status: 'invalid'; reason: string };
+
+export async function publishDraftShift(
+  id: string,
+  actorId: string,
+  auditMetadata: AuditMetadata = { ipAddress: null, userAgent: null },
+  now = new Date()
+): Promise<PublishShiftResult> {
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(shifts)
+      .where(eq(shifts.id, id))
+      .for('update')
+      .limit(1);
+
+    if (!existing) return { status: 'not-found' };
+    if (existing.status !== 'draft') return { status: 'conflict' };
+    if (
+      !existing.title.trim()
+      || !existing.workType.trim()
+      || !existing.location.trim()
+      || existing.requiredWorkers <= 0
+      || existing.startAt <= now
+      || existing.endAt <= existing.startAt
+    ) {
+      return {
+        status: 'invalid',
+        reason: 'A future schedule, required shift details, and positive capacity are required.',
+      };
+    }
+
+    const [shift] = await tx
+      .update(shifts)
+      .set({ status: 'open', updatedAt: now })
+      .where(and(eq(shifts.id, id), eq(shifts.status, 'draft')))
+      .returning();
+
+    if (!shift) return { status: 'conflict' };
+
+    await logAuditEvent({
+      actorId,
+      action: 'UPDATE',
+      entityType: 'shifts',
+      entityId: id,
+      oldValues: { status: existing.status },
+      newValues: { status: shift.status },
+      ...auditMetadata,
+    }, tx);
+
+    return { status: 'published', shift };
+  });
 }
 
 interface ShiftWithDetails extends Shift {
@@ -417,7 +484,18 @@ export async function getAvailableShiftsForEmployee({
   startTo?: string;
   page?: number;
   limit?: number;
-}): Promise<{ data: (Shift & { applicationCount: number; assignedCount: number; hasApplied: boolean })[]; total: number }> {
+}): Promise<{
+  data: (Shift & {
+    applicationCount: number;
+    assignedCount: number;
+    hasApplied: boolean;
+    hasActiveAssignment: boolean;
+    canApply: boolean;
+    applicationStatus: ShiftApplication['status'] | null;
+    applicationId: string | null;
+  })[];
+  total: number;
+}> {
   const offset = (page - 1) * limit;
 
   // Build where conditions for shifts
@@ -437,13 +515,13 @@ export async function getAvailableShiftsForEmployee({
     conditions.push(lte(shifts.startAt, new Date(startTo)));
   }
 
-  // Exclude shifts where employee has already applied (only pending/accepted block re-application)
+  // Only a pending attempt or active assignment blocks a new application.
   const appliedShiftIds = db
     .select({ shiftId: shiftApplications.shiftId })
     .from(shiftApplications)
     .where(and(
       eq(shiftApplications.employeeId, employeeId),
-      inArray(shiftApplications.status, ['pending', 'accepted'])
+      eq(shiftApplications.status, 'pending')
     ));
 
   // Exclude shifts where employee is already actively assigned
@@ -457,6 +535,14 @@ export async function getAvailableShiftsForEmployee({
 
   conditions.push(notInArray(shifts.id, appliedShiftIds));
   conditions.push(notInArray(shifts.id, assignedShiftIds));
+  conditions.push(sql`NOT EXISTS (
+    SELECT 1
+    FROM ${shiftAssignments}
+    WHERE ${shiftAssignments.shiftId} = ${shifts.id}
+      AND ${shiftAssignments.status} IN ('assigned', 'confirmed')
+    GROUP BY ${shiftAssignments.shiftId}
+    HAVING COUNT(*) >= ${shifts.requiredWorkers}
+  )`);
 
   const whereClause = and(...conditions);
 
@@ -480,28 +566,57 @@ export async function getAvailableShiftsForEmployee({
       const [{ applicationCount }] = await db
         .select({ applicationCount: count() })
         .from(shiftApplications)
-        .where(eq(shiftApplications.shiftId, shift.id));
+        .where(and(
+          eq(shiftApplications.shiftId, shift.id),
+          eq(shiftApplications.status, 'pending')
+        ));
 
       const [{ assignedCount }] = await db
         .select({ assignedCount: count() })
         .from(shiftAssignments)
-        .where(eq(shiftAssignments.shiftId, shift.id));
+        .where(and(
+          eq(shiftAssignments.shiftId, shift.id),
+          inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+        ));
 
-      // Check if employee has applied
-      const [applied] = await db
-        .select({ id: shiftApplications.id })
+      const [latestApplication] = await db
+        .select({
+          id: shiftApplications.id,
+          status: shiftApplications.status,
+        })
         .from(shiftApplications)
         .where(and(
           eq(shiftApplications.shiftId, shift.id),
           eq(shiftApplications.employeeId, employeeId)
         ))
+        .orderBy(desc(shiftApplications.appliedAt), desc(shiftApplications.id))
         .limit(1);
+
+      const [activeAssignment] = await db
+        .select({ id: shiftAssignments.id })
+        .from(shiftAssignments)
+        .where(and(
+          eq(shiftAssignments.shiftId, shift.id),
+          eq(shiftAssignments.employeeId, employeeId),
+          inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+        ))
+        .limit(1);
+
+      const hasApplied = latestApplication?.status === 'pending';
+      const hasActiveAssignment = !!activeAssignment;
 
       return {
         ...shift,
         applicationCount,
         assignedCount,
-        hasApplied: !!applied,
+        hasApplied,
+        hasActiveAssignment,
+        canApply: shift.status === 'open'
+          && !hasApplied
+          && !hasActiveAssignment
+          && assignedCount < shift.requiredWorkers,
+        applicationStatus: latestApplication?.status ?? null,
+        applicationId: latestApplication?.id ?? null,
       };
     })
   );
@@ -520,7 +635,9 @@ export async function getShiftDetailsForEmployee(
   applicationCount: number;
   assignedCount: number;
   hasApplied: boolean;
-  applicationStatus: string | null;
+  hasActiveAssignment: boolean;
+  canApply: boolean;
+  applicationStatus: ShiftApplication['status'] | null;
   applicationId: string | null;
 }) | null> {
   const [shift] = await db
@@ -557,12 +674,18 @@ export async function getShiftDetailsForEmployee(
   const [{ applicationCount }] = await db
     .select({ applicationCount: count() })
     .from(shiftApplications)
-    .where(eq(shiftApplications.shiftId, shiftId));
+    .where(and(
+      eq(shiftApplications.shiftId, shiftId),
+      eq(shiftApplications.status, 'pending')
+    ));
 
   const [{ assignedCount }] = await db
     .select({ assignedCount: count() })
     .from(shiftAssignments)
-    .where(eq(shiftAssignments.shiftId, shiftId));
+    .where(and(
+      eq(shiftAssignments.shiftId, shiftId),
+      inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+    ));
 
   const [application] = await db
     .select({
@@ -574,13 +697,31 @@ export async function getShiftDetailsForEmployee(
       eq(shiftApplications.shiftId, shiftId),
       eq(shiftApplications.employeeId, employeeId)
     ))
+    .orderBy(desc(shiftApplications.appliedAt), desc(shiftApplications.id))
     .limit(1);
+
+  const [activeAssignment] = await db
+    .select({ id: shiftAssignments.id })
+    .from(shiftAssignments)
+    .where(and(
+      eq(shiftAssignments.shiftId, shiftId),
+      eq(shiftAssignments.employeeId, employeeId),
+      inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+    ))
+    .limit(1);
+  const hasApplied = application?.status === 'pending';
+  const hasActiveAssignment = !!activeAssignment;
 
   return {
     ...shift,
     applicationCount,
     assignedCount,
-    hasApplied: !!application,
+    hasApplied,
+    hasActiveAssignment,
+    canApply: shift.status === 'open'
+      && !hasApplied
+      && !hasActiveAssignment
+      && assignedCount < shift.requiredWorkers,
     applicationStatus: application?.status || null,
     applicationId: application?.id || null,
   };

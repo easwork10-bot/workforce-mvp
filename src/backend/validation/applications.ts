@@ -13,6 +13,11 @@ export const applicationQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 });
 
+export const adminApplicationQuerySchema = applicationQuerySchema.extend({
+  shiftId: z.string().uuid().optional(),
+  employeeId: z.string().uuid().optional(),
+}).strict();
+
 export const reviewApplicationSchema = z.object({
   status: z.enum(['accepted', 'rejected']),
   rejectionReason: z.string().max(1000).optional(),

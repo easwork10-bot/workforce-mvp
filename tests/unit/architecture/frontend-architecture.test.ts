@@ -52,8 +52,13 @@ describe('frontend foundation architecture', () => {
     ];
     await Promise.all(requiredRoutes.map((file) => readFile(path.join(projectRoot, file), 'utf8')));
 
-    const layout = await readFile(path.join(projectRoot, 'src/app/[locale]/layout.tsx'), 'utf8');
-    expect(layout).toContain("dir={locale === 'ar' ? 'rtl' : 'ltr'}");
+    const [layout, rootLayout] = await Promise.all([
+      readFile(path.join(projectRoot, 'src/app/[locale]/layout.tsx'), 'utf8'),
+      readFile(path.join(projectRoot, 'src/app/layout.tsx'), 'utf8'),
+    ]);
+    expect(rootLayout).toContain("dir={locale === 'ar' ? 'rtl' : 'ltr'}");
+    expect(rootLayout).toContain('getLocale');
+    expect(layout).not.toContain('<html');
     expect(layout).toContain("{ locale: 'nl' }, { locale: 'ar' }");
 
     const [sessionProvider, button, card, navigation] = await Promise.all([

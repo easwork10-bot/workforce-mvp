@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/backend/auth/session';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
 import { getApplications } from '@/backend/db/queries/applications';
+import { adminApplicationQuerySchema } from '@/backend/validation/applications';
 
 /**
  * GET /api/admin/applications - Get all shift applications (admin only)
@@ -22,26 +23,22 @@ async function GET(req: NextRequest): Promise<NextResponse> {
 
     // Parse query parameters
     const { searchParams } = new URL(req.url);
-    const shiftId = searchParams.get('shiftId') || undefined;
-    const employeeId = searchParams.get('employeeId') || undefined;
-    const status = searchParams.get('status') || undefined;
+    const validation = adminApplicationQuerySchema.safeParse(Object.fromEntries(searchParams));
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid application query', code: 'INVALID_REQUEST' }, { status: 400 });
+    }
+    const { page, limit } = validation.data;
 
     // Get applications
-    const { data, total } = await getApplications({
-      shiftId,
-      employeeId,
-      status,
-      page: 1,
-      limit: 100,
-    });
+    const { data, total } = await getApplications(validation.data);
 
     return NextResponse.json({
       applications: data,
       pagination: {
-        page: 1,
-        limit: 100,
+        page,
+        limit,
         total,
-        totalPages: 1,
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (error) {

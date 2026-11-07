@@ -202,7 +202,9 @@ export default function EmployeeShiftBrowser() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {shifts.map((shift) => {
               const isPending = pendingShiftIds.has(shift.id);
-              const hasApplied = shift.hasApplied || appliedShiftIds.has(shift.id);
+              const hasApplied = shift.hasApplied
+                || shift.hasActiveAssignment
+                || appliedShiftIds.has(shift.id);
 
               return (
                 <Card key={shift.id} className="flex flex-col">
@@ -257,7 +259,7 @@ export default function EmployeeShiftBrowser() {
                       type="button"
                       className="w-full"
                       variant={hasApplied ? 'secondary' : 'outline'}
-                      disabled={hasApplied || isPending}
+                      disabled={!shift.canApply || hasApplied || isPending}
                       onClick={() => void applyToShift(shift.id)}
                     >
                       {hasApplied ? (

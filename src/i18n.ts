@@ -15,10 +15,13 @@ export const pathnames = {
   '/employee': '/employee',
   '/employee/shifts': '/employee/shifts',
   '/employee/schedule': '/employee/schedule',
+  '/employee/applications': '/employee/applications',
   '/supervisor': '/supervisor',
   '/admin': '/admin',
   '/admin/shifts': '/admin/shifts',
   '/admin/shifts/create': '/admin/shifts/create',
+  '/admin/applications': '/admin/applications',
+  '/admin/assignments': '/admin/assignments',
   '/attendance/check-in': '/attendance/check-in',
 };
 

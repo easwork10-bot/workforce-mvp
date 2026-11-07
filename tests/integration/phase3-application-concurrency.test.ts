@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { db } from '@/backend/db';
 import { profiles, shifts, shiftApplications, shiftAssignments, attendanceRecords, auditLogs } from '@/backend/db/schema';
-import { applyForShiftWithLock } from '@/backend/db/queries/applications';
+import { applyForShiftWithLock, cancelPendingApplication, getApplications } from '@/backend/db/queries/applications';
 import { getAuditLogs } from '@/backend/db/queries/audit';
+import { getRedis } from '@/backend/auth/session';
 import { eq } from 'drizzle-orm';
 
 const uniqueEmail = (base: string) => `${base}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}@workforce.test`;
@@ -86,7 +87,7 @@ describe('Phase 3 Employee API - Shift Application Concurrency', () => {
 
     const r2 = await applyForShiftWithLock(testShiftId, testEmployeeId);
     expect(r2.success).toBe(false);
-    expect(r2.message).toContain('al gesolliciteerd');
+    expect(r2.code).toBe('DUPLICATE_APPLICATION');
     expect((await getAuditLogs({
       actorId: testEmployeeId,
       entityType: 'shift_applications',
@@ -141,5 +142,143 @@ describe('Phase 3 Employee API - Shift Application Concurrency', () => {
     const result = await applyForShiftWithLock(testShiftId, testEmployeeId);
     expect(result.success).toBe(false);
     expect(result.message).toContain('al ingedeeld');
+  });
+
+  it('allows rejected and cancelled attempts to be reapplied while preserving history', async () => {
+    const first = await applyForShiftWithLock(testShiftId, testEmployeeId);
+    expect(first.success).toBe(true);
+    if (!first.success) return;
+
+    await db.update(shiftApplications)
+      .set({ status: 'rejected', appliedAt: new Date('2026-01-01T10:00:00Z') })
+      .where(eq(shiftApplications.id, first.applicationId));
+
+    const second = await applyForShiftWithLock(testShiftId, testEmployeeId);
+    expect(second.success).toBe(true);
+    if (!second.success) return;
+
+    await db.update(shiftApplications)
+      .set({ status: 'cancelled', appliedAt: new Date('2026-02-01T10:00:00Z') })
+      .where(eq(shiftApplications.id, second.applicationId));
+
+    const third = await applyForShiftWithLock(testShiftId, testEmployeeId);
+    expect(third.success).toBe(true);
+    if (!third.success) return;
+
+    await db.update(shiftApplications)
+      .set({ appliedAt: new Date('2026-03-01T10:00:00Z') })
+      .where(eq(shiftApplications.id, third.applicationId));
+
+    const history = await getApplications({
+      employeeId: testEmployeeId,
+      page: 1,
+      limit: 10,
+    });
+    expect(history.data.map((application) => application.id)).toEqual([
+      third.applicationId,
+      second.applicationId,
+      first.applicationId,
+    ]);
+    expect(history.data.map((application) => application.status)).toEqual([
+      'pending',
+      'cancelled',
+      'rejected',
+    ]);
+    expect(new Set(history.data.map((application) => application.id)).size).toBe(3);
+    expect((await getAuditLogs({
+      actorId: testEmployeeId,
+      entityType: 'shift_applications',
+    })).total).toBe(3);
+  });
+
+  it('cancels a pending attempt without deleting it and permits a new attempt', async () => {
+    const first = await applyForShiftWithLock(testShiftId, testEmployeeId);
+    expect(first.success).toBe(true);
+    if (!first.success) return;
+
+    const cancelled = await cancelPendingApplication(first.applicationId, testEmployeeId);
+    expect(cancelled).toMatchObject({ success: true, code: 'APPLICATION_CANCELLED' });
+
+    const next = await applyForShiftWithLock(testShiftId, testEmployeeId);
+    expect(next.success).toBe(true);
+    if (!next.success) return;
+
+    const attempts = await db.select().from(shiftApplications)
+      .where(eq(shiftApplications.shiftId, testShiftId));
+    expect(attempts.map((attempt) => attempt.status)).toContain('cancelled');
+    expect(attempts.map((attempt) => attempt.status)).toContain('pending');
+    expect(attempts).toHaveLength(2);
+    expect((await getAuditLogs({
+      actorId: testEmployeeId,
+      entityType: 'shift_applications',
+    })).total).toBe(3);
+  });
+
+  it('allows applying after the scheduled start while the shift remains open', async () => {
+    await db.update(shifts)
+      .set({ startAt: new Date('2000-01-01T09:00:00Z'), endAt: new Date('2000-01-01T17:00:00Z') })
+      .where(eq(shifts.id, testShiftId));
+
+    const result = await applyForShiftWithLock(testShiftId, testEmployeeId);
+    expect(result).toMatchObject({ success: true, code: 'APPLICATION_CREATED' });
+  });
+
+  it.each(['draft', 'filled', 'cancelled', 'completed'] as const)(
+    'rejects applications when the shift status is %s',
+    async (status) => {
+      await db.update(shifts).set({ status }).where(eq(shifts.id, testShiftId));
+
+      const result = await applyForShiftWithLock(testShiftId, testEmployeeId);
+      expect(result).toMatchObject({ success: false, code: 'SHIFT_UNAVAILABLE' });
+    }
+  );
+
+  it('treats a cancelled assignment as history rather than an active assignment', async () => {
+    await db.insert(shiftAssignments).values({
+      shiftId: testShiftId,
+      employeeId: testEmployeeId,
+      status: 'cancelled',
+      assignedBy: testEmployeeId,
+    });
+
+    const result = await applyForShiftWithLock(testShiftId, testEmployeeId);
+    expect(result).toMatchObject({ success: true, code: 'APPLICATION_CREATED' });
+  });
+
+  it('creates at most one pending application under concurrent duplicate requests', async () => {
+    const results = await Promise.all([
+      applyForShiftWithLock(testShiftId, testEmployeeId),
+      applyForShiftWithLock(testShiftId, testEmployeeId),
+    ]);
+
+    expect(results.filter((result) => result.success)).toHaveLength(1);
+    expect(results.filter((result) => !result.success)).toHaveLength(1);
+    expect(results.find((result) => !result.success)?.code)
+      .toMatch(/^(LOCK_CONTENDED|DUPLICATE_APPLICATION)$/);
+    expect((await db.select().from(shiftApplications)
+      .where(eq(shiftApplications.shiftId, testShiftId)))).toHaveLength(1);
+    expect((await getAuditLogs({
+      actorId: testEmployeeId,
+      entityType: 'shift_applications',
+    })).total).toBe(1);
+  });
+
+  it('rejects Redis lock contention without entering the application flow', async () => {
+    const redis = await getRedis();
+    const key = `lock:shift:${testShiftId}:apply:${testEmployeeId}`;
+    const owner = crypto.randomUUID();
+    expect(await redis.set(key, owner, { NX: true, PX: 15000 })).toBe('OK');
+
+    try {
+      const result = await applyForShiftWithLock(testShiftId, testEmployeeId);
+      expect(result).toMatchObject({ success: false, code: 'LOCK_CONTENDED' });
+      expect(await db.select().from(shiftApplications)
+        .where(eq(shiftApplications.shiftId, testShiftId))).toHaveLength(0);
+    } finally {
+      await redis.eval(
+        `if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0`,
+        { keys: [key], arguments: [owner] }
+      );
+    }
   });
 });

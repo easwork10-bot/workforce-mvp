@@ -162,8 +162,11 @@ schema and writes migration artifacts to [`drizzle/`](../drizzle/).
 
 The current Drizzle journal records `0000_wild_agent_zero` and migrations
 `0001_notification_idempotency_expand`, `0002_retire_notification_legacy_indexes`,
-and `0003_damp_unus`. There is also an older `drizzle/0000_melodic_spectrum.sql`
-file that is not present in the current journal, plus the historical
+`0003_damp_unus`, `0004_application_history`, and
+`0005_assignment_history`. Fresh-install, upgrade, and rollback behavior for this
+chain is verified only by the guarded disposable-database workflow. There is also
+an older `drizzle/0000_melodic_spectrum.sql` file that is not present in the current
+journal, plus the historical
 [Supabase initial schema](./history/database/supabase/001_initial_schema.sql).
 These artifacts represent different historical schema tracks; their presence
 does not establish the state of any existing database.
@@ -187,10 +190,91 @@ verifying its disposable target identity and empty state.
   transaction. Check-out locks the active record and writes the checkout and audit
   event transactionally. Coordinates are optional; this is not geofence
   enforcement.
-- Employee shift applications use a Redis lock and database uniqueness protection.
-  Application review locks the application and, when accepting, the shift row;
-  it enforces worker capacity before creating an assignment. Application,
-  assignment, notification, and audit writes are coordinated transactionally.
+- Employee shift applications use a Redis request lock, a PostgreSQL shift-row
+  lock, and a partial unique index for pending applications. Rejected and cancelled
+  attempts remain in application history; employees can cancel their own pending
+  attempt and reapply after rejection or cancellation. Applications require an open
+  shift and remaining active-assignment capacity, but have no scheduled-start cutoff.
+  Review and pending cancellation lock the shift before reloading/locking the
+  application; approval then checks assignment rows under that shift lock.
+  Only open shifts can accept approvals, without a scheduled-start cutoff.
+  Assigned/confirmed rows occupy capacity. The final approval atomically changes
+  `open` to `filled` and audits the transition; other pending applications remain.
+  Rejection does not change capacity or shift status. Identical completed decisions
+  replay without side effects; conflicting decisions return HTTP 409 with stable
+  error codes. Application, assignment, shift, notification and audit writes are
+  coordinated transactionally. A partial unique assignment index covers only
+  `assigned` and `confirmed`; cancelled/completed assignment history can coexist
+  with a new assignment linked to a distinct application attempt.
+- Administrator assignment cancellation uses
+  [`cancelAssignment`](../src/backend/db/queries/assignments.ts) through
+  `POST /api/admin/assignments/:id/cancel`, protected by session/JWT role checks,
+  CSRF and UUID validation. It reads the shift reference, then locks **Shift →
+  Assignment → Attendance** and reloads/rechecks the assignment. Assigned or
+  confirmed assignments can be cancelled only before scheduled start and before
+  any check-in/check-out evidence (including historical attendance). An absent
+  record without check-in/check-out evidence does not block cancellation.
+  Successful cancellation retains the assignment and application history; it
+  reopens only `filled` shifts whose remaining assigned/confirmed count is below
+  capacity. Cancelled/completed shifts and pending applications are unchanged.
+  Approval still locks **Shift → Application → Assignment**. All check-in paths
+  lock the assignment before attendance, without subsequently locking the shift,
+  so cancellation/check-in serialize without reversing the shift lock order.
+  Confirmation permits only assigned-to-confirmed, never terminal reactivation.
+  Cancelled retries return 200 with `replayed: true`, including after the start
+  time. Cancellation returns `ASSIGNMENT_CANCELLED`; errors are
+  `ASSIGNMENT_NOT_FOUND` (404), `ASSIGNMENT_STATE_CONFLICT`, `SHIFT_STARTED`,
+  `ATTENDANCE_EXISTS` (409), `INVALID_REQUEST` (400), or `INTERNAL_ERROR` (500).
+  Assignment cancellation, optional filled-to-open audit, notification and
+  notification audit commit atomically. One localized in-app notification uses
+  existing `shift_updated` type and `assignment-cancellation:v1:<assignment-id>`;
+  it clearly refers to the employee's assignment, not cancellation of the shift.
+  Post-start cancellation and automatic candidate selection are not supported.
+- Administrator assignment listing uses `GET /api/admin/assignments` and the
+  existing [`getAssignments`](../src/backend/db/queries/assignments.ts) repository.
+  [`requireRole`](../src/backend/security/requireRole.ts) requires a valid JWT,
+  live Redis session and administrator role; access remains company-wide, not
+  restricted to the administrator who created a shift. The strictly read-only
+  endpoint requires no CSRF token and returns private, non-cacheable responses.
+  Query parameters are optional `status` (`assigned`, `confirmed`, `cancelled`,
+  `completed`), positive safe-integer `page` (default 1), and integer `limit`
+  (1–100, default 20); unsafe offsets, unknown or repeated parameters return
+  `INVALID_REQUEST` (400). Omitting status includes every assignment, preserving
+  cancelled/completed history rather than grouping by employee/shift.
+  The response is `{ assignments, pagination: { page, limit, total, totalPages } }`.
+  Each assignment retains its schema fields (`id`, `shiftId`, `employeeId`,
+  `applicationId`, `status`, `assignedBy`, `assignedAt`, `confirmedAt`) plus
+  `employee: { id, fullName }` and
+  `shift: { id, title, location, startAt, endAt }`. Dates serialize as ISO strings;
+  nullable application/confirmation fields remain null. One count query and one
+  paged query with foreign-key-backed profile/shift joins avoid N+1 reads.
+  Ordering is `assignedAt DESC, id DESC`; empty results have `totalPages: 0`.
+  Authentication failures return 401, other roles 403, unavailable session
+  storage 503, and logged unexpected failures `INTERNAL_ERROR` (500).
+  No assignment mutation or capacity calculation is introduced.
+  The administrator overview at `/admin/assignments` (`/ar/admin/assignments`
+  for Arabic) uses this API through a validated frontend response contract.
+  Dashboard and navigation links expose the list. All four statuses
+  and an All filter use server-side pagination; changing a filter resets page 1.
+  Requests are abortable, empty out-of-range pages return to the last available
+  page, and failures show localized retry feedback (including 401/403/503).
+  The compact list stacks at mobile widths and uses the existing dashboard
+  cards/buttons. Dutch/Arabic dates show full start and end dates in the
+  Europe/Amsterdam time zone; Arabic uses the existing RTL layout.
+  Assigned/confirmed rows offer cancellation through the existing CSRF-protected
+  endpoint. A modal confirmation identifies the employee and shift and explains
+  the pre-start/no-check-in-or-out-history restriction; only the backend decides
+  eligibility. No browser-clock eligibility rule or attendance inference is added.
+  Existing Radix dialog primitives provide modal focus trapping and dismissal;
+  dismissal restores the action's focus, while mutation refresh restores focus
+  to the page heading if the original action disappears. Submission is single-flight,
+  with dialog dismissal and list interactions blocked through mutation/refresh.
+  Responses must contain `success: true`, `ASSIGNMENT_CANCELLED`, and a boolean
+  `replayed`; all existing conflicts and authentication/service errors have
+  Dutch/Arabic feedback. Every attempt reloads authoritative data, even after
+  uncertain network outcomes; refresh errors remain distinct from mutation
+  feedback. Cancelled history stays visible under All. No backend lifecycle,
+  notifications, capacity, employee schedule or migration changes are introduced.
 - Audit records are written through shared query helpers. Audit values redact keys
   whose names resemble secrets, credentials, tokens, or cookies.
 - Notifications are in-app database records with recipient scoping and idempotent

@@ -6,6 +6,59 @@ Run the PostgreSQL-backed test suite without using the development or production
 npm run test:integration:safe
 ```
 
+To also verify the assignments overview against real PostgreSQL/Redis and run
+production Chromium/WebKit UI regressions, use:
+
+```sh
+npm run test:integration:safe -- --browser
+```
+
+The opt-in phase builds a uniquely labelled temporary browser image using the
+locked Playwright version. Tooling installation has no repository, environment
+file or database credentials. A curated temporary source copy excludes environment
+files, secrets and prior test artifacts; its Linux production build runs before
+database startup, with database/Redis URLs pointing to unavailable loopback port 1.
+Fresh ephemeral JWT keys are used, never development keys. The production server,
+HTTPS loopback listener and both browsers subsequently run inside the same isolated
+worker as the database safety guard. No host ports are published. The test-local
+HTTPS listener replaces incoming client-IP headers with the actual socket address,
+using the existing trusted-proxy configuration; secure authentication cookies,
+real password verification, Redis sessions and CSRF remain enabled.
+The production Next.js request handler and locale rewrites share that same HTTPS
+origin; there is no HTTP upstream whose port could be mistaken for a TLS endpoint.
+That origin uses `localhost`, which matches Next.js's canonical loopback URL;
+Node DNS prefers IPv4 to reach the IPv4-only listener without a hostname mismatch.
+The server process trusts only its generated certificate in addition to Node's
+normal CA roots, allowing internal locale rewrites without disabling TLS verification.
+
+The guarded browser phase runs
+[`tests/real-backend/admin-assignments.spec.ts`](../../tests/real-backend/admin-assignments.spec.ts)
+and [`tests/e2e/`](../../tests/e2e/) against the same production server in both
+browser engines. The real-backend spec does not intercept assignment or auth APIs;
+the separate UI regression specs stub their documented API responses. The config
+and server require the safe worker, and fixture writes recheck the live pinned
+database identity. Real-backend tests create disposable accounts/roles, use real
+login/create/publish/apply/approve/cancel APIs, and compare rendered data with
+PostgreSQL. Confirmed/completed/cancelled historical rows are synthetic fixtures,
+not an invented completion business flow. Scenarios cover all statuses,
+pagination, history, Dutch/Arabic, RTL, 390/768/1280px, access denial, changes and
+empty results. Date assertions use each browser's native locale formatter with
+the PostgreSQL timestamps and the explicit Europe/Amsterdam time zone, avoiding
+Node/WebKit ICU punctuation differences without relaxing date correctness.
+The lifecycle runs as named serial tests sharing disposable fixtures and a real
+authenticated browser context per engine. Approval, listing, fixture history,
+each locale's filtering/layout checks, authorization, cancellation, record changes
+and session revocation retain separate default test budgets rather than sharing
+one oversized end-to-end timeout. A failed stage skips dependent stages; suite
+cleanup still runs. Cancellation is submitted through the confirmation dialog,
+including its real CSRF request, and checks assignment/application history,
+capacity reopening and the existing idempotent notification in PostgreSQL.
+Fixture-specific SQL and Redis cleanup precede the worker's
+protected-table emptiness check. The launcher removes its ownership-checked
+browser image and temporary source/dependencies along with the disposable worker,
+PostgreSQL, Redis and network. Failure traces/screenshots are kept under
+`tests/results/real-backend/`; never run this config directly on development data.
+
 For database-free unit tests, use `npm test` or `npm run test:ui`. Both select only
 `tests/unit/` and require neither PostgreSQL nor Redis. The separate
 `vitest.integration.config.ts` includes unit and integration suites and enforces the

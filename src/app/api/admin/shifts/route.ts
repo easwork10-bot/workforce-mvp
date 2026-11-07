@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/backend/auth/session';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
 import { createShiftSchema } from '@/backend/validation/shifts';
-import { createShift, getShifts } from '@/backend/db/queries/shifts';
+import { createShift, getShiftStats, getShifts } from '@/backend/db/queries/shifts';
 import { db } from '@/backend/db';
 import { profiles } from '@/backend/db/schema';
 import { eq } from 'drizzle-orm';
 import { requireCsrf } from '@/backend/security/csrf';
 import { getAuditMetadata } from '@/backend/security/auditLogger';
+import { shiftQuerySchema } from '@/backend/validation/shifts';
 
 /**
  * GET /api/admin/shifts - Get all shifts (admin only)
@@ -26,11 +27,32 @@ async function GET(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Get all shifts using the query function
-    const result = await getShifts({ limit: 100 });
-    const shiftsWithCreators = result.data;
+    const query = shiftQuerySchema.safeParse(
+      Object.fromEntries(req.nextUrl.searchParams.entries())
+    );
+    if (!query.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: query.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({ shifts: shiftsWithCreators });
+    const [result, stats] = await Promise.all([
+      getShifts(query.data),
+      getShiftStats(),
+    ]);
+    const totalPages = Math.ceil(result.total / query.data.limit);
+
+    return NextResponse.json({
+      shifts: result.data,
+      pagination: {
+        page: query.data.page,
+        limit: query.data.limit,
+        total: result.total,
+        totalPages,
+      },
+      stats,
+    });
   } catch (error) {
     console.error('[Admin Shifts GET] Error:', error);
     return NextResponse.json(
@@ -58,7 +80,12 @@ async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Parse and validate input
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const validation = createShiftSchema.safeParse(body);
 
     if (!validation.success) {
@@ -87,9 +114,11 @@ async function POST(req: NextRequest): Promise<NextResponse> {
       ...validation.data,
       startAt: new Date(validation.data.startAt),
       endAt: new Date(validation.data.endAt),
-      latitude: validation.data.latitude ? validation.data.latitude.toString() : null,
-      longitude: validation.data.longitude ? validation.data.longitude.toString() : null,
-      compensationAmount: validation.data.compensationAmount ? validation.data.compensationAmount.toString() : null,
+      latitude: validation.data.latitude != null ? validation.data.latitude.toString() : null,
+      longitude: validation.data.longitude != null ? validation.data.longitude.toString() : null,
+      compensationAmount: validation.data.compensationAmount != null
+        ? validation.data.compensationAmount.toString()
+        : null,
       createdBy: profile.id,
       status: 'draft', // Start as draft
     }, getAuditMetadata(req));
@@ -97,7 +126,7 @@ async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       shift,
       message: 'Shift created successfully',
-    });
+    }, { status: 201 });
   } catch (error) {
     console.error('[Admin Shifts POST] Error:', error);
     return NextResponse.json(

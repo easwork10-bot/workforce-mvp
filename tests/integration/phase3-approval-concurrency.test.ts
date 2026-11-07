@@ -88,7 +88,8 @@ describe('Phase 3 Employee API - Concurrent Approval (Capacity Enforcement)', ()
 
     expect(successful.length).toBe(2);
     expect(failed.length).toBe(1);
-    expect(failed[0].message).toContain('vol');
+    expect(failed[0]).toMatchObject({ code: 'SHIFT_UNAVAILABLE' });
+    expect((await db.select().from(shifts).where(eq(shifts.id, testShiftId)))[0].status).toBe('filled');
 
     // Verify database state: exactly 2 assignments created
     const assignments = await db
@@ -143,15 +144,17 @@ describe('Phase 3 Employee API - Concurrent Approval (Capacity Enforcement)', ()
     const apps = await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, shiftId));
     const r1 = await reviewApplication(apps[0].id, adminId, 'accepted');
     expect(r1.success).toBe(true);
+    expect((await db.select().from(shifts).where(eq(shifts.id, shiftId)))[0].status).toBe('open');
 
     // Accept second application
     const r2 = await reviewApplication(apps[1].id, adminId, 'accepted');
     expect(r2.success).toBe(true);
+    expect((await db.select().from(shifts).where(eq(shifts.id, shiftId)))[0].status).toBe('filled');
 
     // Third should fail - capacity reached
     const r3 = await reviewApplication(apps[2].id, adminId, 'accepted');
     expect(r3.success).toBe(false);
-    expect(r3.message).toContain('vol');
+    expect(r3).toMatchObject({ code: 'SHIFT_UNAVAILABLE' });
 
     // Verify exactly 2 assignments
     const assignments = await db
@@ -326,5 +329,114 @@ describe('Phase 3 Employee API - Concurrent Approval (Capacity Enforcement)', ()
     expect(applicationNotifications[0].type).toBe(
       finalApplication.status === 'accepted' ? 'application_accepted' : 'application_rejected'
     );
+  });
+
+  it('serializes two approvals for the last vacancy and audits the fill exactly once', async () => {
+    await db.update(shifts).set({ requiredWorkers: 1 }).where(eq(shifts.id, testShiftId));
+    const apps = await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, testShiftId));
+    const results = await Promise.all(apps.slice(0, 2).map(app => reviewApplication(app.id, adminId, 'accepted')));
+    expect(results.filter(result => result.success)).toHaveLength(1);
+    expect(results.find(result => !result.success)).toMatchObject({ code: 'SHIFT_UNAVAILABLE' });
+    const assignments = await db.select().from(shiftAssignments).where(eq(shiftAssignments.shiftId, testShiftId));
+    expect(assignments).toHaveLength(1);
+    const winner = apps.find(app => app.id === assignments[0].applicationId);
+    expect(assignments[0].employeeId).toBe(winner?.employeeId);
+    expect((await db.select().from(shifts).where(eq(shifts.id, testShiftId)))[0].status).toBe('filled');
+    const fillAudits = await db.select().from(auditLogs).where(and(
+      eq(auditLogs.entityType, 'shifts'), eq(auditLogs.entityId, testShiftId)
+    ));
+    expect(fillAudits).toHaveLength(1);
+    expect(fillAudits[0]).toMatchObject({ oldValues: { status: 'open' }, newValues: { status: 'filled' } });
+    const beforeReplay = await db.select().from(auditLogs).where(eq(auditLogs.actorId, adminId));
+    expect(await reviewApplication(assignments[0].applicationId!, adminId, 'accepted'))
+      .toMatchObject({ success: true, replayed: true });
+    expect(await db.select().from(auditLogs).where(eq(auditLogs.actorId, adminId))).toEqual(beforeReplay);
+    expect((await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, testShiftId)))
+      .filter(app => app.status === 'pending')).toHaveLength(2);
+  });
+
+  it('approves after the scheduled start while open without counting pending applications', async () => {
+    await db.update(shifts).set({
+      startAt: new Date('2000-01-01T09:00:00Z'), endAt: new Date('2000-01-01T17:00:00Z'),
+    }).where(eq(shifts.id, testShiftId));
+    const [app] = await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, testShiftId));
+    expect(await reviewApplication(app.id, adminId, 'accepted')).toMatchObject({ success: true });
+    expect((await db.select().from(shifts).where(eq(shifts.id, testShiftId)))[0].status).toBe('open');
+    expect(await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, app.id))).toHaveLength(1);
+  });
+
+  it.each(['cancelled', 'completed'] as const)(
+    'does not count another employee %s assignment toward occupied capacity',
+    async (status) => {
+      await db.update(shifts).set({ requiredWorkers: 1 }).where(eq(shifts.id, testShiftId));
+      await db.insert(shiftAssignments).values({
+        shiftId: testShiftId, employeeId: testEmployeeIds[2], assignedBy: adminId, status,
+      });
+      const [app] = await db.select().from(shiftApplications).where(and(
+        eq(shiftApplications.shiftId, testShiftId), eq(shiftApplications.employeeId, testEmployeeIds[0])
+      ));
+      expect(await reviewApplication(app.id, adminId, 'accepted')).toMatchObject({ success: true });
+      expect((await db.select().from(shifts).where(eq(shifts.id, testShiftId)))[0].status).toBe('filled');
+    }
+  );
+
+  it('counts confirmed assignments and rejects an already actively assigned employee', async () => {
+    await db.insert(shiftAssignments).values({
+      shiftId: testShiftId, employeeId: testEmployeeIds[0], assignedBy: adminId, status: 'confirmed',
+    });
+    const apps = await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, testShiftId));
+    const duplicate = apps.find(app => app.employeeId === testEmployeeIds[0])!;
+    expect(await reviewApplication(duplicate.id, adminId, 'accepted'))
+      .toMatchObject({ code: 'ACTIVE_ASSIGNMENT_EXISTS', success: false });
+    const other = apps.find(app => app.employeeId === testEmployeeIds[1])!;
+    expect(await reviewApplication(other.id, adminId, 'accepted')).toMatchObject({ success: true });
+    expect((await db.select().from(shifts).where(eq(shifts.id, testShiftId)))[0].status).toBe('filled');
+  });
+
+  it('preserves historical applications and allows a replacement after a cancelled assignment', async () => {
+    const [app] = await db.select().from(shiftApplications).where(and(
+      eq(shiftApplications.shiftId, testShiftId), eq(shiftApplications.employeeId, testEmployeeIds[0])
+    ));
+    const [history] = await db.insert(shiftApplications).values({
+      shiftId: testShiftId, employeeId: app.employeeId, status: 'rejected',
+      reviewedBy: adminId, reviewedAt: new Date('2026-01-01T09:00:00Z'), rejectionReason: 'Fixture',
+    }).returning();
+    const [oldAssignment] = await db.insert(shiftAssignments).values({
+      shiftId: testShiftId, employeeId: app.employeeId, assignedBy: adminId, status: 'cancelled',
+    }).returning();
+    expect(await reviewApplication(app.id, adminId, 'accepted'))
+      .toMatchObject({ success: true, code: 'APPLICATION_REVIEWED' });
+    expect((await db.select().from(shiftApplications).where(eq(shiftApplications.id, history.id)))[0]).toEqual(history);
+    expect((await db.select().from(shiftApplications).where(eq(shiftApplications.id, app.id)))[0].status).toBe('accepted');
+    expect((await db.select().from(shiftAssignments).where(eq(shiftAssignments.id, oldAssignment.id)))[0]).toEqual(oldAssignment);
+    expect(await db.select().from(shiftAssignments).where(eq(shiftAssignments.employeeId, app.employeeId))).toHaveLength(2);
+  });
+
+  it('links approval to the pending attempt without rewriting previous rejection history', async () => {
+    const [app] = await db.select().from(shiftApplications).where(and(
+      eq(shiftApplications.shiftId, testShiftId), eq(shiftApplications.employeeId, testEmployeeIds[0])
+    ));
+    const [history] = await db.insert(shiftApplications).values({
+      shiftId: testShiftId, employeeId: app.employeeId, status: 'rejected',
+      reviewedBy: adminId, reviewedAt: new Date('2026-01-01T09:00:00Z'), rejectionReason: 'Fixture',
+    }).returning();
+    expect(await reviewApplication(app.id, adminId, 'accepted')).toMatchObject({ success: true });
+    expect((await db.select().from(shiftApplications).where(eq(shiftApplications.id, history.id)))[0]).toEqual(history);
+    expect((await db.select().from(shiftAssignments)
+      .where(eq(shiftAssignments.employeeId, app.employeeId)))[0].applicationId).toBe(app.id);
+  });
+
+  it('replays simultaneous identical approvals of the final vacancy without duplicate effects', async () => {
+    await db.update(shifts).set({ requiredWorkers: 1 }).where(eq(shifts.id, testShiftId));
+    const [app] = await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, testShiftId));
+    const results = await Promise.all([
+      reviewApplication(app.id, adminId, 'accepted'),
+      reviewApplication(app.id, adminId, 'accepted'),
+    ]);
+    expect(results.every(result => result.success)).toBe(true);
+    expect(results.filter(result => result.replayed)).toHaveLength(1);
+    expect(await db.select().from(shiftAssignments).where(eq(shiftAssignments.applicationId, app.id))).toHaveLength(1);
+    expect(await db.select().from(notifications).where(eq(notifications.relatedApplicationId, app.id))).toHaveLength(1);
+    expect(await db.select().from(auditLogs).where(eq(auditLogs.actorId, adminId))).toHaveLength(4);
   });
 });
