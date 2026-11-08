@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { and, eq, inArray } from 'drizzle-orm';
 import { createClient } from 'redis';
 import { db, pool } from '@/backend/db';
-import { attendanceRecords, auditLogs, notifications, profiles, shiftApplications, shiftAssignments, shifts } from '@/backend/db/schema';
+import { attendanceRecords, auditLogs, notifications, profiles, shiftApplications, shiftAssignments, shifts, userRoles } from '@/backend/db/schema';
 import { createTokenPair, decodeJwt, hashToken } from '@/backend/auth/tokens';
 import * as sessions from '@/backend/auth/session';
 import { signCsrfToken } from '@/backend/security/csrf';
@@ -84,8 +84,8 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
     const [profile] = await db.insert(profiles).values({
       fullName: `Delivery ${role}`,
       email: `delivery-${crypto.randomUUID()}@workforce.test`,
-      role,
     }).returning();
+    await db.insert(userRoles).values({ userId: profile.id, role });
     const pair = await createTokenPair(profile.id, role, '127.0.0.1');
     const jti = decodeJwt(pair.accessToken).jti;
     if (typeof jti !== 'string') throw new Error('Generated JWT is missing its session ID');

@@ -1,10 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { employeeTest as test } from './authenticated-test';
 
 for (const locale of ['nl', 'ar'] as const) {
   test(`${locale} login links to localized registration with a translated label`, async ({ page }) => {
     await page.route('**/api/auth/me', route => route.fulfill({ status: 401, json: { error: 'Unauthenticated' } }));
     await page.goto(`/${locale}/auth/login`);
-    const registration = page.getByRole('link', { name: locale === 'ar' ? 'التسجيل' : 'Registreren', exact: true });
+    const registration = page.locator('p').getByRole('link', { name: locale === 'ar' ? 'التسجيل' : 'Registreren', exact: true });
     await expect(registration).toHaveAttribute('href', `/${locale}/auth/register`);
     await registration.click();
     await expect(page).toHaveURL(new RegExp(`/${locale}/auth/register$`));

@@ -13,6 +13,23 @@ production Chromium/WebKit UI regressions, use:
 npm run test:integration:safe -- --browser
 ```
 
+`npm run test:integration -- --browser` is an equivalent alias for the same
+guarded runner.
+
+For low-resource checks, run these commands sequentially:
+
+```sh
+npm run test -- tests/unit/security/session-security.test.ts
+npm run typecheck
+npm run lint
+npm run check:frontend-boundaries
+```
+
+The employee account PATCH regression is an integration test and must be run via
+the guarded database workflow; do not invoke the integration Vitest config directly.
+The `--browser` option adds the production build and Chromium/WebKit checks and
+requires Docker, so run it only when sufficient memory is available.
+
 The opt-in phase builds a uniquely labelled temporary browser image using the
 locked Playwright version. Tooling installation has no repository, environment
 file or database credentials. A curated temporary source copy excludes environment
@@ -85,9 +102,13 @@ The workflow runs focused safety/auth/business tests and the complete unit plus
 integration suite using the guarded integration configuration, then typecheck,
 lint, and the frontend import-boundary check. It verifies the protected fixture tables
 are empty before and after each test pass, then removes only the unique Compose project
-created for that run. The production build runs after service cleanup, outside the
-internal network, because Next.js fetches Google Fonts during builds. No existing
-database or persistent Docker volume is started, migrated, or removed.
+created for that run. For non-browser runs, the production build runs after service
+cleanup, outside the internal network, because Next.js fetches Google Fonts during
+builds. Browser runs already build the curated production app before starting
+services, so they omit a redundant second build. The launcher handles SIGINT/SIGTERM
+by stopping its active worker command and then running ownership-checked cleanup; a
+signal received during cleanup is recorded while cleanup is allowed to finish. No
+existing database or persistent Docker volume is started, migrated, or removed.
 
 Do not run the schema initialization command independently against an existing database.
 The disposable database is initialized by the safe runner only after its identity and

@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { adminTest as test } from './authenticated-test';
 
 const shiftId = 'c2df4e6f-72a7-4e7a-9de1-27fe78d442a1';
 
@@ -56,7 +57,6 @@ for (const locale of ['nl', 'ar']) {
 
       await page.setViewportSize({ width, height: 900 });
       await page.goto(locale === 'ar' ? '/ar/admin/shifts' : '/admin/shifts');
-      await page.waitForLoadState('networkidle');
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
       await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
       await expect(page.locator('h1')).toHaveText(locale === 'ar' ? 'قائمة المناوبات' : 'Overzicht shifts');
@@ -64,8 +64,8 @@ for (const locale of ['nl', 'ar']) {
       if (width < 768) {
         await page.getByRole('button', { name: locale === 'ar' ? 'قائمة' : 'Menu' }).click();
       }
-      await expect(page.getByRole('button', {
-        name: locale === 'ar' ? 'إنشاء حساب' : 'Registreren',
+      await expect(page.getByRole('link', {
+        name: locale === 'ar' ? 'إدارة الموظفين' : 'Werknemers',
       })).toBeVisible();
       if (width < 768) {
         await page.keyboard.press('Escape');
@@ -101,7 +101,6 @@ for (const locale of ['nl', 'ar']) {
       });
       await page.setViewportSize({ width, height: 900 });
       await page.goto(locale === 'ar' ? '/ar/admin' : '/admin');
-      await page.waitForLoadState('networkidle');
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
       await expect(page.locator('h1')).toBeVisible();
       await expect(page.getByText('Future traffic control')).toBeVisible();
@@ -194,10 +193,9 @@ for (const locale of ['nl', 'ar']) {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(locale === 'ar' ? '/ar/admin/shifts/create' : '/admin/shifts/create');
-    await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: locale === 'ar' ? 'قائمة' : 'Menu' }).click();
-    await expect(page.getByRole('button', {
-      name: locale === 'ar' ? 'إنشاء حساب' : 'Registreren',
+    await expect(page.getByRole('link', {
+      name: locale === 'ar' ? 'إدارة الموظفين' : 'Werknemers',
     })).toBeVisible();
     await page.keyboard.press('Escape');
     const titleField = page.getByLabel(locale === 'ar' ? 'المسمى الوظيفي *' : 'Functietitel *');

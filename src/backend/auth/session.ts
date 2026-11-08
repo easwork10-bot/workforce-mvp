@@ -2,6 +2,9 @@ import 'server-only';
 import { createClient } from 'redis';
 import { hashToken, hashIp } from './tokens';
 import { decodeJwt } from './tokens';
+import { db } from '@/backend/db';
+import { profiles, userRoles } from '@/backend/db/schema';
+import { eq } from 'drizzle-orm';
 
 // Redis client - lazy initialization
 // Use `any` to avoid complex generic type issues with redis v4
@@ -99,8 +102,9 @@ export async function createSession(
 }
 
 /**
- * Lookup session by JTI
- * Returns null if session not found or Redis unavailable (fail-safe)
+ * Lookup an active account session by JTI.
+ * Returns null if the session, refresh-token index, or active profile is missing,
+ * or Redis is unavailable.
  */
 export async function getSession(jti: string): Promise<{
   userId: string;
@@ -109,24 +113,46 @@ export async function getSession(jti: string): Promise<{
   userAgent: string;
   refreshHash: string;
 } | null> {
+  let data: Record<string, string>;
   try {
     const redis = await getRedis();
-    const data = await redis.hGetAll(`session:${jti}`);
+    data = await redis.hGetAll(`session:${jti}`);
+    if (!data || Object.keys(data).length === 0 || !data.userId || !data.refreshHash) return null;
 
-    if (!data || Object.keys(data).length === 0) return null;
-
-    return {
-      userId: data.userId,
-      role: data.role as 'administrator' | 'supervisor' | 'employee',
-      ipHash: data.ipHash,
-      userAgent: data.userAgent,
-      refreshHash: data.refreshHash,
-    };
+    const refresh = await redis.hGetAll(`refresh:${data.userId}:${data.refreshHash}`);
+    if (!refresh || refresh.sessionId !== jti) return null;
   } catch (error) {
     // Fail-safe: if Redis is unavailable, treat as session not found
     console.error('[getSession] Redis error, failing safe:', error);
     return null;
   }
+
+  const profileRoles = await db
+    .select({
+      accountStatus: profiles.accountStatus,
+      role: userRoles.role,
+    })
+    .from(profiles)
+    .leftJoin(userRoles, eq(profiles.id, userRoles.userId))
+    .where(eq(profiles.id, data.userId));
+  if (profileRoles.length === 0 || profileRoles[0].accountStatus !== 'active') return null;
+
+  const validRoles = ['administrator', 'supervisor', 'employee'] as const;
+  const sessionRole = validRoles.find((role) => role === data.role);
+  if (!sessionRole) return null;
+  const assignedRoles = profileRoles.flatMap(({ role }) => role ? [role] : []);
+  const hasAssignedRole = assignedRoles.length === 0
+    ? sessionRole === 'employee'
+    : assignedRoles.includes(sessionRole);
+  if (!hasAssignedRole) return null;
+
+  return {
+    userId: data.userId,
+    role: sessionRole,
+    ipHash: data.ipHash,
+    userAgent: data.userAgent,
+    refreshHash: data.refreshHash,
+  };
 }
 
 /**
@@ -268,17 +294,18 @@ export async function rotateRefreshToken(
 
 /**
  * Revoke all sessions for a user (used on logout, password change, token reuse)
- * Silently handles Redis unavailability
+ * Returns false when Redis cannot confirm complete revocation.
  */
-export async function revokeAllUserSessions(userId: string): Promise<void> {
+export async function revokeAllUserSessions(userId: string): Promise<boolean> {
   let redis;
   try {
     redis = await getRedis();
   } catch {
     console.error('[revokeAllUserSessions] Redis unavailable');
-    return;
+    return false;
   }
 
+  let complete = true;
   try {
     // Find all refresh tokens for this user
     const keys = await redis.keys(`refresh:${userId}:*`);
@@ -289,13 +316,16 @@ export async function revokeAllUserSessions(userId: string): Promise<void> {
           await redis.del(`session:${data.sessionId}`);
         }
         await redis.del(key);
-      } catch {
-        // Best effort per-key
+      } catch (error) {
+        complete = false;
+        console.error(`[revokeAllUserSessions] Failed to revoke ${key}:`, error);
       }
     }
   } catch {
     console.error('[revokeAllUserSessions] Redis error during key iteration');
+    return false;
   }
+  return complete;
 }
 
 /**

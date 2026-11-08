@@ -1,35 +1,65 @@
 # Workforce MVP
 
-Workforce MVP is a Next.js workforce-scheduling application with PostgreSQL and
-Redis-backed services. The employee shift browser, login, and registration are
-connected; several other screens remain prototypes. See the
-[documentation index](./docs/README.md) for verified architecture, setup, testing,
-security, database, operations, and historical records.
+Workforce MVP is a localized workforce-scheduling application built with Next.js,
+PostgreSQL, and Redis. It includes employee and administrator workflows for
+authentication, shift browsing and management, applications, and assignments.
+Administrator, employee, and attendance pages require a valid server-side session
+and the appropriate role. Employee schedule, dashboard, and attendance screens
+still contain sample data; see the [current architecture](./docs/architecture.md)
+for the verified feature status.
 
-## Quick start
+## Requirements
 
-- Use Node.js 24 and npm.
-- Install dependencies with `npm ci --legacy-peer-deps`.
-- Copy `.env.example` to `.env.local` and configure local services and secrets as
-  described in the [environment template](./.env.example) and
-  [security notes](./docs/architecture.md#authentication-and-security-contracts).
-- Start the app with `npm run dev`.
+- Node.js 24 and npm
+- PostgreSQL and Redis for local application development
+- A configured RS256 JWT key pair and `CSRF_SECRET`
+
+See [.env.example](./.env.example) for the environment variables and
+[architecture security notes](./docs/architecture.md#authentication-and-security-contracts).
+Never put production credentials in tracked files.
+
+## Setup and local development
+
+```sh
+npm ci --legacy-peer-deps
+```
+
+Copy `.env.example` to `.env.local`, configure the local PostgreSQL/Redis services,
+JWT keys and CSRF secret, then start:
+
+```sh
+npm run dev
+```
 
 Do not run schema push or migration commands against an existing `workforce`
 database. The migration history is unresolved; see
 [database and migration state](./docs/architecture.md#postgresql-and-migration-state).
 
-## Common commands
+## Safe checks
 
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Start the validated local development server |
-| `npm test` | Run database-free unit tests |
-| `npm run test:integration:safe` | Run database-backed tests on disposable isolated services |
-| `npm run typecheck` | Run the TypeScript check |
-| `npm run lint` | Run the configured lint command |
-| `npm run build` | Create a production build |
+Run database-free tests and static checks:
 
-Use only `npm run test:integration:safe` for database-backed tests. It verifies the
-disposable database identity and does not use the development or production
-database. See the [testing guide](./docs/testing/isolated-integration-tests.md).
+```sh
+npm test
+npm run typecheck
+npm run lint
+npm run check:frontend-boundaries
+```
+
+Database-backed tests must use the guarded isolated workflow; never point test
+commands directly at a development or production database:
+
+```sh
+npm run test:integration:safe
+```
+
+The optional production-browser run also starts Docker and builds the application,
+so use it only when sufficient memory is available:
+
+```sh
+npm run test:integration:safe -- --browser
+```
+
+See the [isolated integration-test guide](./docs/testing/isolated-integration-tests.md)
+for isolation details and the [documentation index](./docs/README.md) for the
+architecture, roadmap, and historical records.

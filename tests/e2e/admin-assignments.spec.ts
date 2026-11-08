@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { adminTest as test } from './authenticated-test';
 import { assignmentStatuses, type AdminAssignment } from '@/shared/admin-assignments';
 import nl from '@/locales/nl.json';
 import ar from '@/locales/ar.json';

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/backend/auth/session';
+import { getSession, revokeAllUserSessions } from '@/backend/auth/session';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
 import { employeeIdParamSchema, updateEmployeeSchema } from '@/backend/validation/employees';
 import { getEmployeeById, updateEmployee } from '@/backend/db/queries/employees';
@@ -105,6 +105,21 @@ const protectedPATCH = requireCsrf(async (
       );
     }
 
+    let sessionsRevokedBeforeUpdate = false;
+    if (validation.data.accountStatus === 'active') {
+      const currentEmployee = await getEmployeeById(params.id);
+      if (currentEmployee && currentEmployee.accountStatus !== 'active') {
+        const revoked = await revokeAllUserSessions(params.id);
+        if (!revoked) {
+          return NextResponse.json(
+            { error: 'Unable to revoke existing sessions; account remains inactive' },
+            { status: 503 }
+          );
+        }
+        sessionsRevokedBeforeUpdate = true;
+      }
+    }
+
     // Update employee
     const success = await updateEmployee(
       params.id,
@@ -138,6 +153,21 @@ const protectedPATCH = requireCsrf(async (
         { error: 'Failed to update employee or employee not found' },
         { status: 404 }
       );
+    }
+
+    if (
+      (
+        validation.data.role
+        || (validation.data.accountStatus && validation.data.accountStatus !== 'active')
+      )
+      && !sessionsRevokedBeforeUpdate
+    ) {
+      const revoked = await revokeAllUserSessions(params.id);
+      if (!revoked) {
+        console.error(
+          '[Admin Employee PATCH] Session cleanup was incomplete; shared session validation will reject removed roles and inactive accounts.'
+        );
+      }
     }
 
     return NextResponse.json({

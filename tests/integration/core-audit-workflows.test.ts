@@ -12,6 +12,7 @@ import {
   shiftApplications,
   shiftAssignments,
   shifts,
+  userRoles,
 } from '@/backend/db/schema';
 import { getAuditLogs } from '@/backend/db/queries/audit';
 import { updateEmployee } from '@/backend/db/queries/employees';
@@ -181,6 +182,28 @@ describe('Core workflow audit integration', () => {
     });
     expect(JSON.stringify(logs.data)).not.toContain('NL00SECRET123');
     expect(JSON.stringify(logs.data)).not.toContain('+31000000000');
+  });
+
+  it('replaces all prior role assignments and audits the privilege removal', async () => {
+    await db.insert(userRoles).values([
+      { userId: employeeId, role: 'administrator' },
+      { userId: employeeId, role: 'supervisor' },
+    ]);
+
+    expect(await updateEmployee(employeeId, adminId, {}, 'employee')).toBe(true);
+
+    const assignedRoles = await db.select({ role: userRoles.role })
+      .from(userRoles)
+      .where(eq(userRoles.userId, employeeId));
+    expect(assignedRoles).toEqual([{ role: 'employee' }]);
+
+    const roleAudits = await getAuditLogs({ actorId: adminId, entityType: 'user_roles', page: 1, limit: 10 });
+    expect(roleAudits.data.map(({ action }) => action).sort()).toEqual(['DELETE', 'DELETE', 'INSERT']);
+    expect(roleAudits.data.filter(({ action }) => action === 'DELETE')
+      .map(({ oldValues }) => oldValues)).toEqual(expect.arrayContaining([
+      { role: 'administrator' },
+      { role: 'supervisor' },
+    ]));
   });
 
   it('audits check-in and check-out plus the associated assignment transition', async () => {

@@ -1,7 +1,7 @@
 import 'server-only';
 import { db } from '..';
 import { profiles, userRoles, employeeDetails } from '../schema';
-import { eq, and, desc, asc, ilike, or, count } from 'drizzle-orm';
+import { eq, and, inArray, desc, asc, ilike, or, count } from 'drizzle-orm';
 import type { Profile, EmployeeDetail } from '../schema';
 import { logAuditEvent, type AuditMetadata } from './audit';
 
@@ -186,20 +186,38 @@ export async function updateEmployee(
 
     // Update role
     if (roleData) {
-      const [existingRole] = await tx
+      const existingRoles = await tx
         .select()
         .from(userRoles)
-        .where(and(eq(userRoles.userId, id), eq(userRoles.role, roleData)))
-        .limit(1);
+        .where(eq(userRoles.userId, id));
 
-      if (!existingRole) {
+      const removedRoles = existingRoles.filter(({ role }) => role !== roleData);
+      if (removedRoles.length > 0) {
+        await tx
+          .delete(userRoles)
+          .where(inArray(userRoles.id, removedRoles.map(({ id: roleId }) => roleId)));
+
+        for (const removedRole of removedRoles) {
+          await logAuditEvent({
+            actorId,
+            action: 'DELETE',
+            entityType: 'user_roles',
+            entityId: removedRole.id,
+            oldValues: { role: removedRole.role },
+            newValues: null,
+            ...auditMetadata,
+          }, tx);
+        }
+      }
+
+      if (!existingRoles.some(({ role }) => role === roleData)) {
         const [createdRole] = await tx
-        .insert(userRoles)
-        .values({
-          userId: id,
-          role: roleData,
-        })
-        .returning();
+          .insert(userRoles)
+          .values({
+            userId: id,
+            role: roleData,
+          })
+          .returning();
 
         await logAuditEvent({
           actorId,

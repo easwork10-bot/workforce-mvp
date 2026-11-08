@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { generateCsrfToken, signCsrfToken } from '@/backend/security/csrf';
+import { getEmployeeById } from '@/backend/db/queries/employees';
 
 const mocks = vi.hoisted(() => ({
   verifyTokenFromCookie: vi.fn(),
   getSession: vi.fn(),
+  revokeAllUserSessions: vi.fn(),
   updateEmployee: vi.fn(),
   getAuditMetadata: vi.fn(),
 }));
@@ -15,6 +17,7 @@ vi.mock('@/backend/auth/tokens', () => ({
 
 vi.mock('@/backend/auth/session', () => ({
   getSession: mocks.getSession,
+  revokeAllUserSessions: mocks.revokeAllUserSessions,
 }));
 
 vi.mock('@/backend/db/queries/employees', () => ({
@@ -59,8 +62,10 @@ function matchingCsrfOptions(body: unknown = validBody): RequestOptions {
 describe('PATCH /api/admin/employees/[id] CSRF protection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getEmployeeById).mockReset();
     mocks.verifyTokenFromCookie.mockResolvedValue({ sub: 'admin-user', jti: 'admin-session' });
     mocks.getSession.mockResolvedValue({ role: 'administrator' });
+    mocks.revokeAllUserSessions.mockResolvedValue(undefined);
     mocks.updateEmployee.mockResolvedValue(true);
     mocks.getAuditMetadata.mockReturnValue(auditMetadata);
   });
@@ -135,5 +140,46 @@ describe('PATCH /api/admin/employees/[id] CSRF protection', () => {
     expect(mocks.updateEmployee.mock.calls[0][0]).toBe(employeeId);
     expect(mocks.updateEmployee.mock.calls[0][1]).toBe('admin-user');
     expect(mocks.updateEmployee.mock.calls[0][5]).toEqual(auditMetadata);
+    expect(mocks.revokeAllUserSessions).not.toHaveBeenCalled();
+  });
+
+  it('revokes all sessions when an account is deactivated', async () => {
+    const response = await PATCH(
+      createRequest(matchingCsrfOptions({ accountStatus: 'inactive' })),
+      employeeParams
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.revokeAllUserSessions).toHaveBeenCalledOnce();
+    expect(mocks.revokeAllUserSessions).toHaveBeenCalledWith(employeeId);
+  });
+
+  it('revokes sessions when replacing an employee role', async () => {
+    const response = await PATCH(
+      createRequest(matchingCsrfOptions({ role: 'employee' })),
+      employeeParams
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateEmployee.mock.calls[0][3]).toBe('employee');
+    expect(mocks.revokeAllUserSessions).toHaveBeenCalledOnce();
+    expect(mocks.revokeAllUserSessions).toHaveBeenCalledWith(employeeId);
+  });
+
+  it('does not reactivate an account when existing sessions cannot be revoked', async () => {
+    vi.mocked(getEmployeeById).mockResolvedValue({
+      id: employeeId,
+      accountStatus: 'inactive',
+    } as Awaited<ReturnType<typeof getEmployeeById>>);
+    mocks.revokeAllUserSessions.mockResolvedValue(false);
+
+    const response = await PATCH(
+      createRequest(matchingCsrfOptions({ accountStatus: 'active' })),
+      employeeParams
+    );
+
+    expect(response.status).toBe(503);
+    expect(mocks.updateEmployee).not.toHaveBeenCalled();
+    expect(mocks.revokeAllUserSessions).toHaveBeenCalledWith(employeeId);
   });
 });

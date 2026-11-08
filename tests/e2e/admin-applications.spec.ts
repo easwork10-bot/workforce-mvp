@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { adminTest as test } from './authenticated-test';
 import type { AdminApplication, ApplicationStatus } from '@/shared/admin-applications';
 
 const shiftId = 'c2df4e6f-72a7-4e7a-9de1-27fe78d442a1';

@@ -43,6 +43,21 @@ let primaryError;
 let runtimeDirectory;
 let browserImageCreated = false;
 let browserKeys = {};
+let interruptSignal;
+let cleanupStarted = false;
+const activeChildren = new Set();
+
+function handleInterrupt(signal) {
+  if (interruptSignal) return;
+  interruptSignal = signal;
+  primaryError = new Error(`The isolated test workflow was interrupted by ${signal}.`);
+  if (!cleanupStarted) {
+    for (const child of activeChildren) child.kill();
+  }
+}
+
+process.on('SIGINT', handleInterrupt);
+process.on('SIGTERM', handleInterrupt);
 
 function redact(text) {
   return text.replaceAll(dbPassword, '[redacted]');
@@ -50,19 +65,28 @@ function redact(text) {
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
+    if (interruptSignal && !cleanupStarted) {
+      reject(new Error(`The isolated test workflow was interrupted by ${interruptSignal}.`));
+      return;
+    }
     const child = spawn(command, args, {
       cwd: projectRoot,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
       ...options,
     });
+    activeChildren.add(child);
     const stdout = [];
     const stderr = [];
 
     child.stdout?.on('data', (chunk) => stdout.push(chunk));
     child.stderr?.on('data', (chunk) => stderr.push(chunk));
-    child.once('error', reject);
+    child.once('error', (error) => {
+      activeChildren.delete(child);
+      reject(error);
+    });
     child.once('close', (code, signal) => {
+      activeChildren.delete(child);
       const output = Buffer.concat(stdout).toString();
       const errors = Buffer.concat(stderr).toString();
       if (code === 0) {
@@ -355,6 +379,7 @@ try {
 } catch (error) {
   primaryError = error;
 } finally {
+  cleanupStarted = true;
   if (composeStarted) {
     try {
       const { stdout } = await run(docker, [
@@ -421,9 +446,10 @@ try {
         : error;
     }
   }
+  cleanupStarted = false;
 }
 
-if (!primaryError) {
+if (!primaryError && !browserEnabled) {
   try {
     console.log('\n> Production build (after disposable services are removed)');
     const buildEnv = createBuildIsolationEnvironment(

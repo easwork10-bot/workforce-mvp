@@ -3,11 +3,12 @@ import { generateKeyPairSync } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/backend/db';
-import { auditLogs, notifications, profiles, shiftApplications, shiftAssignments, shifts } from '@/backend/db/schema';
+import { auditLogs, notifications, profiles, shiftApplications, shiftAssignments, shifts, userRoles } from '@/backend/db/schema';
 import type { ShiftAssignment } from '@/backend/db/schema';
 import { createTokenPair, decodeJwt, hashToken } from '@/backend/auth/tokens';
-import { createSession, deleteSession } from '@/backend/auth/session';
+import { createSession, deleteSession, getSession } from '@/backend/auth/session';
 import { getAssignments } from '@/backend/db/queries/assignments';
+import { updateEmployee } from '@/backend/db/queries/employees';
 import { GET } from '@/app/api/admin/assignments/route';
 
 type Identity = { id: string; token: string; jti: string; refreshHash: string };
@@ -72,6 +73,9 @@ describe('admin assignments GET with PostgreSQL and real JWT/Redis sessions', ()
   afterEach(async () => {
     if (shiftIds.length) await db.delete(shifts).where(inArray(shifts.id, shiftIds));
     for (const user of identities) await deleteSession(user.jti, user.id, user.refreshHash);
+    if (identities.length) {
+      await db.delete(auditLogs).where(inArray(auditLogs.actorId, identities.map(user => user.id)));
+    }
     if (identities.length) await db.delete(profiles).where(inArray(profiles.id, identities.map(user => user.id)));
     identities.length = 0;
     shiftIds.length = 0;
@@ -85,12 +89,23 @@ describe('admin assignments GET with PostgreSQL and real JWT/Redis sessions', ()
       email: `assignments-${crypto.randomUUID()}@workforce.test`,
       passwordHash: 'must-not-be-returned',
     }).returning();
+    await db.insert(userRoles).values({ userId: profile.id, role });
     const pair = await createTokenPair(profile.id, role, '127.0.0.1');
     const jti = decodeJwt(pair.accessToken).jti;
     if (typeof jti !== 'string') throw new Error('Generated JWT is missing its session ID');
     const user = { id: profile.id, token: pair.accessToken, jti, refreshHash: hashToken(pair.refreshToken) };
     identities.push(user);
     await createSession(jti, profile.id, role, '127.0.0.1', 'assignment-overview-test', pair.refreshToken);
+    return user;
+  }
+
+  async function createExistingIdentity(id: string, role: 'administrator' | 'employee' | 'supervisor'): Promise<Identity> {
+    const pair = await createTokenPair(id, role, '127.0.0.1');
+    const jti = decodeJwt(pair.accessToken).jti;
+    if (typeof jti !== 'string') throw new Error('Generated JWT is missing its session ID');
+    const user = { id, token: pair.accessToken, jti, refreshHash: hashToken(pair.refreshToken) };
+    identities.push(user);
+    await createSession(jti, id, role, '127.0.0.1', 'assignment-overview-test', pair.refreshToken);
     return user;
   }
 
@@ -183,6 +198,21 @@ describe('admin assignments GET with PostgreSQL and real JWT/Redis sessions', ()
     expect((await GET(request('', supervisor))).status).toBe(403);
     await deleteSession(admin.jti, admin.id, admin.refreshHash);
     expect((await GET(request('', admin))).status).toBe(401);
+  });
+
+  it('invalidates an administrator session on role replacement and requires reauthentication', async () => {
+    expect(await updateEmployee(otherAdmin.id, admin.id, {}, 'employee')).toBe(true);
+
+    expect(await getSession(otherAdmin.jti)).toBeNull();
+    expect((await GET(request('', otherAdmin))).status).toBe(401);
+    const assignedRoles = await db.select({ role: userRoles.role })
+      .from(userRoles)
+      .where(eq(userRoles.userId, otherAdmin.id));
+    expect(assignedRoles).toEqual([{ role: 'employee' }]);
+
+    const reauthenticatedEmployee = await createExistingIdentity(otherAdmin.id, 'employee');
+    expect(await getSession(reauthenticatedEmployee.jti)).toMatchObject({ role: 'employee' });
+    expect((await GET(request('', reauthenticatedEmployee))).status).toBe(403);
   });
 
   it('rejects invalid status, pagination, unknown and duplicate query parameters with real authorization', async () => {

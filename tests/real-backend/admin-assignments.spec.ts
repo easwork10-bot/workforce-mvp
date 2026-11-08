@@ -3,7 +3,7 @@ import { expect, test, type APIRequestContext, type BrowserContext, type Page } 
 import argon2 from 'argon2';
 import { Client } from 'pg';
 import { createClient } from 'redis';
-import { decodeJwt } from 'jose';
+import { decodeJwt, importPKCS8, SignJWT } from 'jose';
 import { verifyTestDatabaseTarget } from '../support/database/testDatabaseSafety';
 import { adminAssignmentPageSchema, assignmentStatuses } from '../../src/shared/admin-assignments';
 import nl from '../../src/locales/nl.json';
@@ -33,6 +33,7 @@ test.describe.serial('real authenticated assignment lifecycle', () => {
   let approved: ApprovedAssignment;
 
   const password = `Disposable-${randomUUID()}!`;
+
   async function identity(role: 'administrator' | 'employee') {
     const id = randomUUID();
     const email = `real-browser-${id}@workforce.test`;
@@ -47,6 +48,8 @@ test.describe.serial('real authenticated assignment lifecycle', () => {
   }
 
   async function login(target: BrowserContext, user: Awaited<ReturnType<typeof identity>>) {
+    // Keep functional setup logins independent of the disposable IP throttle window.
+    await redis.del('ratelimit:127.0.0.1:login');
     const response = await target.request.post('/api/auth/login', { data: { email: user.email, password } });
     expect(response.status()).toBe(200);
     expect((await response.json()).user).toMatchObject({ id: user.id, role: user.role, fullName: user.fullName });
@@ -111,6 +114,141 @@ test.describe.serial('real authenticated assignment lifecycle', () => {
     employeeLogin = await login(employeeContext, employee);
   });
 
+  test('real login form opens the localized administrator dashboard', async ({ browser }) => {
+    const target = await browser.newContext({ baseURL: 'https://localhost:3197', ignoreHTTPSErrors: true });
+    try {
+      const loginPage = await target.newPage();
+      await loginPage.goto('/ar/admin');
+      await expect(loginPage).toHaveURL(/\/ar\/auth\/login$/);
+      await loginPage.getByLabel(ar.auth.login.email).fill(admin.email);
+      await loginPage.getByLabel(ar.auth.login.password, { exact: true }).fill(password);
+      await loginPage.getByRole('button', { name: ar.auth.login.submit, exact: true }).last().click();
+      await expect(loginPage).toHaveURL(/\/ar\/admin$/);
+      await expect(loginPage.getByRole('heading', { level: 1 })).toBeVisible();
+      const cookies = await target.cookies();
+      const access = cookies.find(cookie => cookie.name === 'access_token');
+      const refresh = cookies.find(cookie => cookie.name === 'refresh_token');
+      if (!access || !refresh) throw new Error('Real login did not establish both authentication cookies.');
+      const jti = decodeJwt(access.value).jti;
+      if (!jti) throw new Error('Real login JWT has no session ID.');
+      sessionKeys.push(`session:${jti}`, `refresh:${admin.id}:${createHash('sha256').update(refresh.value).digest('hex')}`);
+    } finally {
+      await target.close();
+    }
+  });
+
+  test('deactivated accounts cannot use existing Redis sessions for pages or APIs', async () => {
+    for (const [user, target, jti, apiPath, pagePath] of [
+      [employee, employeeContext!, employeeLogin.jti, '/api/employee/schedule', '/ar/employee/schedule'],
+      [admin, context!, adminLogin.jti, '/api/admin/assignments', '/nl/admin/assignments'],
+    ] as const) {
+      await db.query("UPDATE profiles SET account_status = 'inactive' WHERE id = $1", [user.id]);
+      try {
+        expect(await redis.exists(`session:${jti}`)).toBe(1);
+        expect((await target.request.get(apiPath)).status()).toBe(401);
+        expect((await target.request.get('/api/auth/me')).status()).toBe(401);
+        const page = await target.newPage();
+        try {
+          await page.goto(pagePath);
+          await expect(page).toHaveURL(new RegExp(`${pagePath.startsWith('/ar') ? '/ar' : '/nl'}/auth/login$`));
+        } finally {
+          await page.close();
+        }
+      } finally {
+        await db.query("UPDATE profiles SET account_status = 'active' WHERE id = $1", [user.id]);
+      }
+    }
+  });
+
+  test('deactivating an employee revokes their Redis session', async () => {
+    try {
+      const response = await context!.request.patch(`/api/admin/employees/${employee.id}`, {
+        headers: { 'x-csrf-token': adminLogin.csrf },
+        data: { accountStatus: 'inactive' },
+      });
+      expect(response.status()).toBe(200);
+      expect(await redis.exists(`session:${employeeLogin.jti}`)).toBe(0);
+    } finally {
+      await db.query("UPDATE profiles SET account_status = 'active' WHERE id = $1", [employee.id]);
+      employeeLogin = await login(employeeContext!, employee);
+    }
+  });
+
+  test('reactivating an account revokes any session left by a failed deactivation cleanup', async () => {
+    try {
+      await db.query("UPDATE profiles SET account_status = 'inactive' WHERE id = $1", [employee.id]);
+      expect(await redis.exists(`session:${employeeLogin.jti}`)).toBe(1);
+      const response = await context!.request.patch(`/api/admin/employees/${employee.id}`, {
+        headers: { 'x-csrf-token': adminLogin.csrf },
+        data: { accountStatus: 'active' },
+      });
+      expect(response.status()).toBe(200);
+      expect(await redis.exists(`session:${employeeLogin.jti}`)).toBe(0);
+      expect((await employeeContext!.request.get('/api/employee/schedule')).status()).toBe(401);
+    } finally {
+      await db.query("UPDATE profiles SET account_status = 'active' WHERE id = $1", [employee.id]);
+      employeeLogin = await login(employeeContext!, employee);
+    }
+  });
+
+  for (const locale of ['nl', 'ar'] as const) {
+      test(`${locale} protected pages reject anonymous and wrong-role requests`, async ({ browser }) => {
+        const anonymous = await browser.newContext({ baseURL: 'https://localhost:3197', ignoreHTTPSErrors: true });
+        try {
+          for (const path of ['/admin', '/admin/shifts', '/admin/shifts/create', '/admin/applications',
+            '/admin/assignments', '/employee', '/employee/shifts', '/employee/applications',
+            '/employee/schedule', '/attendance/check-in']) {
+            const response = await anonymous.request.get(`/${locale}${path}`, { maxRedirects: 0 });
+            expect(response.status(), path).toBe(307);
+            expect(response.headers().location).toBe(`/${locale}/auth/login`);
+          }
+          const external = await anonymous.request.get(`/${locale}/admin?next=https%3A%2F%2Fexample.com`, { maxRedirects: 0 });
+          expect(external.status()).toBe(307);
+          expect(external.headers().location).toBe(`/${locale}/auth/login`);
+          for (const path of ['/admin', '/admin/shifts', '/admin/shifts/create', '/admin/applications', '/admin/assignments']) {
+            const response = await employeeContext!.request.get(`/${locale}${path}`, { maxRedirects: 0 });
+            expect(response.status(), path).toBe(404);
+            expect(await response.text()).not.toContain('Real database administrator');
+          }
+          for (const path of ['/employee', '/employee/shifts', '/employee/applications', '/employee/schedule', '/attendance/check-in']) {
+            const response = await context!.request.get(`/${locale}${path}`, { maxRedirects: 0 });
+            expect(response.status(), path).toBe(404);
+            expect(await response.text()).not.toContain('Real database employee');
+          }
+          expect((await context!.request.get(`/${locale}/admin`, { maxRedirects: 0 })).status()).toBe(200);
+          expect((await employeeContext!.request.get(`/${locale}/employee`, { maxRedirects: 0 })).status()).toBe(200);
+        } finally {
+          await anonymous.close();
+        }
+      });
+    }
+
+    test('expired JWT and revoked Redis session cannot render a protected page', async ({ browser }) => {
+      const target = await browser.newContext({ baseURL: 'https://localhost:3197', ignoreHTTPSErrors: true });
+      try {
+        const loginResult = await login(target, employee);
+        if (!process.env.JWT_PRIVATE_KEY_B64) throw new Error('Missing isolated test signing key.');
+        const key = await importPKCS8(Buffer.from(process.env.JWT_PRIVATE_KEY_B64, 'base64').toString('utf8'), 'RS256');
+        const expired = await new SignJWT({ role: 'employee', ipHash: 'test' })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setSubject(employee.id).setJti(loginResult.jti)
+          .setIssuedAt().setExpirationTime(Math.floor(Date.now() / 1000) - 60).sign(key);
+        const original = (await target.cookies()).find(cookie => cookie.name === 'access_token');
+        if (!original) throw new Error('Missing access cookie.');
+        await target.addCookies([{ name: 'access_token', value: expired, url: 'https://localhost:3197', secure: true, httpOnly: true }]);
+        let response = await target.request.get('/ar/employee/schedule', { maxRedirects: 0 });
+        expect(response.status()).toBe(307);
+        expect(response.headers().location).toBe('/ar/auth/login');
+        await target.addCookies([original]);
+        await redis.del(`session:${loginResult.jti}`);
+        response = await target.request.get('/nl/employee/schedule', { maxRedirects: 0 });
+        expect(response.status()).toBe(307);
+        expect(response.headers().location).toBe('/nl/auth/login');
+        expect((await target.request.get('/api/employee/schedule')).status()).toBe(401);
+      } finally {
+        await target.close();
+      }
+    });
+
     test('create and publish a shift, apply as employee, approve with real CSRF and verify database writes', async () => {
       const created = await post(context!.request, '/api/admin/shifts', adminLogin.csrf, {
         title: 'Real backend traffic control', workType: 'traffic-control', location: 'Amsterdam Noord',
@@ -140,7 +278,7 @@ test.describe.serial('real authenticated assignment lifecycle', () => {
     });
 
     test('real browser response, rendered details and dates match the approved assignment in PostgreSQL', async () => {
-      const { response, body } = await navigate(page, '/admin/assignments');
+      const { response, body } = await navigate(page, '/nl/admin/assignments');
       expect(response.status()).toBe(200);
       expect(response.headers()['cache-control']).toBe('private, no-store');
       const data = adminAssignmentPageSchema.parse(body);
@@ -226,17 +364,17 @@ test.describe.serial('real authenticated assignment lifecycle', () => {
 
     test('unauthenticated and employee browsers cannot read protected assignment data', async ({ browser }) => {
       anonymousContext = await browser.newContext({ baseURL: 'https://localhost:3197', ignoreHTTPSErrors: true });
-      for (const [target, status, message] of [
-        [anonymousContext, 401, nl.adminAssignmentManagement.unauthorized],
-        [employeeContext!, 403, nl.adminAssignmentManagement.forbidden],
+      for (const [target, status] of [
+        [anonymousContext, 401],
+        [employeeContext!, 403],
       ] as const) {
         const direct = await target.request.get('/api/admin/assignments');
         expect(direct.status()).toBe(status);
         expect(await direct.json()).not.toHaveProperty('assignments');
         const otherPage = await target.newPage();
-        const { response } = await navigate(otherPage, '/admin/assignments');
-        expect(response.status()).toBe(status);
-        await expect(otherPage.getByRole('main').getByRole('alert')).toHaveText(message);
+        await otherPage.goto('/nl/admin/assignments');
+        if (status === 401) await expect(otherPage).toHaveURL(/\/nl\/auth\/login$/);
+        else await expect(otherPage.getByRole('heading', { name: '404' })).toBeVisible();
         await expect(otherPage.getByText(employee.fullName, { exact: true })).toHaveCount(0);
         await otherPage.close();
       }
@@ -323,6 +461,45 @@ test.describe.serial('real authenticated assignment lifecycle', () => {
       await page.getByRole('button', { name: ar.adminAssignmentManagement.refresh, exact: true }).click();
       expect((await pending).status()).toBe(401);
       await expect(page.getByRole('main').getByRole('alert')).toHaveText(ar.adminAssignmentManagement.unauthorized);
+    });
+
+    test('replacing administrator role revokes sessions and requires employee reauthentication', async ({ browser }) => {
+      const roleChangeContext = await browser.newContext({
+        baseURL: 'https://localhost:3197',
+        ignoreHTTPSErrors: true,
+      });
+      const reauthenticationContext = await browser.newContext({
+        baseURL: 'https://localhost:3197',
+        ignoreHTTPSErrors: true,
+      });
+      try {
+        const roleChangeLogin = await login(roleChangeContext, admin);
+        const roleChangeResponse = await roleChangeContext.request.patch(
+          `/api/admin/employees/${admin.id}`,
+          {
+            headers: { 'x-csrf-token': roleChangeLogin.csrf },
+            data: { role: 'employee' },
+          },
+        );
+        expect(roleChangeResponse.status(), await roleChangeResponse.text()).toBe(200);
+
+        expect(await redis.exists(`session:${roleChangeLogin.jti}`)).toBe(0);
+        expect((await roleChangeContext.request.get('/api/admin/assignments')).status()).toBe(401);
+        const oldSessionPage = await roleChangeContext.newPage();
+        await oldSessionPage.goto('/nl/admin');
+        await expect(oldSessionPage).toHaveURL(/\/nl\/auth\/login$/);
+        await oldSessionPage.close();
+
+        await login(reauthenticationContext, { ...admin, role: 'employee' });
+        expect((await reauthenticationContext.request.get('/api/admin/assignments')).status()).toBe(403);
+        const employeePage = await reauthenticationContext.newPage();
+        await employeePage.goto('/nl/admin');
+        await expect(employeePage.getByRole('heading', { name: '404' })).toBeVisible();
+        await employeePage.close();
+      } finally {
+        await roleChangeContext.close();
+        await reauthenticationContext.close();
+      }
     });
   test.afterAll(async () => {
     await context?.close();

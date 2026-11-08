@@ -12,8 +12,8 @@ against the linked code; dated plans and the original handoff are historical rec
 - [Authentication and security](./architecture.md#authentication-and-security-contracts)
 - [Database schema and migration history](./architecture.md#postgresql-and-migration-state)
 - [Development setup and limitations](./architecture.md#development)
-- [Unit and integration testing](./architecture.md#tests-and-isolated-database-workflow)
-- [Safe isolated integration-test procedure](./testing/isolated-integration-tests.md)
+- [Test configuration and current scope](./architecture.md#tests-and-isolated-database-workflow)
+- [Safe isolated integration and browser-test procedure](./testing/isolated-integration-tests.md)
 - [Operations and deployment limitations](./architecture.md#current-limitations-and-deployment-readiness)
 - [Root README](../README.md) — project entrypoint and quick start.
 - [Environment template](../.env.example) — active environment variable names and

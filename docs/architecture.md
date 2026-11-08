@@ -60,9 +60,21 @@ Database, secret, session, authorization, and business-logic code belongs under
 protect this separation.
 
 The `next-intl` middleware applies locale routing and the default Dutch locale. It
-does not authenticate or authorize application pages. API handlers perform
-authentication, role checks, and resource ownership checks where required; UI
-visibility is not a security boundary.
+does not authenticate or authorize application pages. Each protected dashboard page verifies the access JWT and its Redis session on the
+server before rendering:
+administrator pages require the administrator role; employee and attendance pages
+require the employee role. Missing, expired or revoked sessions redirect to the
+current locale's login; a wrong role receives a not-found response. API handlers
+remain the authoritative enforcement boundary and perform authentication, role
+checks, and resource ownership checks where required. Session lookup also requires
+an active profile and an assigned role matching the Redis session. The employee
+edit API replaces prior roles when its single role field is provided, then attempts
+to revoke the user's sessions. Even if Redis revocation is incomplete, a session
+with a removed role is rejected by the shared PostgreSQL-backed session check.
+Setting an account inactive or suspended also triggers Redis session revocation;
+any session that remains is rejected while the profile is inactive. Reactivation
+first requires confirmed Redis revocation, so an unavailable Redis service leaves
+the account inactive rather than reviving a stale session.
 
 ## Pages and implemented UI
 
@@ -127,8 +139,19 @@ changing handlers.
   and refresh endpoints apply IP-based rate limits. Session records have a
   seven-day Redis TTL; refresh-token records have a 30-day TTL. Refresh-token claims
   are single-use and atomically claimed; reuse can revoke the user's sessions.
-- Session lookup depends on Redis. Authentication fails closed when session state
-  cannot be established.
+- Session lookup checks the Redis session, its matching refresh-token index, and the
+  current PostgreSQL account status and role assignments. A Redis role snapshot is
+  rejected if it is no longer assigned; accounts without role rows retain the
+  existing employee fallback. Authentication fails closed when session state cannot
+  be established.
+- Deactivation and suspension reject existing sessions immediately through the
+  account-status check and attempt Redis revocation. Reactivation is blocked unless
+  Redis confirms revocation, preventing a session left by a failed deactivation
+  cleanup from becoming usable again. A session without its matching refresh-token
+  index is also rejected, including an orphan left by incomplete session creation.
+- The employee-edit API's single role field replaces prior role assignments and
+  revokes existing sessions. Even if Redis cleanup is unavailable, shared session
+  validation immediately rejects a session whose role was removed.
 - The fixed-window rate limiter fails open if Redis is unavailable. This is a
   current availability trade-off and must be considered in deployment threat
   modeling.
@@ -136,11 +159,12 @@ changing handlers.
 ### Authorization and CSRF
 
 [`requireAuth`](../src/backend/security/requireAuth.ts) verifies the access JWT and
-looks up its JTI in Redis. [`requireRole`](../src/backend/security/requireRole.ts)
-restricts access to `administrator`, `supervisor`, and `employee`
-roles. Handlers also scope queries or mutations to the authenticated user where the
-resource is employee-owned. PostgreSQL row-level security is not the current
-authorization layer; API authorization and ownership checks are critical.
+looks up its JTI in Redis; session lookup also confirms that the associated profile
+is active in PostgreSQL. [`requireRole`](../src/backend/security/requireRole.ts)
+restricts access to `administrator`, `supervisor`, and `employee` roles. Handlers
+also scope queries or mutations to the authenticated user where the resource is
+employee-owned. PostgreSQL row-level security is not the current authorization
+layer; API authorization and ownership checks are critical.
 
 State-changing routes that use the
 [CSRF helpers](../src/backend/security/csrf.ts) require a matching token from the
@@ -343,9 +367,15 @@ Vitest suites plus typecheck, lint, boundary check, and production build, verifi
 protected fixture tables remain empty after the tests, and cleans up only its own
 resources. See [the test guide](./testing/isolated-integration-tests.md) and
 [safe runner](../scripts/test-integration-safe.mjs).
-Playwright is configured for future Chromium tests in `tests/e2e/`, with generated
-artifacts under `tests/results/playwright/`; no browser-test suite is currently
-maintained.
+Playwright UI regression tests are maintained under [`tests/e2e/`](../tests/e2e/)
+and run against both Chromium and WebKit through the guarded
+[`npm run test:integration:safe -- --browser`](./testing/isolated-integration-tests.md)
+workflow. These UI tests stub their documented APIs. The separate
+[`tests/real-backend/admin-assignments.spec.ts`](../tests/real-backend/admin-assignments.spec.ts)
+exercises the production app with real PostgreSQL, Redis, authentication and CSRF
+inside the same isolated workflow. Test output is kept under the ignored
+`tests/results/` directory; never run the real-backend Playwright config directly
+against development data.
 
 ## Historical records
 

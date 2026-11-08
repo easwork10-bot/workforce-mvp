@@ -56,7 +56,7 @@ try {
     server.once('error', reject);
     server.listen(3197, '127.0.0.1', resolve);
   });
-  for (const [route, status] of [['/api/auth/me', 401], ['/nl/admin/assignments', 200]]) {
+  for (const [route, status] of [['/api/auth/me', 401], ['/nl/admin/assignments', 307]]) {
     await new Promise((resolve, reject) => {
       const request = httpsGet(`https://localhost:3197${route}`, response => {
         response.resume();
