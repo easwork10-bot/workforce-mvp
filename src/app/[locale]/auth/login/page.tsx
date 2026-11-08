@@ -220,7 +220,7 @@ export default function LoginPage() {
               <p className="text-sm text-muted-foreground">
                 {t("login.noAccount")}{" "}
                 <Link href="/auth/register" className="font-medium text-primary hover:underline">
-                  {t("register")}
+                  {t("register.title")}
                 </Link>
               </p>
             </div>

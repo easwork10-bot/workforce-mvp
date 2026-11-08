@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 for (const locale of ['nl', 'ar'] as const) {
+  test(`${locale} login links to localized registration with a translated label`, async ({ page }) => {
+    await page.route('**/api/auth/me', route => route.fulfill({ status: 401, json: { error: 'Unauthenticated' } }));
+    await page.goto(`/${locale}/auth/login`);
+    const registration = page.getByRole('link', { name: locale === 'ar' ? 'التسجيل' : 'Registreren', exact: true });
+    await expect(registration).toHaveAttribute('href', `/${locale}/auth/register`);
+    await registration.click();
+    await expect(page).toHaveURL(new RegExp(`/${locale}/auth/register$`));
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+  });
+
   test(`${locale} login preserves the locale in the dashboard redirect`, async ({ page }) => {
     await page.route('**/api/auth/me', route => route.fulfill({ status: 401, json: { error: 'Unauthenticated' } }));
     await page.route('**/api/auth/login', route => route.fulfill({ json: { user: { role: 'employee' } } }));
