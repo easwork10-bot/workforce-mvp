@@ -303,6 +303,20 @@ test.describe.serial('real authenticated assignment lifecycle', () => {
       await expect(page.getByText(text.empty, { exact: true })).toBeVisible();
     });
 
+    test('employee logout uses real CSRF and removes the Redis session while preserving Arabic', async () => {
+      const employeePage = await employeeContext!.newPage();
+      await employeePage.goto('/ar/employee');
+      const logout = employeePage.waitForResponse(response => new URL(response.url()).pathname === '/api/auth/logout');
+      await employeePage.getByRole('button', { name: ar.navigation.logout, exact: true }).first().click();
+      const response = await logout;
+      expect(response.status()).toBe(200);
+      expect(response.request().headers()['x-csrf-token']).toBeTruthy();
+      await expect(employeePage).toHaveURL(/\/ar\/auth\/login$/);
+      expect(await redis.exists(`session:${employeeLogin.jti}`)).toBe(0);
+      expect((await employeeContext!.request.get('/api/auth/me')).status()).toBe(401);
+      await employeePage.close();
+    });
+
     test('revoking the real Redis session removes administrator access without a false empty success', async () => {
       await redis.del(`session:${adminLogin.jti}`);
       const pending = page.waitForResponse(response => response.url().includes('/api/admin/assignments?'));

@@ -42,7 +42,7 @@ src/
 │   └── validation/     API request schemas
 ├── frontend/
 │   ├── components/     Navigation and client session context
-│   ├── features/       Connected employee shift-browser feature
+│   ├── features/       Connected employee and administrator features
 │   ├── lib/            Browser-safe shared utilities
 │   └── ui/             Reusable UI primitives
 ├── locales/            Dutch and Arabic message catalogs
@@ -69,15 +69,15 @@ visibility is not a security boundary.
 Pages are under `src/app/[locale]/`:
 
 - `/`, `/auth/login`, and `/auth/register`
-- `/employee`, `/employee/shifts`, and `/employee/schedule`
-- `/admin`, `/admin/shifts`, and `/admin/shifts/create`
+- `/employee`, `/employee/shifts`, `/employee/applications`, and `/employee/schedule`
+- `/admin`, `/admin/shifts`, `/admin/shifts/create`, `/admin/applications`, and `/admin/assignments`
 - `/attendance/check-in`
 
-The employee shift browser is connected to the employee shift APIs. Login and
-registration use the self-hosted auth routes. Several other screens remain
-presentation prototypes backed by hard-coded sample data: employee dashboard,
-employee schedule, admin dashboard, admin shift list/create form, and attendance
-check-in/out page. In particular, the attendance page does not call the implemented
+The employee shift browser and application history use their APIs. The administrator
+dashboard, shift management, application review and assignment overview use their
+respective APIs. Login and registration use the self-hosted auth routes.
+The employee dashboard, employee schedule, and attendance check-in/out page remain
+presentation prototypes backed by sample data. In particular, the attendance page does not call the implemented
 attendance APIs, and GPS shown there is not a server-side geofence or location
 verification feature. Do not treat sample dashboard values or UI controls as
 persisted workflows.
@@ -92,11 +92,13 @@ Route handlers live in [`src/app/api/`](../src/app/api/); Zod input contracts ar
 | `/api/auth/*` | CSRF token bootstrap, registration, login, logout, current identity, and refresh-token rotation |
 | `/api/employee/shifts*` | Browse shifts, read shift details, and apply for a shift |
 | `/api/employee/applications` | Read the authenticated employee's applications |
+| `/api/employee/applications/:id/cancel` | Cancel an eligible pending application |
 | `/api/employee/schedule` | Read the authenticated employee's schedule |
 | `/api/employee/attendance/*` | Employee check-in and check-out |
 | `/api/attendance/*` | Parallel attendance handlers retained for existing callers |
-| `/api/admin/shifts` | Administrative shift listing and creation |
+| `/api/admin/shifts*` | Administrative shift listing, creation and publication |
 | `/api/admin/applications*` | Read applications and review a specific application |
+| `/api/admin/assignments*` | List and cancel assignments |
 | `/api/admin/employees*` | Employee management |
 | `/api/admin/attendance` and `/api/admin/audit` | Attendance and audit queries |
 | `/api/notifications*` | Read, create, mark read, and delete recipient notifications |

@@ -35,6 +35,7 @@
     "profile": "Profiel",
     "login": "Inloggen",
     "logout": "Uitloggen",
+    "logoutError": "Uitloggen is mislukt. Probeer het opnieuw.",
     "roleAdmin": "Admin",
     "roleSupervisor": "Supervisor",
     "roleEmployee": "Medewerker"

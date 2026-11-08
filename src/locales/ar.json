@@ -35,6 +35,7 @@
     "profile": "الملف الشخصي",
     "login": "تسجيل الدخول",
     "logout": "تسجيل الخروج",
+    "logoutError": "تعذر تسجيل الخروج. حاول مرة أخرى.",
     "roleAdmin": "مدير النظام",
     "roleSupervisor": "المشرف",
     "roleEmployee": "الموظف"

@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { Link, useRouter } from "@/shared/i18n-routing";
+import { useSession } from "@/frontend/components/session-provider";
 import { useTranslations } from "next-intl";
 import { Button } from "@/frontend/ui/button";
 import { Input } from "@/frontend/ui/input";
 import { Label } from "@/frontend/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/frontend/ui/card";
-import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
   const router = useRouter();
+  const { refreshSession } = useSession();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,6 +71,7 @@ export default function LoginPage() {
         employee: "/employee",
       };
 
+      await refreshSession();
       router.push(redirectPath[data.user.role] || "/employee");
       router.refresh();
     } catch (err: any) {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Link, usePathname } from "@/shared/i18n-routing";
+import { Link, usePathname, useRouter } from "@/shared/i18n-routing";
 import { useTranslations } from "next-intl";
 import { Button } from "@/frontend/ui/button";
 import { Users, LogOut, Home, Menu, X } from "lucide-react";
@@ -13,17 +13,46 @@ export default function Navigation() {
   const t = useTranslations("navigation");
   const tCommon = useTranslations("common");
   const pathname = usePathname();
-  const { user, loading } = useSession();
+  const router = useRouter();
+  const { user, loading, refreshSession } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [logoutPending, setLogoutPending] = React.useState(false);
+  const [logoutError, setLogoutError] = React.useState(false);
 
   const isAdmin = user?.role === "administrator";
   const isSupervisor = user?.role === "supervisor";
   const isEmployee = user?.role === "employee";
 
   const handleLogout = async () => {
-    const res = await fetch("/api/auth/logout", { method: "POST" });
-    if (res.ok) {
-      window.location.href = "/auth/login";
+    if (logoutPending) return;
+    setLogoutPending(true);
+    setLogoutError(false);
+    try {
+      const tokenResponse = await fetch("/api/auth/csrf", {
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      if (!tokenResponse.ok) throw new Error("CSRF request failed");
+      const token: unknown = await tokenResponse.json();
+      if (!token || typeof token !== "object" || !("csrfToken" in token)
+        || typeof token.csrfToken !== "string" || !token.csrfToken) {
+        throw new Error("Invalid CSRF response");
+      }
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "x-csrf-token": token.csrfToken },
+      });
+      if (!res.ok) throw new Error("Logout request failed");
+      await refreshSession();
+      router.replace("/auth/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setLogoutError(true);
+    } finally {
+      setLogoutPending(false);
     }
   };
 
@@ -47,7 +76,7 @@ export default function Navigation() {
     if (isEmployee) {
       links.push(
         { href: "/employee", label: t("employee.dashboard"), icon: Home },
-        { href: "/employee/shifts", label: t("shifts.title"), icon: Users },
+        { href: "/employee/shifts", label: t("shifts"), icon: Users },
         { href: "/employee/schedule", label: t("employee.my.schedule"), icon: Users },
         { href: "/employee/applications", label: t("employee.my.applications"), icon: Users }
       );
@@ -119,6 +148,7 @@ export default function Navigation() {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
+                disabled={logoutPending}
                 aria-label={t("logout")}
               >
                 <LogOut className="h-4 w-4" aria-hidden="true" />
@@ -191,6 +221,7 @@ export default function Navigation() {
                       <Button
                         variant="outline"
                         className="mx-4 mt-2 w-[calc(100%-1rem)] justify-start gap-3"
+                        disabled={logoutPending}
                         onClick={() => {
                           handleLogout();
                           setMobileMenuOpen(false);
@@ -230,6 +261,7 @@ export default function Navigation() {
           </Sheet>
         </div>
       </nav>
+      {logoutError && <p role="alert" className="container-wide text-sm text-destructive">{t("logoutError")}</p>}
     </header>
   );
 }

@@ -6,6 +6,7 @@ against the linked code; dated plans and the original handoff are historical rec
 ## Current system
 
 - [System architecture and source ownership](./architecture.md#system-at-a-glance)
+- [Current roadmap and owner decisions](./roadmap.md)
 - [Frontend status and localization](./architecture.md#pages-and-implemented-ui)
 - [Backend APIs and services](./architecture.md#api-responsibilities)
 - [Authentication and security](./architecture.md#authentication-and-security-contracts)
