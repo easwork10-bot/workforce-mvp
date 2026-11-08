@@ -21,7 +21,7 @@ Never put production credentials in tracked files.
 ## Setup and local development
 
 ```sh
-npm ci --legacy-peer-deps
+npm ci
 ```
 
 Copy `.env.example` to `.env.local`, configure the local PostgreSQL/Redis services,

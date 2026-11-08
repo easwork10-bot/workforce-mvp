@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 export const locales = ['nl', 'ar'] as const;
 export type Locale = (typeof locales)[number];
 
+export const defaultLocale: Locale = 'nl';
 export const localePrefix = 'always';
 
 export const pathnames = {
@@ -25,10 +26,12 @@ export const pathnames = {
   '/attendance/check-in': '/attendance/check-in',
 };
 
-export default getRequestConfig(async ({ locale }) => {
-  if (!locales.includes(locale as Locale)) notFound();
+export default getRequestConfig(async ({ requestLocale }) => {
+  const locale = await requestLocale;
+  if (!locale || !locales.some(candidate => candidate === locale)) notFound();
 
   return {
+    locale,
     messages: (await import(`@/locales/${locale}.json`)).default,
     timeZone: locale === 'ar' ? 'Asia/Riyadh' : 'Europe/Amsterdam',
   };

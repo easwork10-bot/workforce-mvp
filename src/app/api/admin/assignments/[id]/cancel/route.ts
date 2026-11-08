@@ -7,11 +7,11 @@ import { getAuditMetadata } from '@/backend/security/auditLogger';
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
-async function cancel(req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+async function cancel(req: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {
     const auth = await requireRole(req, ['administrator']);
     if (auth instanceof NextResponse) return auth;
-    const parsed = paramsSchema.safeParse(params);
+    const parsed = paramsSchema.safeParse(await params);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid assignment ID', code: 'INVALID_REQUEST' }, { status: 400 });
     }

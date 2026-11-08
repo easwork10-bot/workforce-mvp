@@ -5,14 +5,14 @@ import { requireCsrf } from '@/backend/security/csrf';
 import { requireRole } from '@/backend/security/requireRole';
 import { shiftIdParamSchema } from '@/backend/validation/shifts';
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 async function POST(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     const auth = await requireRole(req, ['administrator']);
     if (auth instanceof NextResponse) return auth;
 
-    const parsedParams = shiftIdParamSchema.safeParse(params);
+    const parsedParams = shiftIdParamSchema.safeParse(await params);
     if (!parsedParams.success) {
       return NextResponse.json({ error: 'Invalid shift ID' }, { status: 400 });
     }

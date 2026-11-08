@@ -8,11 +8,12 @@ import { SessionProvider } from '@/frontend/components/session-provider';
 
 export default async function RootLayout({
   children,
-  params: { locale }
+  params
 }: {
   children: ReactNode;
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }) {
+  const { locale } = await params;
   if (!['nl', 'ar'].includes(locale)) {
     notFound();
   }

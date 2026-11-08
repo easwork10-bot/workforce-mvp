@@ -6,10 +6,12 @@ import { getEmployeeById, updateEmployee } from '@/backend/db/queries/employees'
 import { getAuditMetadata } from '@/backend/security/auditLogger';
 import { requireCsrf } from '@/backend/security/csrf';
 
+type RouteContext = { params: Promise<{ id: string }> };
+
 /**
  * GET /api/admin/employees/[id] - Get employee by ID (admin only)
  */
-async function GET(req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+async function GET(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     // Verify authentication
     const payload = await verifyTokenFromCookie(req.headers.get('cookie'));
@@ -24,7 +26,8 @@ async function GET(req: NextRequest, { params }: { params: { id: string } }): Pr
     }
 
     // Validate employee ID
-    const validation = employeeIdParamSchema.safeParse({ id: params.id });
+    const { id } = await params;
+    const validation = employeeIdParamSchema.safeParse({ id });
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Invalid employee ID' },
@@ -33,7 +36,7 @@ async function GET(req: NextRequest, { params }: { params: { id: string } }): Pr
     }
 
     // Get employee
-    const employee = await getEmployeeById(params.id);
+    const employee = await getEmployeeById(id);
 
     if (!employee) {
       return NextResponse.json(
@@ -55,7 +58,7 @@ async function GET(req: NextRequest, { params }: { params: { id: string } }): Pr
 /**
  * PATCH /api/admin/employees/[id] - Update employee (admin only)
  */
-async function PATCH(req: NextRequest, context: { params: { id: string } }): Promise<NextResponse> {
+async function PATCH(req: NextRequest, context: RouteContext): Promise<NextResponse> {
   try {
     // Verify authentication
     const payload = await verifyTokenFromCookie(req.headers.get('cookie'));
@@ -81,12 +84,13 @@ async function PATCH(req: NextRequest, context: { params: { id: string } }): Pro
 
 const protectedPATCH = requireCsrf(async (
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: RouteContext,
   actorId: string
 ): Promise<NextResponse> => {
   try {
     // Validate employee ID
-    const idValidation = employeeIdParamSchema.safeParse({ id: params.id });
+    const { id } = await params;
+    const idValidation = employeeIdParamSchema.safeParse({ id });
     if (!idValidation.success) {
       return NextResponse.json(
         { error: 'Invalid employee ID' },
@@ -107,9 +111,9 @@ const protectedPATCH = requireCsrf(async (
 
     let sessionsRevokedBeforeUpdate = false;
     if (validation.data.accountStatus === 'active') {
-      const currentEmployee = await getEmployeeById(params.id);
+      const currentEmployee = await getEmployeeById(id);
       if (currentEmployee && currentEmployee.accountStatus !== 'active') {
-        const revoked = await revokeAllUserSessions(params.id);
+        const revoked = await revokeAllUserSessions(id);
         if (!revoked) {
           return NextResponse.json(
             { error: 'Unable to revoke existing sessions; account remains inactive' },
@@ -122,7 +126,7 @@ const protectedPATCH = requireCsrf(async (
 
     // Update employee
     const success = await updateEmployee(
-      params.id,
+      id,
       actorId,
       {
         fullName: validation.data.fullName,
@@ -162,7 +166,7 @@ const protectedPATCH = requireCsrf(async (
       )
       && !sessionsRevokedBeforeUpdate
     ) {
-      const revoked = await revokeAllUserSessions(params.id);
+      const revoked = await revokeAllUserSessions(id);
       if (!revoked) {
         console.error(
           '[Admin Employee PATCH] Session cleanup was incomplete; shared session validation will reject removed roles and inactive accounts.'
@@ -186,7 +190,7 @@ const protectedPATCH = requireCsrf(async (
 /**
  * DELETE /api/admin/employees/[id] - Delete employee (admin only)
  */
-async function DELETE(req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+async function DELETE(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     // Verify authentication
     const payload = await verifyTokenFromCookie(req.headers.get('cookie'));
@@ -201,7 +205,7 @@ async function DELETE(req: NextRequest, { params }: { params: { id: string } }):
     }
 
     // Validate employee ID
-    const validation = employeeIdParamSchema.safeParse({ id: params.id });
+    const validation = employeeIdParamSchema.safeParse(await params);
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Invalid employee ID' },

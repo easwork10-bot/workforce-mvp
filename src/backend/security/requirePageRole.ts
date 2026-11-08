@@ -9,7 +9,7 @@ type Role = 'administrator' | 'supervisor' | 'employee';
 export async function requirePageRole(locale: string, role: Role): Promise<void> {
   if (locale !== 'nl' && locale !== 'ar') notFound();
 
-  const token = cookies().get('access_token')?.value;
+  const token = (await cookies()).get('access_token')?.value;
   const payload = token ? await verifyAccessToken(token) : null;
   const session = payload ? await getSession(payload.jti) : null;
   if (!session) redirect(`/${locale}/auth/login`);

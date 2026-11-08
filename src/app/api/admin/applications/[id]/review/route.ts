@@ -8,9 +8,9 @@ import { applicationIdParamSchema, reviewApplicationSchema } from '@/backend/val
 
 async function postReview(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const paramsValidation = applicationIdParamSchema.safeParse(params);
+  const paramsValidation = applicationIdParamSchema.safeParse(await params);
   if (!paramsValidation.success) {
     return NextResponse.json({ error: 'Invalid application ID', code: 'INVALID_REQUEST' }, { status: 400 });
   }

@@ -143,7 +143,7 @@ describe('Application review audit integration', () => {
   }
 
   function reviewRoute(request: NextRequest, id = applicationId) {
-    return postApplicationReview(request, { params: { id } });
+    return postApplicationReview(request, { params: Promise.resolve({ id }) });
   }
 
   function makeCancelRequest(options: { csrf?: boolean } = {}, id = applicationId): NextRequest {

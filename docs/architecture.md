@@ -9,7 +9,7 @@ database-backed tests, see the
 
 ## System at a glance
 
-Workforce MVP is one Next.js 14 App Router application. It serves localized pages,
+Workforce MVP is one Next.js 15 App Router application. It serves localized pages,
 API route handlers, and server-side business logic from the same deployment. It uses
 PostgreSQL for persistent application data and Redis for authentication/session
 state, rate limits, and application coordination. There is no active Supabase client
@@ -17,7 +17,7 @@ or Supabase-backed runtime in the current app.
 
 | Area | Current implementation |
 |---|---|
-| Web application | Next.js 14, React 18, TypeScript, standalone output |
+| Web application | Next.js 15, React 19, TypeScript, standalone output |
 | UI | Tailwind CSS, Radix-based primitives, `lucide-react` |
 | Localization | `next-intl`; Dutch (`nl`) and Arabic (`ar`) catalogs; Arabic RTL |
 | API validation | Zod schemas in [`src/backend/validation/`](../src/backend/validation/) |
@@ -25,6 +25,11 @@ or Supabase-backed runtime in the current app.
 | Authentication | Argon2id password hashes, RS256 access JWTs, opaque refresh tokens in [`src/backend/auth/`](../src/backend/auth/) |
 | Session and coordination state | Redis |
 | Tests | Vitest; database suites run through the isolated Docker workflow |
+
+Next.js 15 and React 19 replace the vulnerable Next.js 14 line. The Next.js
+PostCSS dependency is overridden to the patched version declared in
+[`package.json`](../package.json). `next-intl` 4 uses asynchronous locale
+resolution; explicit locale preferences retain the previous one-year cookie lifetime.
 
 ## Source ownership and request flow
 
@@ -323,7 +328,7 @@ English message catalog in the active locale configuration.
 ## Development
 
 Use Node.js 24 as declared by [`.nvmrc`](../.nvmrc) and install the locked
-dependencies with `npm ci --legacy-peer-deps`. Copy [`.env.example`](../.env.example)
+dependencies with `npm ci`. Copy [`.env.example`](../.env.example)
 to `.env.local`; configure `DATABASE_URL` for a disposable, separately provisioned
 local development database and `REDIS_URL` for a local Redis service. The repository
 does not provide a reviewed first-run development database bootstrap. Do not point

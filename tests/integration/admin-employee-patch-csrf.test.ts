@@ -32,7 +32,7 @@ vi.mock('@/backend/security/auditLogger', () => ({
 import { PATCH } from '@/app/api/admin/employees/[id]/route';
 
 const employeeId = 'c2df4e6f-72a7-4e7a-9de1-27fe78d442a1';
-const employeeParams = { params: { id: employeeId } };
+const employeeParams = { params: Promise.resolve({ id: employeeId }) };
 const validBody = { fullName: 'Updated Employee' };
 const auditMetadata = { ipAddress: 'hashed-ip-address', userAgent: 'test-agent' };
 

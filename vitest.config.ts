@@ -10,6 +10,8 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
     fileParallelism: false,
+    // Let Vite resolve next-intl's Next.js imports in Node-based tests.
+    server: { deps: { inline: ['next-intl'] } },
     fsModuleCache: process.env.WORKFORCE_DISABLE_FS_MODULE_CACHE !== '1',
     // Database test files share fixture tables and must not overlap.
     sequence: {

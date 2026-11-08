@@ -80,7 +80,7 @@ function makeRequest(
   });
 }
 
-const publishParams = { params: { id: shiftId } };
+const publishParams = { params: Promise.resolve({ id: shiftId }) };
 
 describe('admin shift API', () => {
   beforeEach(() => {
@@ -187,7 +187,7 @@ describe('admin shift API', () => {
     mocks.getSession.mockResolvedValue({ role: 'administrator' });
     expect((await publishShiftPost(
       makeRequest('/api/admin/shifts/not-a-uuid/publish', 'POST'),
-      { params: { id: 'not-a-uuid' } }
+      { params: Promise.resolve({ id: 'not-a-uuid' }) }
     )).status).toBe(400);
     expect(mocks.publishDraftShift).not.toHaveBeenCalled();
   });

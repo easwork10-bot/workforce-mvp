@@ -3,10 +3,10 @@ const withNextIntl = require('next-intl/plugin')('./src/i18n.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: __dirname,
   experimental: {
     cpus: 1,
-    optimizePackageImports: ['drizzle-orm', 'jose', 'zod'],
-    instrumentationHook: true
+    optimizePackageImports: ['drizzle-orm', 'jose', 'zod']
   },
   typescript: {
     ignoreBuildErrors: false

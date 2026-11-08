@@ -129,7 +129,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
 
   async function pending(): Promise<{ shiftId: string; applicationId: string }> {
     const shiftId = await draft();
-    await publishShift(request(`/api/admin/shifts/${shiftId}/publish`, admin, {}), { params: { id: shiftId } });
+    await publishShift(request(`/api/admin/shifts/${shiftId}/publish`, admin, {}), { params: Promise.resolve({ id: shiftId }) });
     const applied = await applyForShiftWithLock(shiftId, employee.id);
     expect(applied.success).toBe(true);
     if (!applied.success) throw new Error('Expected pending application fixture');
@@ -184,7 +184,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
     )).json());
     expect((await list()).applications[0].shift.assignedCount).toBe(0);
     const approved = await reviewShiftApplication(request('/api/admin/applications/review', admin, { status: 'accepted' }), {
-      params: { id: applicationId },
+      params: Promise.resolve({ id: applicationId }),
     });
     expect(approved.status).toBe(200);
     expect((await list()).applications[0]).toMatchObject({
@@ -289,7 +289,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
         logs: await db.select().from(auditLogs).where(eq(auditLogs.actorId, admin.id)),
         notices: await db.select().from(notifications).where(eq(notifications.relatedShiftId, shiftId)),
       };
-      const response = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: { id: assignment.id } });
+      const response = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: Promise.resolve({ id: assignment.id }) });
       expect(response.status).toBe(409);
       expect(await response.json()).toMatchObject({ code: expectedCode });
       expect(await db.select().from(shiftAssignments).where(eq(shiftAssignments.shiftId, shiftId))).toEqual(before.assignments);
@@ -307,18 +307,18 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
       [undefined, true, 401], [employee, true, 403], [supervisor, true, 403], [admin, false, 403],
     ] as const) {
       expect((await cancelShiftAssignment(request('/api/admin/assignments/cancel', user, {}, enabled),
-        { params: { id: assignment.id } })).status).toBe(status);
+        { params: Promise.resolve({ id: assignment.id }) })).status).toBe(status);
     }
-    const invalid = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: { id: 'invalid' } });
+    const invalid = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: Promise.resolve({ id: 'invalid' }) });
     expect(invalid.status).toBe(400);
     expect(await invalid.json()).toMatchObject({ code: 'INVALID_REQUEST' });
-    const absent = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: { id: crypto.randomUUID() } });
+    const absent = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: Promise.resolve({ id: crypto.randomUUID() }) });
     expect(absent.status).toBe(404);
     expect(await absent.json()).toMatchObject({ code: 'ASSIGNMENT_NOT_FOUND' });
-    const success = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: { id: assignment.id } });
+    const success = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: Promise.resolve({ id: assignment.id }) });
     expect(success.status).toBe(200);
     expect(await success.json()).toMatchObject({ code: 'ASSIGNMENT_CANCELLED', replayed: false });
-    const replay = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: { id: assignment.id } });
+    const replay = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: Promise.resolve({ id: assignment.id }) });
     expect(replay.status).toBe(200);
     expect(await replay.json()).toMatchObject({ replayed: true });
   });
@@ -344,7 +344,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
         if (event.entityType === 'notifications') throw new Error('Synthetic failure after notification audit');
       });
     }
-    const result = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: { id: assignment.id } });
+    const result = await cancelShiftAssignment(request('/api/admin/assignments/cancel', admin, {}), { params: Promise.resolve({ id: assignment.id }) });
     expect(result.status).toBe(500);
     expect(await result.json()).toMatchObject({ code: 'INTERNAL_ERROR', error: 'Annuleren van indeling mislukt' });
     expect((await db.select().from(shiftAssignments).where(eq(shiftAssignments.id, assignment.id)))[0]).toEqual(assignment);
@@ -427,7 +427,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
     expect((await list.json()).shifts.map((shift: { id: string }) => shift.id)).toContain(id);
 
     const published = await Promise.all([1, 2].map(() => publishShift(
-      request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: { id } },
+      request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: Promise.resolve({ id }) },
     )));
     expect(published.map((response) => response.status).sort()).toEqual([200, 409]);
     const visible = await browseShifts(request('/api/employee/shifts?workType=delivery-integration', employee));
@@ -453,7 +453,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
       [undefined, true, 401], [employee, true, 403], [admin, false, 403],
     ] as const) {
       expect((await publishShift(request(`/api/admin/shifts/${id}/publish`, user, {}, enabled), {
-        params: { id },
+        params: Promise.resolve({ id }),
       })).status).toBe(status);
     }
     expect((await applyShift(request(`/api/employee/shifts/${id}/apply`, admin, {}), {
@@ -489,7 +489,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
     await db.update(shifts).set({ requiredWorkers: 1 }).where(eq(shifts.id, shiftId));
     const review = (user?: Identity, csrfEnabled = true, status = 'accepted') =>
       reviewShiftApplication(request(`/api/admin/applications/${applicationId}/review`, user, { status }, csrfEnabled), {
-        params: { id: applicationId },
+        params: Promise.resolve({ id: applicationId }),
       });
     expect((await review()).status).toBe(401);
     expect((await review(employee)).status).toBe(403);
@@ -513,11 +513,11 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
   it('rolls back publication and application creation on audit failure and releases the apply lock', async () => {
     const id = await draft();
     const failure = vi.spyOn(audit, 'logAuditEvent').mockRejectedValue(new Error('Synthetic audit failure'));
-    const publishResponse = await publishShift(request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: { id } });
+    const publishResponse = await publishShift(request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: Promise.resolve({ id }) });
     expect(publishResponse.status).toBe(500);
     expect((await db.select().from(shifts).where(eq(shifts.id, id)))[0].status).toBe('draft');
     failure.mockRestore();
-    await publishShift(request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: { id } });
+    await publishShift(request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: Promise.resolve({ id }) });
     vi.spyOn(audit, 'logAuditEvent').mockRejectedValue(new Error('Synthetic audit failure'));
     expect(await applyForShiftWithLock(id, employee.id)).toMatchObject({ success: false, code: 'INTERNAL_ERROR' });
     expect(await db.select().from(shiftApplications).where(eq(shiftApplications.shiftId, id))).toHaveLength(0);
@@ -528,7 +528,7 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
 
   it('returns 503 without database writes when the Redis lock client is disconnected', async () => {
     const id = await draft();
-    await publishShift(request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: { id } });
+    await publishShift(request(`/api/admin/shifts/${id}/publish`, admin, {}), { params: Promise.resolve({ id }) });
     const disconnected = createClient({ url: process.env.REDIS_URL });
     disconnected.on('error', () => {});
     await disconnected.connect();

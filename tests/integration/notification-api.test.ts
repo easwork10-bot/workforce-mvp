@@ -160,7 +160,7 @@ describe('Notification API', () => {
     const notification = await createNotification(recipientId, 'Unread');
     const response = await PATCH(
       request('PATCH', `/api/notifications/${notification.id}`, { body: '{"read":true}' }),
-      { params: { id: notification.id } }
+      { params: Promise.resolve({ id: notification.id }) }
     );
 
     expect(response.status).toBe(403);
@@ -175,7 +175,7 @@ describe('Notification API', () => {
         csrf: true,
         body: JSON.stringify({ read: true }),
       }),
-      { params: { id: notification.id } }
+      { params: Promise.resolve({ id: notification.id }) }
     );
 
     expect(response.status).toBe(401);
@@ -191,7 +191,7 @@ describe('Notification API', () => {
         csrf: true,
         body: JSON.stringify({ read: true }),
       }),
-      { params: { id: notification.id } }
+      { params: Promise.resolve({ id: notification.id }) }
     );
 
     expect(response.status).toBe(200);
@@ -206,7 +206,7 @@ describe('Notification API', () => {
   it('rejects malformed JSON, unsupported fields, and invalid IDs', async () => {
     const malformedJson = await PATCH(
       request('PATCH', '/api/notifications/invalid', { csrf: true, body: '{' }),
-      { params: { id: 'invalid' } }
+      { params: Promise.resolve({ id: 'invalid' }) }
     );
     expect(malformedJson.status).toBe(400);
 
@@ -215,13 +215,13 @@ describe('Notification API', () => {
         csrf: true,
         body: JSON.stringify({ read: true, title: 'Forged title' }),
       }),
-      { params: { id: 'invalid' } }
+      { params: Promise.resolve({ id: 'invalid' }) }
     );
     expect(extraFields.status).toBe(400);
 
     const invalidId = await DELETE(
       request('DELETE', '/api/notifications/not-a-uuid', { csrf: true }),
-      { params: { id: 'not-a-uuid' } }
+      { params: Promise.resolve({ id: 'not-a-uuid' }) }
     );
     expect(invalidId.status).toBe(400);
   });
@@ -234,13 +234,13 @@ describe('Notification API', () => {
         csrf: true,
         body: JSON.stringify({ read: true }),
       }),
-      { params: { id: notification.id } }
+      { params: Promise.resolve({ id: notification.id }) }
     );
     expect(patched.status).toBe(404);
 
     const deleted = await DELETE(
       request('DELETE', `/api/notifications/${notification.id}`, { csrf: true }),
-      { params: { id: notification.id } }
+      { params: Promise.resolve({ id: notification.id }) }
     );
     expect(deleted.status).toBe(404);
 
@@ -254,13 +254,13 @@ describe('Notification API', () => {
     const notification = await createNotification(recipientId, 'Dismiss me');
     const deleted = await DELETE(
       request('DELETE', `/api/notifications/${notification.id}`, { csrf: true }),
-      { params: { id: notification.id } }
+      { params: Promise.resolve({ id: notification.id }) }
     );
     expect(deleted.status).toBe(200);
 
     const missing = await DELETE(
       request('DELETE', '/api/notifications/00000000-0000-0000-0000-000000000000', { csrf: true }),
-      { params: { id: '00000000-0000-0000-0000-000000000000' } }
+      { params: Promise.resolve({ id: '00000000-0000-0000-0000-000000000000' }) }
     );
     expect(missing.status).toBe(404);
   });

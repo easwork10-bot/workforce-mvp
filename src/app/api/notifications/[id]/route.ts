@@ -9,14 +9,14 @@ import { markNotificationReadSchema, notificationIdSchema } from '@/backend/vali
 import { getAuditMetadata } from '@/backend/security/auditLogger';
 
 const allowedRoles = ['administrator', 'supervisor', 'employee'] as const;
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 async function patchNotification(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     const authResult = await requireRole(req, [...allowedRoles]);
     if (authResult instanceof NextResponse) return authResult;
 
-    const idValidation = notificationIdSchema.safeParse(params.id);
+    const idValidation = notificationIdSchema.safeParse((await params).id);
     if (!idValidation.success) {
       return NextResponse.json({ error: 'Invalid notification ID' }, { status: 400 });
     }
@@ -57,7 +57,7 @@ async function dismissNotification(req: NextRequest, { params }: RouteContext): 
     const authResult = await requireRole(req, [...allowedRoles]);
     if (authResult instanceof NextResponse) return authResult;
 
-    const idValidation = notificationIdSchema.safeParse(params.id);
+    const idValidation = notificationIdSchema.safeParse((await params).id);
     if (!idValidation.success) {
       return NextResponse.json({ error: 'Invalid notification ID' }, { status: 400 });
     }

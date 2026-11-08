@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ libstdc++
 
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 COPY . .
 
 ENV NODE_ENV=development
@@ -22,7 +22,7 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 
 COPY . .
 

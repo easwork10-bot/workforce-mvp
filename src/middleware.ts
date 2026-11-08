@@ -1,11 +1,12 @@
 import createMiddleware from 'next-intl/middleware';
-import { locales, localePrefix, pathnames } from './i18n';
+import { defaultLocale, locales, localePrefix, pathnames } from './i18n';
 
 export default createMiddleware({
   locales,
   localePrefix,
   pathnames,
-  defaultLocale: 'nl',
+  defaultLocale,
+  localeCookie: { maxAge: 31536000 },
 });
 
 export const config = {
