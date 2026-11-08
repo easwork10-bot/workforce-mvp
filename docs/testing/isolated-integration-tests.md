@@ -16,7 +16,7 @@ npm run test:integration:safe -- --browser
 `npm run test:integration -- --browser` is an equivalent alias for the same
 guarded runner.
 
-For low-resource checks, run these commands sequentially:
+For lightweight checks, run these commands sequentially:
 
 ```sh
 npm run test -- tests/unit/security/session-security.test.ts
@@ -28,7 +28,36 @@ npm run check:frontend-boundaries
 The employee account PATCH regression is an integration test and must be run via
 the guarded database workflow; do not invoke the integration Vitest config directly.
 The `--browser` option adds the production build and Chromium/WebKit checks and
-requires Docker, so run it only when sufficient memory is available.
+requires Docker.
+
+## Resource monitoring and failure conditions
+
+The runner has no minimum available-RAM requirement, CPU/RAM percentage gate, or
+automatic cancellation based on resource usage. On a 16 GB Windows computer,
+Task Manager and `docker stats --no-stream` can help observe resource pressure;
+temporary 100% CPU usage or high RAM usage is a warning, not proof of failure.
+Run one heavy build/test workflow at a time and let it continue while it makes
+progress. Child output is buffered until a command finishes, so a long or quiet
+stage alone does not establish a hang.
+
+Keep `experimental.cpus: 1` in [`next.config.js`](../../next.config.js): the
+production build has been verified with this reduced build-worker parallelism.
+Playwright uses one worker, Vitest disables file parallelism, and workflow stages
+are awaited sequentially. The PostgreSQL 512 MiB and Redis 64 MiB tmpfs sizes cap
+their disposable data directories; they are not process-memory limits or host
+memory-headroom requirements.
+
+Nonzero process exits, Docker failures, and existing service-startup, connection,
+test and hook timeouts remain failure conditions. There is no whole-workflow
+resource watchdog. If there is confirmed out-of-memory termination, persistent
+unresponsiveness or severe sustained paging, a genuine hang, or unsafe effects on
+unrelated services, stop the run rather than repeatedly retrying it. For a
+responsive launcher, cancel with SIGINT/SIGTERM and allow its ownership-checked
+cleanup to finish. Abruptly killing the launcher or an OS out-of-memory kill cannot
+guarantee cleanup; cleanup errors are reported, and any remaining resources must
+be checked for ownership before removal. Never use global Docker cleanup commands.
+
+## Database safety and isolation guarantees
 
 The opt-in phase builds a uniquely labelled temporary browser image using the
 locked Playwright version. Tooling installation has no repository, environment

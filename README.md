@@ -54,7 +54,8 @@ npm run test:integration:safe
 ```
 
 The optional production-browser run also starts Docker and builds the application,
-so use it only when sufficient memory is available:
+so run it separately from other heavy workloads. Monitor resource use as a warning,
+not a fixed launch gate: high CPU or RAM usage alone does not cancel a functioning run.
 
 ```sh
 npm run test:integration:safe -- --browser
