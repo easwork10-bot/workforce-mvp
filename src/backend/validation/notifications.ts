@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { uuidLikeString } from '@/shared/validation';
 
 export const notificationQuerySchema = z.object({
   type: z.enum([
@@ -22,4 +23,4 @@ export const markNotificationReadSchema = z.object({
   read: z.literal(true),
 }).strict();
 
-export const notificationIdSchema = z.string().uuid();
+export const notificationIdSchema = uuidLikeString();

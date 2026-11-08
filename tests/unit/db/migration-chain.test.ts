@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { getTableConfig, PgDialect } from 'drizzle-orm/pg-core';
-import { shiftApplications, shiftAssignments } from '@/backend/db/schema';
+import { auditLogs, notifications, shiftApplications, shiftAssignments } from '@/backend/db/schema';
 import { describe, expect, it } from 'vitest';
 
 describe('journaled migration history', () => {
@@ -55,5 +55,34 @@ describe('journaled migration history', () => {
       expect(create).toBeGreaterThanOrEqual(0);
       expect(drop).toBeGreaterThan(create);
     }
+  });
+
+  it('records existing check constraints in the snapshots where their migrations introduced them', async () => {
+    const checks = [
+      { table: 'public.notifications', name: 'notifications_idempotency_fields_ck', introduced: 1, schema: notifications },
+      { table: 'public.audit_logs', name: 'audit_logs_actor_type_ck', introduced: 3, schema: auditLogs },
+    ] as const;
+    const dialect = new PgDialect();
+
+    for (const { table, name, introduced, schema } of checks) {
+      const check = getTableConfig(schema).checks.find(item => item.name === name);
+      if (!check) throw new Error(`Missing schema check ${name}`);
+      const expected = { name, value: dialect.sqlToQuery(check.value).sql };
+
+      for (let index = 0; index <= 5; index++) {
+        const id = String(index).padStart(4, '0');
+        const snapshot: {
+          tables: Record<string, { checkConstraints?: Record<string, { name: string; value: string }> }>;
+        } = JSON.parse(await readFile(path.join(folder, 'meta', `${id}_snapshot.json`), 'utf8'));
+        const recorded = snapshot.tables[table].checkConstraints?.[name];
+        if (index < introduced) expect(recorded).toBeUndefined();
+        else expect(recorded).toEqual(expected);
+      }
+    }
+
+    expect(await readFile(path.join(folder, '0001_notification_idempotency_expand.sql'), 'utf8'))
+      .toContain('ADD CONSTRAINT "notifications_idempotency_fields_ck"');
+    expect(await readFile(path.join(folder, '0003_damp_unus.sql'), 'utf8'))
+      .toContain('ADD CONSTRAINT "audit_logs_actor_type_ck"');
   });
 });

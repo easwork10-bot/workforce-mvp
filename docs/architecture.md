@@ -31,6 +31,20 @@ PostCSS dependency is overridden to the patched version declared in
 [`package.json`](../package.json). `next-intl` 4 uses asynchronous locale
 resolution; explicit locale preferences retain the previous one-year cookie lifetime.
 
+Drizzle ORM 0.45.2 fixes SQL identifier escaping and is paired with Drizzle Kit
+0.31.11. Application uniqueness checks read the PostgreSQL cause of Drizzle's wrapped
+query errors. Historical snapshot metadata records two existing check constraints so
+the newer migration generator does not propose adding them again; migration SQL and
+database history are unchanged. Zod 4.6.6 supplies the collection-validation fix.
+Shared validators retain previously accepted UUID-shaped identifiers and datetime
+formats. Zod 4's `.int()` rejects integers outside JavaScript's safe range and uses
+updated default validation messages; the field-error response shape is unchanged.
+Response arrays enforce the existing 100-item pagination limit, and work-category
+validation stops at the first invalid element without capping valid category lists. Scoped
+development overrides update the deprecated Drizzle loader's esbuild and the
+TypeScript ESLint parser's minimatch to patched versions. At Delivery 3B verification,
+both the full and production-only npm audits reported no remaining advisories.
+
 ## Source ownership and request flow
 
 ```text

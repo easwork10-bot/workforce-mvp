@@ -1,7 +1,7 @@
 import 'server-only';
 import { db } from '..';
 import { shiftApplications, shifts, profiles, shiftAssignments } from '../schema';
-import { eq, and, desc, count, inArray, sql } from 'drizzle-orm';
+import { DrizzleQueryError, eq, and, desc, count, inArray, sql } from 'drizzle-orm';
 import type { ShiftApplication } from '../schema';
 import { getRedis } from '@/backend/auth/session';
 import { randomUUID } from 'node:crypto';
@@ -341,12 +341,13 @@ export type ApplyForShiftResult =
     };
 
 function isPendingApplicationUniqueViolation(error: unknown): boolean {
-  return typeof error === 'object'
-    && error !== null
-    && 'code' in error
-    && error.code === '23505'
-    && 'constraint' in error
-    && error.constraint === 'unique_pending_shift_employee';
+  const cause = error instanceof DrizzleQueryError ? error.cause : error;
+  return typeof cause === 'object'
+    && cause !== null
+    && 'code' in cause
+    && cause.code === '23505'
+    && 'constraint' in cause
+    && cause.constraint === 'unique_pending_shift_employee';
 }
 
 /**

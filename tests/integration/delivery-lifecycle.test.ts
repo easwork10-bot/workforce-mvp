@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
 import { NextRequest } from 'next/server';
-import { and, eq, inArray } from 'drizzle-orm';
+import { DrizzleQueryError, and, eq, inArray } from 'drizzle-orm';
 import { createClient } from 'redis';
 import { db, pool } from '@/backend/db';
 import { attendanceRecords, auditLogs, notifications, profiles, shiftApplications, shiftAssignments, shifts, userRoles } from '@/backend/db/schema';
@@ -414,8 +414,12 @@ describe('Delivery lifecycle with real JWT sessions, PostgreSQL and Redis', () =
     })));
     expect(results.filter(item => item.status === 'fulfilled')).toHaveLength(1);
     const failure = results.find(item => item.status === 'rejected');
-    expect(failure?.status === 'rejected' ? failure.reason : null)
-      .toMatchObject({ code: '23505', constraint: 'unique_active_shift_assignment_employee' });
+    expect(failure?.status).toBe('rejected');
+    if (!failure || failure.status !== 'rejected') throw new Error('Expected a unique-constraint error');
+    expect(failure.reason).toBeInstanceOf(DrizzleQueryError);
+    expect(failure.reason).toMatchObject({
+      cause: { code: '23505', constraint: 'unique_active_shift_assignment_employee' },
+    });
     expect(await db.select().from(shiftAssignments).where(eq(shiftAssignments.shiftId, shiftId))).toHaveLength(1);
   });
 

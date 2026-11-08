@@ -1,5 +1,18 @@
 import 'server-only';
 import { z } from 'zod';
+import { uuidLikeString } from '@/shared/validation';
+
+const workCategoriesSchema = z.preprocess((value, ctx) => {
+  if (Array.isArray(value)) {
+    const index = value.findIndex(category => typeof category !== 'string');
+    if (index !== -1) {
+      // Avoid allocating an issue for every invalid element.
+      ctx.addIssue({ code: 'invalid_type', expected: 'string', input: value[index], path: [index], fatal: true });
+      return z.NEVER;
+    }
+  }
+  return value;
+}, z.array(z.string()));
 
 // Employee query params
 export const employeeQuerySchema = z.object({
@@ -14,7 +27,7 @@ export const employeeQuerySchema = z.object({
 
 // Employee ID param
 export const employeeIdParamSchema = z.object({
-  id: z.string().uuid('Invalid employee ID'),
+  id: uuidLikeString('Invalid employee ID'),
 });
 
 // Employee update (admin only)
@@ -25,7 +38,7 @@ export const updateEmployeeSchema = z.object({
   preferredLanguage: z.enum(['nl', 'ar', 'en']).optional(),
   accountStatus: z.enum(['active', 'inactive', 'suspended']).optional(),
   role: z.enum(['administrator', 'supervisor', 'employee']).optional(),
-  workCategories: z.array(z.string()).optional(),
+  workCategories: workCategoriesSchema.optional(),
   employmentType: z.enum(['permanent', 'temporary', 'freelance']).optional(),
   hourlyRate: z.number().positive().max(1000).optional().nullable(),
   bankAccountIban: z.string().max(50).optional().nullable(),

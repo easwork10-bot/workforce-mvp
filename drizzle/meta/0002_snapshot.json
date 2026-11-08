@@ -590,7 +590,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "notifications_idempotency_fields_ck": {
+          "name": "notifications_idempotency_fields_ck",
+          "value": "(\"notifications\".\"idempotency_key\" IS NULL) = (\"notifications\".\"idempotency_payload_hash\" IS NULL)"
+        }
+      }
     },
     "public.profiles": {
       "name": "profiles",

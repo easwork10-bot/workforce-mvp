@@ -289,7 +289,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "audit_logs_actor_type_ck": {
+          "name": "audit_logs_actor_type_ck",
+          "value": "(\"audit_logs\".\"actor_type\" = 'user' AND \"audit_logs\".\"actor_id\" IS NOT NULL) OR (\"audit_logs\".\"actor_type\" = 'system' AND \"audit_logs\".\"actor_id\" IS NULL)"
+        }
+      }
     },
     "public.employee_details": {
       "name": "employee_details",
@@ -597,7 +603,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "notifications_idempotency_fields_ck": {
+          "name": "notifications_idempotency_fields_ck",
+          "value": "(\"notifications\".\"idempotency_key\" IS NULL) = (\"notifications\".\"idempotency_payload_hash\" IS NULL)"
+        }
+      }
     },
     "public.profiles": {
       "name": "profiles",

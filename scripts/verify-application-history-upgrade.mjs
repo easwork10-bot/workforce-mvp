@@ -4,8 +4,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
+import { DrizzleQueryError } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
+
+function assertDeliberateMissingRelation(error, relation) {
+  assert.ok(error instanceof DrizzleQueryError, 'Expected a wrapped migration query error');
+  assert.equal(error.cause?.code, '42P01');
+  assert.ok(error.query.includes(`SELECT * FROM ${relation}`), 'Expected the injected failing query');
+  return true;
+}
 
 // Called only by the worker after verifying its disposable database is empty.
 export async function verifyApplicationHistoryUpgrade(connectionString, projectRoot) {
@@ -98,7 +106,10 @@ export async function verifyApplicationHistoryUpgrade(connectionString, projectR
 --> statement-breakpoint
 SELECT * FROM deliberately_missing_upgrade_test_relation;
 `);
-    await assert.rejects(migrate(database, { migrationsFolder: directory }), { code: '42P01' });
+    await assert.rejects(
+      migrate(database, { migrationsFolder: directory }),
+      error => assertDeliberateMissingRelation(error, 'deliberately_missing_upgrade_test_relation'),
+    );
     assert.deepEqual(await fixtures(), originalFixtures);
     assert.deepEqual(await catalog(), originalCatalog);
     assert.equal((await client.query('SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations'))
@@ -161,7 +172,10 @@ SELECT * FROM deliberately_missing_upgrade_test_relation;
 --> statement-breakpoint
 SELECT * FROM deliberately_missing_assignment_upgrade_relation;
 `);
-    await assert.rejects(migrate(database, { migrationsFolder: directory }), { code: '42P01' });
+    await assert.rejects(
+      migrate(database, { migrationsFolder: directory }),
+      error => assertDeliberateMissingRelation(error, 'deliberately_missing_assignment_upgrade_relation'),
+    );
     assert.deepEqual(await fixtures(), beforeAssignments);
     assert.deepEqual(await catalog(), beforeAssignmentCatalog);
     assert.equal((await client.query('SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations'))

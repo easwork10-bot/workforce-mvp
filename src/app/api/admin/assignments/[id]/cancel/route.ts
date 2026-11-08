@@ -4,8 +4,9 @@ import { cancelAssignment } from '@/backend/db/queries/assignments';
 import { requireRole } from '@/backend/security/requireRole';
 import { requireCsrf } from '@/backend/security/csrf';
 import { getAuditMetadata } from '@/backend/security/auditLogger';
+import { uuidLikeString } from '@/shared/validation';
 
-const paramsSchema = z.object({ id: z.string().uuid() });
+const paramsSchema = z.object({ id: uuidLikeString() });
 
 async function cancel(req: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   try {

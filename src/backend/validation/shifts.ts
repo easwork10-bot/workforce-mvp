@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { isoDateTimeString, uuidLikeString } from '@/shared/validation';
 
 // Shift creation
 export const createShiftSchema = z.object({
@@ -9,8 +10,8 @@ export const createShiftSchema = z.object({
   location: z.string().min(3, 'Location is required').max(200).trim(),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
-  startAt: z.string().datetime({ offset: true }),
-  endAt: z.string().datetime({ offset: true }),
+  startAt: isoDateTimeString({ offset: true }),
+  endAt: isoDateTimeString({ offset: true }),
   requiredWorkers: z.number().int().positive('At least 1 worker required').max(100),
   compensationType: z.enum(['hourly', 'fixed', 'daily']).default('hourly'),
   compensationAmount: z.number().positive('Compensation must be positive').max(10000).optional().nullable(),
@@ -30,8 +31,8 @@ export const updateShiftSchema = z.object({
   location: z.string().min(3).max(200).trim().optional(),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
-  startAt: z.string().datetime({ offset: true }).optional(),
-  endAt: z.string().datetime({ offset: true }).optional(),
+  startAt: isoDateTimeString({ offset: true }).optional(),
+  endAt: isoDateTimeString({ offset: true }).optional(),
   requiredWorkers: z.number().int().positive().max(100).optional(),
   compensationType: z.enum(['hourly', 'fixed', 'daily']).optional(),
   compensationAmount: z.number().positive().max(10000).optional().nullable(),
@@ -52,8 +53,8 @@ export const updateShiftSchema = z.object({
 export const shiftQuerySchema = z.object({
   status: z.enum(['draft', 'open', 'filled', 'cancelled', 'completed']).optional(),
   workType: z.string().optional(),
-  startFrom: z.string().datetime({ offset: true }).optional(),
-  startTo: z.string().datetime({ offset: true }).optional(),
+  startFrom: isoDateTimeString({ offset: true }).optional(),
+  startTo: isoDateTimeString({ offset: true }).optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
   sortBy: z.enum(['startAt', 'createdAt', 'title']).default('startAt'),
@@ -70,7 +71,7 @@ export const shiftQuerySchema = z.object({
 
 // Shift ID param
 export const shiftIdParamSchema = z.object({
-  id: z.string().uuid('Invalid shift ID'),
+  id: uuidLikeString('Invalid shift ID'),
 });
 
 // Export types

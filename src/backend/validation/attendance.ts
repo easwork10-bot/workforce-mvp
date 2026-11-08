@@ -1,24 +1,25 @@
 import 'server-only';
 import { z } from 'zod';
+import { uuidLikeString } from '@/shared/validation';
 
 // Check-in
 export const checkInSchema = z.object({
-  shiftAssignmentId: z.string().uuid('Invalid shift assignment ID'),
+  shiftAssignmentId: uuidLikeString('Invalid shift assignment ID'),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 
 // Check-out
 export const checkOutSchema = z.object({
-  shiftAssignmentId: z.string().uuid('Invalid shift assignment ID'),
+  shiftAssignmentId: uuidLikeString('Invalid shift assignment ID'),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 
 // Attendance query params
 export const attendanceQuerySchema = z.object({
-  shiftId: z.string().uuid().optional(),
-  employeeId: z.string().uuid().optional(),
+  shiftId: uuidLikeString().optional(),
+  employeeId: uuidLikeString().optional(),
   status: z.enum(['checked_in', 'checked_out', 'late', 'absent', 'missed_checkout']).optional(),
   dateFrom: z.string().date().optional(),
   dateTo: z.string().date().optional(),

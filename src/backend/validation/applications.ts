@@ -1,9 +1,10 @@
 import 'server-only';
 import { z } from 'zod';
+import { uuidLikeString } from '@/shared/validation';
 
 // Shift application
 export const applyShiftSchema = z.object({
-  shiftId: z.string().uuid('Invalid shift ID'),
+  shiftId: uuidLikeString('Invalid shift ID'),
 });
 
 // Application query params
@@ -14,8 +15,8 @@ export const applicationQuerySchema = z.object({
 });
 
 export const adminApplicationQuerySchema = applicationQuerySchema.extend({
-  shiftId: z.string().uuid().optional(),
-  employeeId: z.string().uuid().optional(),
+  shiftId: uuidLikeString().optional(),
+  employeeId: uuidLikeString().optional(),
 }).strict();
 
 export const reviewApplicationSchema = z.object({
@@ -24,7 +25,7 @@ export const reviewApplicationSchema = z.object({
 }).strict();
 
 export const applicationIdParamSchema = z.object({
-  id: z.string().uuid('Invalid application ID'),
+  id: uuidLikeString('Invalid application ID'),
 });
 
 // Export types
