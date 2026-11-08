@@ -104,13 +104,14 @@ Pages are under `src/app/[locale]/`:
 - `/admin`, `/admin/shifts`, `/admin/shifts/create`, `/admin/applications`, and `/admin/assignments`
 - `/attendance/check-in`
 
-The employee shift browser and application history use their APIs. The administrator
-dashboard, shift management, application review and assignment overview use their
-respective APIs. Login and registration use the self-hosted auth routes.
-The employee dashboard, employee schedule, and attendance check-in/out page remain
-presentation prototypes backed by sample data. In particular, the attendance page does not call the implemented
-attendance APIs, and GPS shown there is not a server-side geofence or location
-verification feature. Do not treat sample dashboard values or UI controls as
+The employee shift browser, application history and schedule use their APIs. The
+administrator dashboard, shift management, application review and assignment
+overview use their respective APIs. Login and registration use the self-hosted auth routes.
+The employee dashboard's schedule summary uses the schedule API; its application
+and hours summaries remain presentation prototypes backed by sample data. The
+attendance check-in/out page does not call the implemented attendance APIs, and
+GPS shown there is not a server-side geofence or location verification feature.
+Do not treat the remaining sample dashboard values or attendance UI controls as
 persisted workflows.
 
 ## API responsibilities
@@ -134,6 +135,28 @@ Route handlers live in [`src/app/api/`](../src/app/api/); Zod input contracts ar
 | `/api/admin/attendance` and `/api/admin/audit` | Attendance and audit queries |
 | `/api/notifications*` | Read, create, mark read, and delete recipient notifications |
 | `/api/health` | Application dependency health endpoint |
+
+The employee schedule endpoint only reads assignments owned by the authenticated
+employee. It accepts assignment `status`, `shiftId`, inclusive local calendar
+`dateFrom`/`dateTo`, and `page`/`limit` filters. Invalid or reversed dates are
+rejected. For compatibility a valid `employeeId` query parameter is ignored and
+never changes ownership. Day boundaries are converted to UTC and shifts are
+included when their half-open intervals overlap the requested dates, including
+overnight shifts. Results are ordered by shift start and assignment ID; attendance
+is fetched in a batch and the latest record is selected deterministically.
+Responses are private and non-cacheable.
+
+The schema currently has no per-worksite timezone, so the endpoint uses
+`Europe/Amsterdam` as its fallback and includes that timezone with each shift.
+The Dutch/Arabic employee page formats the same instants in the supplied worksite
+timezone, rather than choosing a timezone from the display language. Week and
+month views use date-range filtering and server-side pagination, and show
+assignment/shift status, attendance, loading, empty and retry states. Supporting
+other worksites requires a stored timezone and corresponding per-worksite date
+filtering; a location string or UI locale is not a timezone source.
+The employee dashboard's weekly summary reads every page for the current worksite
+week and counts active, not-yet-ended assignments on open or filled shifts; it
+does not present a partial count when a request fails.
 
 The two attendance route families remain in the API surface. Mutating business
 routes use CSRF and role wrappers where implemented; authentication endpoints use
@@ -319,7 +342,8 @@ verifying its disposable target identity and empty state.
   Dutch/Arabic feedback. Every attempt reloads authoritative data, even after
   uncertain network outcomes; refresh errors remain distinct from mutation
   feedback. Cancelled history stays visible under All. No backend lifecycle,
-  notifications, capacity, employee schedule or migration changes are introduced.
+  notifications, capacity or migration changes are introduced by this
+  administrative endpoint.
 - Audit records are written through shared query helpers. Audit values redact keys
   whose names resemble secrets, credentials, tokens, or cookies.
 - Notifications are in-app database records with recipient scoping and idempotent

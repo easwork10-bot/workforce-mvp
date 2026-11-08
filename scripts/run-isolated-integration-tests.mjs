@@ -39,6 +39,7 @@ const focusedTests = [
   'tests/integration/admin-shift-management.test.ts',
   'tests/integration/delivery-lifecycle.test.ts',
   'tests/integration/admin-assignments.test.ts',
+  'tests/integration/employee-schedule.test.ts',
 ];
 let databaseUrl;
 let dbProxy;

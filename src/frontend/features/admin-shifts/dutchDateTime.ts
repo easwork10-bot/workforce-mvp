@@ -1,6 +1,7 @@
-const timeZone = 'Europe/Amsterdam';
+import { DEFAULT_WORKSITE_TIME_ZONE } from '@/shared/worksite-time';
+
 const formatter = new Intl.DateTimeFormat('en-GB', {
-  timeZone,
+  timeZone: DEFAULT_WORKSITE_TIME_ZONE,
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',

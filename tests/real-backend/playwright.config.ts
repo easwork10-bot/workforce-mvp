@@ -11,6 +11,7 @@ export default defineConfig({
   testDir: '../..',
   testMatch: [
     'tests/real-backend/admin-assignments.spec.ts',
+    'tests/real-backend/employee-schedule.spec.ts',
     'tests/e2e/*.spec.ts',
   ],
   outputDir: '/workspace/tests/results/real-backend',

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEmployeeSchedule } from '@/backend/db/queries/assignments';
-import { attendanceQuerySchema } from '@/backend/validation/attendance';
+import { employeeScheduleQuerySchema } from '@/backend/validation/assignments';
 import { requireRole } from '@/backend/security/requireRole';
+
+const noStore = { 'Cache-Control': 'private, no-store' };
 
 /**
  * GET /api/employee/schedule - Get employee's schedule (upcoming and past assignments)
@@ -11,6 +13,7 @@ async function GET(req: NextRequest): Promise<NextResponse> {
     // Verify authentication and employee role
     const authResult = await requireRole(req, ['employee']);
     if (authResult instanceof NextResponse) {
+      authResult.headers.set('Cache-Control', noStore['Cache-Control']);
       return authResult;
     }
 
@@ -18,26 +21,27 @@ async function GET(req: NextRequest): Promise<NextResponse> {
 
     // Parse and validate query parameters
     const { searchParams } = new URL(req.url);
-    const validation = attendanceQuerySchema.safeParse({
-      shiftId: searchParams.get('shiftId') || undefined,
-      employeeId: searchParams.get('employeeId') || undefined,
-      status: searchParams.get('status') || undefined,
-      dateFrom: searchParams.get('dateFrom') || undefined,
-      dateTo: searchParams.get('dateTo') || undefined,
-      page: searchParams.get('page') || undefined,
-      limit: searchParams.get('limit') || undefined,
+    const validation = employeeScheduleQuerySchema.safeParse({
+      shiftId: searchParams.get('shiftId') ?? undefined,
+      employeeId: searchParams.get('employeeId') ?? undefined,
+      status: searchParams.get('status') ?? undefined,
+      dateFrom: searchParams.get('dateFrom') ?? undefined,
+      dateTo: searchParams.get('dateTo') ?? undefined,
+      page: searchParams.get('page') ?? undefined,
+      limit: searchParams.get('limit') ?? undefined,
     });
 
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Invalid query parameters', details: validation.error.flatten().fieldErrors },
-        { status: 400 }
+        { status: 400, headers: noStore }
       );
     }
 
     // Employee can only see their own schedule
     const { data, total } = await getEmployeeSchedule({
       employeeId: userId,
+      shiftId: validation.data.shiftId,
       startFrom: validation.data.dateFrom,
       startTo: validation.data.dateTo,
       status: validation.data.status,
@@ -53,12 +57,12 @@ async function GET(req: NextRequest): Promise<NextResponse> {
         total,
         totalPages: Math.ceil(total / validation.data.limit),
       },
-    });
+    }, { headers: noStore });
   } catch (error) {
     console.error('[Employee Schedule GET] Error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch schedule' },
-      { status: 500 }
+      { status: 500, headers: noStore }
     );
   }
 }

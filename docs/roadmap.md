@@ -15,26 +15,19 @@ criteria require owner approval.
   confirmed revocation before the account can become active. A supplied role in the
   employee-edit API replaces the account's previous role assignments; sessions with
   removed roles are rejected even if Redis revocation is incomplete.
-- Employee shift browsing and application history, administrator shift management,
-  application review and assignment management use real APIs.
-- Employee schedule and attendance screens still need real-data integration.
-  Employee Schedule API/query validation and the mock schedule UI remain follow-up
-  work; the current schedule page is access-protected but still uses sample data.
+- Employee shift browsing, application history and schedule, administrator shift
+  management, application review and assignment management use real APIs.
+- The attendance screen still needs real-data integration. Employee Schedule uses
+  the Netherlands fallback timezone until a worksite timezone can be stored.
 - Main's dashboard uses Dutch and Arabic locale-prefixed routes. The separate
   Jofra public-site static preview and its GitHub Pages base path are not part of
   this branch. A future Arabic-to-English change is not implemented.
-
-## In progress
-
-- Delivery 2 authorization implementation and focused checks are in place, but the
-  guarded PostgreSQL/Redis integration and Chromium/WebKit browser workflow still
-  needs to pass before this delivery is ready to commit and push.
 
 ## Future decisions
 
 | Area | Remaining work |
 |---|---|
-| Workforce UI | Connect employee schedule and attendance with end-to-end coverage. |
+| Workforce UI | Connect attendance with end-to-end coverage. |
 | Accounts | Define invitation, account recovery and profile workflows. |
 | Scheduling | Confirm availability, shift-change and direct-assignment policies. |
 | Attendance | Define windows, corrections, review and missing-checkout rules. |

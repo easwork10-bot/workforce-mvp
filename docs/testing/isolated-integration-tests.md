@@ -78,15 +78,18 @@ The server process trusts only its generated certificate in addition to Node's
 normal CA roots, allowing internal locale rewrites without disabling TLS verification.
 
 The guarded browser phase runs
-[`tests/real-backend/admin-assignments.spec.ts`](../../tests/real-backend/admin-assignments.spec.ts)
+[`tests/real-backend/admin-assignments.spec.ts`](../../tests/real-backend/admin-assignments.spec.ts),
+[`tests/real-backend/employee-schedule.spec.ts`](../../tests/real-backend/employee-schedule.spec.ts),
 and [`tests/e2e/`](../../tests/e2e/) against the same production server in both
-browser engines. The real-backend spec does not intercept assignment or auth APIs;
+browser engines. The real-backend specs do not intercept assignment, schedule or auth APIs;
 the separate UI regression specs stub their documented API responses. The config
 and server require the safe worker, and fixture writes recheck the live pinned
 database identity. Real-backend tests create disposable accounts/roles, use real
 login/create/publish/apply/approve/cancel APIs, and compare rendered data with
 PostgreSQL. Confirmed/completed/cancelled historical rows are synthetic fixtures,
-not an invented completion business flow. Scenarios cover all statuses,
+as are schedule attendance records, not invented completion or attendance flows.
+Schedule coverage also checks worksite-timezone dates, overnight shifts and
+employee ownership. Scenarios cover all statuses,
 pagination, history, Dutch/Arabic, RTL, 390/768/1280px, access denial, changes and
 empty results. Date assertions use each browser's native locale formatter with
 the PostgreSQL timestamps and the explicit Europe/Amsterdam time zone, avoiding

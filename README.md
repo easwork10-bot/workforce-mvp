@@ -4,9 +4,9 @@ Workforce MVP is a localized workforce-scheduling application built with Next.js
 PostgreSQL, and Redis. It includes employee and administrator workflows for
 authentication, shift browsing and management, applications, and assignments.
 Administrator, employee, and attendance pages require a valid server-side session
-and the appropriate role. Employee schedule, dashboard, and attendance screens
-still contain sample data; see the [current architecture](./docs/architecture.md)
-for the verified feature status.
+and the appropriate role. Employee schedules use real assignments; parts of the
+employee dashboard and the attendance screen still contain sample data. See the
+[current architecture](./docs/architecture.md) for the verified feature status.
 
 ## Requirements
 

@@ -1,10 +1,11 @@
 import 'server-only';
 import { db } from '..';
 import { shiftAssignments, shifts, attendanceRecords, profiles } from '../schema';
-import { eq, and, desc, count, gte, lte, asc, inArray } from 'drizzle-orm';
-import type { Profile, Shift, ShiftAssignment } from '../schema';
+import { eq, and, desc, count, asc, inArray, sql } from 'drizzle-orm';
+import type { AttendanceRecord, Profile, Shift, ShiftAssignment } from '../schema';
 import { logAuditEvent, type AuditMetadata } from './audit';
 import { createNotificationIdempotent } from './notifications';
+import { DEFAULT_WORKSITE_TIME_ZONE } from '@/shared/worksite-time';
 
 export type CancelAssignmentResult =
   | { success: true; code: 'ASSIGNMENT_CANCELLED'; replayed: boolean }
@@ -211,8 +212,17 @@ export async function confirmAssignment(
 /**
  * Get employee schedule (upcoming and past assignments with attendance)
  */
+export type EmployeeScheduleItem = ShiftAssignment & {
+  shift: Pick<Shift,
+    'id' | 'title' | 'workType' | 'location' | 'latitude' | 'longitude'
+    | 'startAt' | 'endAt' | 'compensationType' | 'compensationAmount' | 'status'
+  > & { timeZone: string };
+  attendance: Pick<AttendanceRecord, 'id' | 'checkInAt' | 'checkOutAt' | 'attendanceStatus'> | null;
+};
+
 export async function getEmployeeSchedule({
   employeeId,
+  shiftId,
   startFrom,
   startTo,
   status,
@@ -220,49 +230,32 @@ export async function getEmployeeSchedule({
   limit = 20,
 }: {
   employeeId: string;
+  shiftId?: string;
   startFrom?: string;
   startTo?: string;
-  status?: string;
+  status?: ShiftAssignment['status'];
   page?: number;
   limit?: number;
-}): Promise<{
-  data: (ShiftAssignment & {
-    shift: {
-      id: string;
-      title: string;
-      workType: string;
-      location: string;
-      latitude: string | null;
-      longitude: string | null;
-      startAt: Date;
-      endAt: Date;
-      compensationType: string;
-      compensationAmount: string | null;
-      status: string;
-    };
-    attendance: {
-      id: string;
-      checkInAt: Date | null;
-      checkOutAt: Date | null;
-      attendanceStatus: string;
-    } | null;
-  })[];
-  total: number;
-}> {
+}): Promise<{ data: EmployeeScheduleItem[]; total: number }> {
   const offset = (page - 1) * limit;
 
   const conditions = [eq(shiftAssignments.employeeId, employeeId)];
 
-  if (status) {
-    conditions.push(eq(shiftAssignments.status, status as any));
+  if (shiftId) {
+    conditions.push(eq(shiftAssignments.shiftId, shiftId));
   }
 
+  if (status) {
+    conditions.push(eq(shiftAssignments.status, status));
+  }
+
+  // Compare half-open shift intervals with local calendar-day boundaries.
   if (startFrom) {
-    conditions.push(gte(shifts.startAt, new Date(startFrom)));
+    conditions.push(sql`${shifts.endAt} > (${startFrom}::date::timestamp AT TIME ZONE ${DEFAULT_WORKSITE_TIME_ZONE})`);
   }
 
   if (startTo) {
-    conditions.push(lte(shifts.startAt, new Date(startTo)));
+    conditions.push(sql`${shifts.startAt} < ((${startTo}::date + 1)::timestamp AT TIME ZONE ${DEFAULT_WORKSITE_TIME_ZONE})`);
   }
 
   const whereClause = and(...conditions);
@@ -271,7 +264,7 @@ export async function getEmployeeSchedule({
   const [{ total }] = await db
     .select({ total: count() })
     .from(shiftAssignments)
-    .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+    .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
     .where(whereClause);
 
   // Fetch data
@@ -293,34 +286,32 @@ export async function getEmployeeSchedule({
       },
     })
     .from(shiftAssignments)
-    .leftJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+    .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
     .where(whereClause)
-    .orderBy(asc(shifts.startAt))
+    .orderBy(asc(shifts.startAt), asc(shiftAssignments.id))
     .limit(limit)
     .offset(offset);
 
-  // For each assignment, get the most recent attendance record
-  const result = await Promise.all(
-    data.map(async (item) => {
-      const [attendance] = await db
-        .select({
-          id: attendanceRecords.id,
-          checkInAt: attendanceRecords.checkInAt,
-          checkOutAt: attendanceRecords.checkOutAt,
-          attendanceStatus: attendanceRecords.attendanceStatus,
-        })
-        .from(attendanceRecords)
-        .where(eq(attendanceRecords.shiftAssignmentId, item.assignment.id))
-        .orderBy(desc(attendanceRecords.createdAt))
-        .limit(1);
-
-      return {
-        ...item.assignment,
-        shift: item.shift!,
-        attendance: attendance || null,
-      };
+  const attendance = data.length === 0 ? [] : await db
+    .selectDistinctOn([attendanceRecords.shiftAssignmentId], {
+      shiftAssignmentId: attendanceRecords.shiftAssignmentId,
+      id: attendanceRecords.id,
+      checkInAt: attendanceRecords.checkInAt,
+      checkOutAt: attendanceRecords.checkOutAt,
+      attendanceStatus: attendanceRecords.attendanceStatus,
     })
+    .from(attendanceRecords)
+    .where(inArray(attendanceRecords.shiftAssignmentId, data.map(item => item.assignment.id)))
+    .orderBy(asc(attendanceRecords.shiftAssignmentId), desc(attendanceRecords.createdAt), desc(attendanceRecords.id));
+
+  const attendanceByAssignment = new Map(
+    attendance.map(({ shiftAssignmentId, ...record }) => [shiftAssignmentId, record]),
   );
+  const result = data.map(({ assignment, shift }) => ({
+    ...assignment,
+    shift: { ...shift, timeZone: DEFAULT_WORKSITE_TIME_ZONE },
+    attendance: attendanceByAssignment.get(assignment.id) ?? null,
+  }));
 
   return { data: result, total };
 }
