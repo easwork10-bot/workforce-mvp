@@ -13,6 +13,7 @@ import {
 } from '@/frontend/features/employee-schedule/scheduleCalendar';
 import type { EmployeeScheduleItem, EmployeeSchedulePage } from '@/shared/employee-schedule';
 import { dateKeyInTimeZone, DEFAULT_WORKSITE_TIME_ZONE } from '@/shared/worksite-time';
+import { Link } from '@/shared/i18n-routing';
 
 type LoadState =
   | { key: string; kind: 'loading' }
@@ -201,6 +202,9 @@ export default function EmployeeSchedule({ initialDate }: { initialDate: string 
                               </p>
                               <p className="text-sm text-muted-foreground">{t('timeZone', { zone: assignment.shift.timeZone })}</p>
                               <p className="text-sm">{t('shiftStatus')}: {t(`shiftStatuses.${assignment.shift.status}`)}</p>
+                              <Link className="inline-block text-sm underline" href={`/attendance/check-in?date=${group.date}`}>
+                                {t('attendance')}
+                              </Link>
                               {assignment.attendance ? (
                                 <div className="space-y-1 text-sm">
                                   <p>{t('attendance')}: {t(`attendanceStatuses.${assignment.attendance.attendanceStatus}`)}</p>

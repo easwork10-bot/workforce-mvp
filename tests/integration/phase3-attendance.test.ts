@@ -95,6 +95,16 @@ describe('Phase 3 Employee API - Attendance Check-in/Out', () => {
     expect(result.record!.checkInLongitude).toBeNull();
   });
 
+  it('rejects another check-in while late attendance is active and still allows checkout', async () => {
+    const first = await employeeCheckIn(testEmployeeId, testAssignmentId, null, null);
+    await db.update(attendanceRecords).set({ attendanceStatus: 'late' }).where(eq(attendanceRecords.id, first.record!.id));
+    expect((await employeeCheckIn(testEmployeeId, testAssignmentId, null, null)).success).toBe(false);
+    expect(await db.select().from(attendanceRecords).where(eq(attendanceRecords.shiftAssignmentId, testAssignmentId))).toHaveLength(1);
+    const result = await employeeCheckOut(testEmployeeId, testAssignmentId, null, null);
+    expect(result.success).toBe(true);
+    expect(result.record?.attendanceStatus).toBe('checked_out');
+  });
+
   it('should reject duplicate check-in', async () => {
     await employeeCheckIn(testEmployeeId, testAssignmentId, 52.3676, 4.9041);
     const result = await employeeCheckIn(testEmployeeId, testAssignmentId, 52.3676, 4.9041);

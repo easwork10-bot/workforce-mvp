@@ -584,5 +584,20 @@
       "viewAll": "Alle sollicitaties",
       "schedule": "Mijn rooster"
     }
+  },
+  "employeeAttendance": {
+    "checkIn": "Inchecken",
+    "checkOut": "Uitchecken",
+    "title": "Aanwezigheid",
+    "description": "Registreer je aanwezigheid voor je toegewezen diensten.",
+    "date": "Datum van de dienst",
+    "refresh": "Vernieuwen",
+    "empty": "Je hebt geen toegewezen diensten op deze datum.",
+    "checkInSuccess": "Je bent ingecheckt.",
+    "checkOutSuccess": "Je bent uitgecheckt.",
+    "unauthorized": "Je sessie is verlopen. Log opnieuw in.",
+    "forbidden": "Deze actie is niet toegestaan. Vernieuw de pagina en probeer opnieuw.",
+    "invalidAction": "Deze actie is niet meer mogelijk. Controleer de vernieuwde aanwezigheidsstatus.",
+    "actionError": "De actie kon niet worden bevestigd. Controleer de vernieuwde status voordat je opnieuw probeert."
   }
 }

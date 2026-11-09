@@ -1,319 +1,124 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/ui/card';
+import { useEffect, useRef, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/card';
 import { Button } from '@/frontend/ui/button';
-import { MapPin, Clock, CheckCircle, AlertCircle, Satellite, Shield, Calendar } from 'lucide-react';
+import { fetchEmployeeSchedule, employeeScheduleErrorKind } from '@/frontend/features/employee-schedule/employeeScheduleApi';
+import { AttendanceApiError, attendanceActions, recordAttendance } from '@/frontend/features/employee-attendance/employeeAttendanceApi';
+import type { EmployeeSchedulePage } from '@/shared/employee-schedule';
+import { dateKeyInTimeZone, DEFAULT_WORKSITE_TIME_ZONE } from '@/shared/worksite-time';
 
-const mockTodaysShifts = [
-  {
-    id: '1',
-    shiftTitle: 'Traffic Controller - Amsterdam',
-    date: '2024-01-15',
-    startTime: '08:00',
-    endTime: '16:00',
-    location: 'Amsterdam Central Station',
-    status: 'confirmed',
-    hasCheckedIn: false,
-    hasCheckedOut: false,
-  },
-  {
-    id: '2',
-    shiftTitle: 'Cleaning Service - Rotterdam',
-    date: '2024-01-16',
-    startTime: '17:00',
-    endTime: '22:00',
-    location: 'Rotterdam Business Park',
-    status: 'confirmed',
-    hasCheckedIn: false,
-    hasCheckedOut: false,
-  },
-];
-
-export default function CheckInPage() {
-  const tAttendance = useTranslations('attendance');
-  const tCommon = useTranslations('common');
-
-  const [todaysShifts, setTodaysShifts] = useState(mockTodaysShifts);
-  const [loading, setLoading] = useState(false);
-  const [gpsEnabled, setGpsEnabled] = useState(false);
-  const [location, setLocation] = useState<GeolocationPosition | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+export default function CheckIn({ initialDate }: { initialDate: string }) {
+  const t = useTranslations('employeeAttendance');
+  const s = useTranslations('employeeSchedule');
+  const locale = useLocale();
+  const [date, setDate] = useState(initialDate);
+  const [page, setPage] = useState(1);
+  const [reload, setReload] = useState(0);
+  const [data, setData] = useState<EmployeeSchedulePage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ error: boolean; key: string } | null>(null);
+  const [pending, setPending] = useState(false);
+  const actionLock = useRef(false);
 
   useEffect(() => {
-    // Check if GPS is available
-    if ('geolocation' in navigator) {
-      setGpsEnabled(true);
-    }
-  }, []);
-
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
-      return;
-    }
-
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation(pos);
-      },
-      (err) => {
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            setLocationError('Location permission denied. Please enable location access in your browser settings.');
-            break;
-          case err.POSITION_UNAVAILABLE:
-            setLocationError('Location information is unavailable.');
-            break;
-          case err.TIMEOUT:
-            setLocationError('Location request timed out.');
-            break;
-          default:
-            setLocationError('An unknown error occurred.');
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  };
-
-  const handleCheckIn = async (shiftId: string) => {
+    const controller = new AbortController();
     setLoading(true);
-    requestLocation();
+    setData(null);
+    setLoadError(null);
+    fetchEmployeeSchedule(date, date, page, controller.signal).then(result => {
+      if (controller.signal.aborted) return;
+      if (page > 1 && page > result.pagination.totalPages) {
+        setPage(Math.max(1, result.pagination.totalPages));
+        return;
+      }
+      setData(result);
+    }).catch(error => {
+      if (!controller.signal.aborted) setLoadError(employeeScheduleErrorKind(error));
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
+  }, [date, page, reload]);
 
-    // Wait for location or timeout
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
+  async function act(id: string, action: 'check-in' | 'check-out') {
+    if (actionLock.current) return;
+    actionLock.current = true;
+    setPending(true);
+    setNotice(null);
     try {
-      // TODO: Implement actual Supabase check-in
-      console.log('Checking in for shift:', shiftId, 'Location:', location);
-
-      setTodaysShifts(prev =>
-        prev.map(s =>
-          s.id === shiftId ? { ...s, hasCheckedIn: true } : s
-        )
-      );
-    } catch (err: any) {
-      console.error('Check-in failed:', err);
+      await recordAttendance(id, action);
+      setNotice({ error: false, key: action === 'check-in' ? 'checkInSuccess' : 'checkOutSuccess' });
+    } catch (error) {
+      const status = error instanceof AttendanceApiError ? error.status : undefined;
+      setNotice({ error: true, key: status === 401 ? 'unauthorized' : status === 403 ? 'forbidden' : status === 400 ? 'invalidAction' : 'actionError' });
     } finally {
-      setLoading(false);
+      // Reconcile conflicts and lost responses too: the server may have saved the action.
+      setData(null);
+      setLoading(true);
+      setReload(value => value + 1);
+      setPending(false);
+      actionLock.current = false;
     }
-  };
+  }
 
-  const handleCheckOut = async (shiftId: string) => {
+  function changeDate(value: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    setData(null);
     setLoading(true);
-    requestLocation();
-
-    // Wait for location or timeout
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    try {
-      // TODO: Implement actual Supabase check-out
-      console.log('Checking out for shift:', shiftId, 'Location:', location);
-
-      setTodaysShifts(prev =>
-        prev.map(s =>
-          s.id === shiftId ? { ...s, hasCheckedOut: true } : s
-        )
-      );
-    } catch (err: any) {
-      console.error('Check-out failed:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const now = new Date();
+    setNotice(null);
+    setPage(1);
+    setDate(value);
+    setReload(value => value + 1);
+  }
+  const format = (value: string, timeZone: string) => new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'nl-NL', {
+    timeZone, calendar: 'gregory', dateStyle: 'medium', timeStyle: 'short',
+  }).format(new Date(value));
 
   return (
-    <div className="container mx-auto py-8 space-y-8 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{tAttendance('check_in')}</h1>
-          <p className="text-muted-foreground mt-2">
-            Record your attendance for today's shifts
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-2xl font-mono font-bold">{formatTime(now)}</p>
-          <p className="text-sm text-muted-foreground">{now.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-        </div>
+    <main className="container mx-auto max-w-3xl space-y-6 py-8">
+      <header><h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="mt-2 text-muted-foreground">{t('description')}</p></header>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="space-y-1"><span className="block text-sm font-medium">{t('date')}</span>
+          <input type="date" value={date} disabled={pending} onChange={event => changeDate(event.target.value)}
+            className="rounded-md border bg-background p-2" /></label>
+        <Button variant="outline" disabled={pending} onClick={() => changeDate(dateKeyInTimeZone(new Date(), DEFAULT_WORKSITE_TIME_ZONE))}>{s('today')}</Button>
+        <Button variant="outline" disabled={pending || loading} onClick={() => { setLoading(true); setReload(value => value + 1); }}>{t('refresh')}</Button>
       </div>
-
-      {/* GPS Status Card */}
-      <Card className={gpsEnabled ? 'border-green-500' : 'border-yellow-500'}>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            {gpsEnabled ? (
-              <Satellite className="h-5 w-5 text-green-600" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-            )}
-            <CardTitle className="text-lg">
-              {gpsEnabled ? 'GPS Available' : 'GPS Not Available'}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                {location ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <Clock className="h-5 w-5 text-gray-400" />
-                )}
-                <span className="font-medium">Location</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {location
-                  ? `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`
-                  : 'Not retrieved'}
-              </p>
+      <p className="text-sm text-muted-foreground">{s('timeZone', { zone: DEFAULT_WORKSITE_TIME_ZONE })}</p>
+      {notice && <p role={notice.error ? 'alert' : 'status'} className={notice.error ? 'text-destructive' : 'text-green-700 dark:text-green-400'}>{t(notice.key)}</p>}
+      {loading && <p role="status">{s('loading')}</p>}
+      {!loading && loadError && <div className="space-y-3"><p role="alert">{s(loadError)}</p>
+        <Button onClick={() => setReload(value => value + 1)}>{s('retry')}</Button></div>}
+      {!loading && data?.assignments.length === 0 && <p role="status">{t('empty')}</p>}
+      {!loading && data?.assignments.map(item => {
+        const actions = attendanceActions(item);
+        return <Card key={item.id}>
+          <CardHeader><CardTitle className="break-words"><bdi>{item.shift.title}</bdi></CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <p className="break-words"><bdi>{item.shift.location}</bdi></p>
+            <p>{s('start')}: <time dateTime={item.shift.startAt}><bdi>{format(item.shift.startAt, item.shift.timeZone)}</bdi></time></p>
+            <p>{s('end')}: <time dateTime={item.shift.endAt}><bdi>{format(item.shift.endAt, item.shift.timeZone)}</bdi></time></p>
+            <p>{s('assignmentStatus')}: {s(`assignmentStatuses.${item.status}`)}</p>
+            <p>{s('shiftStatus')}: {s(`shiftStatuses.${item.shift.status}`)}</p>
+            <p>{item.attendance ? `${s('attendance')}: ${s(`attendanceStatuses.${item.attendance.attendanceStatus}`)}` : s('noAttendance')}</p>
+            {item.attendance?.checkInAt && <p>{s('checkedIn')}: <time dateTime={item.attendance.checkInAt}><bdi>{format(item.attendance.checkInAt, item.shift.timeZone)}</bdi></time></p>}
+            {item.attendance?.checkOutAt && <p>{s('checkedOut')}: <time dateTime={item.attendance.checkOutAt}><bdi>{format(item.attendance.checkOutAt, item.shift.timeZone)}</bdi></time></p>}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button disabled={pending || !actions.checkIn} onClick={() => act(item.id, 'check-in')}>{t('checkIn')}</Button>
+              <Button variant="outline" disabled={pending || !actions.checkOut} onClick={() => act(item.id, 'check-out')}>{t('checkOut')}</Button>
             </div>
-            <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Shield className="h-5 w-5 text-blue-600" />
-                <span className="font-medium">Accuracy</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {location ? `±${Math.round(location.coords.accuracy)}m` : 'N/A'}
-              </p>
-            </div>
-            <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <Button variant="outline" size="sm" onClick={requestLocation} disabled={loading}>
-                <Satellite className="h-4 w-4 mr-2" />
-                Refresh Location
-              </Button>
-            </div>
-          </div>
-          {locationError && (
-            <div className="mt-3 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-md">
-              {locationError}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* TodayToday'sapos;s Shifts */}
-      <Card>
-        <CardHeader>
-          <CardTitle>TodayToday'sapos;s Shifts</CardTitle>
-          <CardDescription>Check in and out for your assigned shifts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {todaysShifts.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium">No shifts today</h3>
-              <p className="text-muted-foreground mt-1">You have no shifts scheduled for today</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {todaysShifts.map((shift) => (
-                <div key={shift.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-semibold text-lg">{shift.shiftTitle}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                        <MapPin className="h-3 w-3" />
-                        {shift.location}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{shift.startTime} - {shift.endTime}</p>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        {shift.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Check In */}
-                    <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="h-5 w-5 text-blue-600" />
-                        <span className="font-medium">{tAttendance('check_in')}</span>
-                      </div>
-                      {shift.hasCheckedIn ? (
-                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                          <CheckCircle className="h-5 w-5" />
-                          <span>Checked in at {formatTime(new Date())}</span>
-                        </div>
-                      ) : (
-                        <Button
-                          className="w-full"
-                          onClick={() => handleCheckIn(shift.id)}
-                          disabled={loading || shift.hasCheckedOut}
-                        >
-                          {loading ? tCommon('loading') : tAttendance('check_in')}
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Check Out */}
-                    <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="h-5 w-5 text-orange-600" />
-                        <span className="font-medium">{tAttendance('check_out')}</span>
-                      </div>
-                      {shift.hasCheckedOut ? (
-                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                          <CheckCircle className="h-5 w-5" />
-                          <span>Checked out at {formatTime(new Date())}</span>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleCheckOut(shift.id)}
-                          disabled={loading || !shift.hasCheckedIn || shift.hasCheckedOut}
-                        >
-                          {loading ? tCommon('loading') : tAttendance('check_out')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Info Card */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-3 text-center">
-            <div className="p-4">
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mx-auto mb-2">
-                <Satellite className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h4 className="font-medium">GPS Verification</h4>
-              <p className="text-sm text-muted-foreground mt-1">Your location is recorded to verify you're at the work site</p>
-            </div>
-            <div className="p-4">
-              <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mx-auto mb-2">
-                <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-              <h4 className="font-medium">Secure & Private</h4>
-              <p className="text-sm text-muted-foreground mt-1">Location data is only used for attendance verification</p>
-            </div>
-            <div className="p-4">
-              <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center mx-auto mb-2">
-                <Clock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h4 className="font-medium">Accurate Timing</h4>
-              <p className="text-sm text-muted-foreground mt-1">Server-side timestamps ensure accurate hour tracking</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>;
+      })}
+      {!loading && data && data.pagination.totalPages > 1 && <nav aria-label={s('pagination')} className="flex flex-wrap items-center gap-3">
+        <Button variant="outline" disabled={pending || page === 1} onClick={() => { setLoading(true); setPage(value => value - 1); }}>{s('previous')}</Button>
+        <p>{s('page', { page, pages: data.pagination.totalPages, total: data.pagination.total })}</p>
+        <Button variant="outline" disabled={pending || page >= data.pagination.totalPages} onClick={() => { setLoading(true); setPage(value => value + 1); }}>{s('next')}</Button>
+      </nav>}
+    </main>
   );
 }

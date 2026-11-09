@@ -41,7 +41,7 @@ export async function checkInCore(
       .where(
         and(
           eq(attendanceRecords.shiftAssignmentId, assignmentId),
-          eq(attendanceRecords.attendanceStatus, 'checked_in')
+          or(eq(attendanceRecords.attendanceStatus, 'checked_in'), eq(attendanceRecords.attendanceStatus, 'late'))
         )
       )
       .for('update')

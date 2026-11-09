@@ -81,7 +81,7 @@ export async function upsertAttendance(
         .from(attendanceRecords)
         .where(and(
           eq(attendanceRecords.shiftAssignmentId, assignmentId),
-          eq(attendanceRecords.attendanceStatus, 'checked_in')
+          or(eq(attendanceRecords.attendanceStatus, 'checked_in'), eq(attendanceRecords.attendanceStatus, 'late'))
         ))
         .for('update')
         .limit(1);
@@ -196,7 +196,7 @@ export async function employeeCheckIn(
       .from(attendanceRecords)
       .where(and(
         eq(attendanceRecords.shiftAssignmentId, assignmentId),
-        eq(attendanceRecords.attendanceStatus, 'checked_in')
+        or(eq(attendanceRecords.attendanceStatus, 'checked_in'), eq(attendanceRecords.attendanceStatus, 'late'))
       ))
       .limit(1);
 
