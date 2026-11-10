@@ -195,8 +195,8 @@ test.describe.serial('real authenticated employee schedule', () => {
       await expect(list.getByText('Real current-week shift', { exact: true })).toBeVisible();
       await expect(dashboard.getByRole('status', { name: text.upcomingCount.replace('{count}', '1') })).toHaveText('1');
       await expect(dashboard.getByText('Traffic Controller - Amsterdam', { exact: true })).toHaveCount(0);
-      const link = dashboard.getByRole('link', { name: text.viewAll, exact: true });
-      await expect(link).toHaveAttribute('href', '/nl/employee/schedule');
+      const link = dashboard.locator('a[href="/nl/employee/schedule"]').filter({ hasText: text.viewAll });
+      await expect(link).toBeVisible();
       await link.click();
       await expect(dashboard).toHaveURL(/\/nl\/employee\/schedule$/);
     } finally {

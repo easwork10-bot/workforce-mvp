@@ -599,5 +599,31 @@
     "forbidden": "هذا الإجراء غير مسموح. حدّث الصفحة وحاول مرة أخرى.",
     "invalidAction": "لم يعد هذا الإجراء متاحًا. تحقّق من حالة الحضور المحدّثة.",
     "actionError": "تعذّر تأكيد الإجراء. تحقّق من الحالة المحدّثة قبل المحاولة مرة أخرى."
+  },
+  "employeeDashboard": {
+    "welcome": "جدولك وطلباتك وساعاتك المسجلة في مكان واحد.",
+    "pending": "الطلبات المعلقة",
+    "pendingDescription": "بانتظار المراجعة",
+    "accepted": "المقبولة هذا الشهر",
+    "acceptedDescription": "حسب تاريخ قبول الطلب",
+    "hours": "الساعات المسجلة هذا الشهر",
+    "hoursDescription": "سجلات الحضور المكتملة ضمن الشهر التقويمي بتوقيت أمستردام",
+    "recentApplications": "الطلبات الأخيرة",
+    "applicationsDescription": "حالة أحدث ثلاثة طلبات",
+    "emptyApplications": "لم تقدم أي طلبات بعد.",
+    "browse": "البحث عن مناوبات",
+    "browseDescription": "ابحث عن مناوبة وقدّم طلبًا",
+    "schedule": "جدولي",
+    "scheduleDescription": "اعرض جدولك الأسبوعي أو الشهري",
+    "applications": "طلباتي",
+    "trackApplications": "تابع طلباتك",
+    "attendance": "تسجيل الحضور والانصراف",
+    "attendanceDescription": "سجّل حضورك",
+    "statuses": {
+      "pending": "قيد الانتظار",
+      "accepted": "مقبول",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى"
+    }
   }
 }

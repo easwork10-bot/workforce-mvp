@@ -5,6 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
+import { setTimeout as delay } from 'node:timers/promises';
+import { verifyDatabaseRecovery } from './verify-database-recovery.mjs';
 
 const require = createRequire(import.meta.url);
 const { isLocalDockerEndpoint } = require('./docker-endpoint-safety.cjs');
@@ -20,8 +23,11 @@ const composeFile = path.join(projectRoot, 'docker-compose.integration-test.yml'
 const docker = process.env.DOCKER_BIN || 'docker';
 const nodeImage = 'node:24-bookworm-slim';
 const browserEnabled = process.argv.includes('--browser');
-if (process.argv.slice(2).some(argument => argument !== '--browser')) {
-  throw new Error('Only the optional --browser argument is supported.');
+const dashboardFocus = process.argv.includes('--focus=employee-dashboard');
+const productionEnabled = process.argv.includes('--production');
+const recoveryEnabled = process.argv.includes('--recovery');
+if (process.argv.slice(2).some(argument => !['--browser', '--focus=employee-dashboard', '--production', '--recovery'].includes(argument))) {
+  throw new Error('Only --browser, --focus=employee-dashboard, --production and --recovery are supported.');
 }
 const majorNodeVersion = Number(process.versions.node.split('.')[0]);
 if (majorNodeVersion !== 24) {
@@ -32,6 +38,7 @@ if (majorNodeVersion !== 24) {
 const projectName = `wf-safe-test-${randomBytes(16).toString('hex')}`;
 const runnerName = `${projectName}-runner`;
 const browserImage = `${projectName}-browser`;
+const productionImage = `${projectName}-production`;
 const dbPassword = randomBytes(32).toString('base64url');
 const composeEnv = {
   ...process.env,
@@ -42,6 +49,7 @@ let composeStarted = false;
 let primaryError;
 let runtimeDirectory;
 let browserImageCreated = false;
+let productionImageCreated = false;
 let browserKeys = {};
 let interruptSignal;
 let cleanupStarted = false;
@@ -305,6 +313,80 @@ async function formatError(error) {
   return error instanceof Error ? error.stack || error.message : String(error);
 }
 
+async function verifyProductionImage() {
+  console.log('\n> Build and smoke-test the existing production Docker target');
+  await run(docker, [
+    'build', '--target', 'runner', '--label', `com.workforce.safe-test-project=${projectName}`,
+    '--tag', productionImage, projectRoot,
+  ]);
+  productionImageCreated = true;
+  const keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const environment = {
+    ...process.env,
+    DATABASE_URL: `postgresql://workforce_test:${encodeURIComponent(dbPassword)}@db:5432/workforce_test`,
+    REDIS_URL: 'redis://redis:6379',
+    JWT_PRIVATE_KEY_FILE: '',
+    JWT_PUBLIC_KEY_FILE: '',
+    JWT_PRIVATE_KEY_B64: Buffer.from(keys.privateKey.export({ format: 'pem', type: 'pkcs8' })).toString('base64'),
+    JWT_PUBLIC_KEY_B64: Buffer.from(keys.publicKey.export({ format: 'pem', type: 'spki' })).toString('base64'),
+    CSRF_SECRET: randomBytes(48).toString('base64url'),
+    SHIFT_REMINDER_JOB_ENABLED: 'false',
+  };
+  await run(docker, [
+    'run', '-d', '--name', runnerName, '--label', `com.workforce.safe-test-project=${projectName}`,
+    '--network', `${projectName}_isolated`, '--read-only', '--init',
+    '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',
+    '--tmpfs', '/tmp:rw,noexec,nosuid,size=64m,uid=1001,gid=1001',
+    '--tmpfs', '/app/.next/cache:rw,noexec,nosuid,size=64m,uid=1001,gid=1001',
+    ...['DATABASE_URL', 'REDIS_URL', 'JWT_PRIVATE_KEY_FILE', 'JWT_PUBLIC_KEY_FILE',
+      'JWT_PRIVATE_KEY_B64', 'JWT_PUBLIC_KEY_B64', 'CSRF_SECRET', 'SHIFT_REMINDER_JOB_ENABLED']
+      .flatMap(name => ['--env', name]),
+    productionImage,
+  ], { env: environment });
+  const probe = `
+    const assert = require('node:assert/strict');
+    assert.equal(process.getuid(), 1001);
+    for (const [route, expected] of [['/api/live', 200], ['/api/health', 200], ['/api/auth/me', 401]]) {
+      const response = await fetch('http://127.0.0.1:3000' + route, {signal: AbortSignal.timeout(12000)});
+      assert.equal(response.status, expected, route);
+      if (route === '/api/health') {
+        const body = await response.json();
+        assert.equal(body.db, true);
+        assert.equal(body.redis, true);
+      }
+    }
+    const response = await fetch('http://127.0.0.1:3000/api/auth/csrf');
+    assert.equal(response.status, 200);
+    const cookie = response.headers.get('set-cookie');
+    assert.match(cookie, /HttpOnly/i);
+    assert.match(cookie, /Secure/i);
+    assert.match(cookie, /SameSite=Strict/i);
+  `;
+  let lastError;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    try {
+      await run(docker, ['exec', runnerName, 'node', '--input-type=commonjs', '-e', `(async () => { ${probe} })().catch(e => { console.error(e); process.exit(1); })`]);
+      lastError = undefined;
+      break;
+    } catch (error) {
+      lastError = error;
+      await delay(1000);
+    }
+  }
+  if (lastError) {
+    const logs = await run(docker, ['logs', runnerName]);
+    console.error(redact(logs.stdout + logs.stderr));
+    throw lastError;
+  }
+  const container = JSON.parse((await run(docker, ['inspect', runnerName])).stdout)[0];
+  assert.ok(isOwnedRunnerContainer(container, runnerName, projectName, `${projectName}_isolated`));
+  assert.equal(container.Config.User, 'nextjs');
+  assert.equal(container.HostConfig.ReadonlyRootfs, true);
+  assert.deepEqual(container.HostConfig.PortBindings || {}, {});
+  console.log('Production image smoke passed: non-root/read-only, no published ports, live/readiness, real PostgreSQL/Redis, auth denial and secure HttpOnly CSRF cookie.');
+  await run(docker, ['rm', '-f', container.Id]);
+}
+
 try {
   console.log(`Starting disposable test services (${projectName}).`);
   await assertLocalDockerEndpoint();
@@ -346,6 +428,7 @@ try {
     WORKFORCE_TEST_DB_SERVER_ADDRESS: dbAddress,
     WORKFORCE_TEST_DB_SERVER_PORT: '5432',
     ...browserKeys,
+    WORKFORCE_SAFE_TEST_FOCUS: dashboardFocus ? 'employee-dashboard' : '',
   };
   const workerArgs = [
     'run',
@@ -359,6 +442,7 @@ try {
     '--env', 'WORKFORCE_SAFE_DB_PASSWORD',
     '--env', 'WORKFORCE_TEST_DB_SERVER_ADDRESS',
     '--env', 'WORKFORCE_TEST_DB_SERVER_PORT',
+    '--env', 'WORKFORCE_SAFE_TEST_FOCUS',
     ...(browserEnabled ? [
       '--mount', `type=bind,src=${path.join(runtimeDirectory, 'app')},dst=/browser-app`,
       '--mount', `type=bind,src=${path.join(runtimeDirectory, 'node_modules')},dst=/browser-app/node_modules,readonly`,
@@ -376,6 +460,12 @@ try {
   });
   if (workerResult.stdout) process.stdout.write(redact(workerResult.stdout));
   if (workerResult.stderr) process.stderr.write(redact(workerResult.stderr));
+  if (productionEnabled) await verifyProductionImage();
+  if (recoveryEnabled) {
+    const checkedDatabase = await getContainer('db');
+    assertOwnedContainer(checkedDatabase, 'db');
+    await verifyDatabaseRecovery(args => run(docker, ['exec', checkedDatabase.Id, ...args]));
+  }
 } catch (error) {
   primaryError = error;
 } finally {
@@ -423,16 +513,19 @@ try {
     }
   }
 
-  if (browserImageCreated) {
+  for (const image of [
+    ...(browserImageCreated ? [browserImage] : []),
+    ...(productionImageCreated ? [productionImage] : []),
+  ]) {
     try {
-      const inspected = JSON.parse((await run(docker, ['image', 'inspect', browserImage])).stdout)[0];
+      const inspected = JSON.parse((await run(docker, ['image', 'inspect', image])).stdout)[0];
       if (inspected.Config?.Labels?.['com.workforce.safe-test-project'] !== projectName) {
-        throw new Error('The temporary browser image is not owned by this run; refusing cleanup.');
+        throw new Error('The temporary test image is not owned by this run; refusing cleanup.');
       }
       await run(docker, ['image', 'rm', inspected.Id]);
     } catch (error) {
       primaryError = primaryError
-        ? new AggregateError([primaryError, error], 'Browser image cleanup failed after the isolated workflow.')
+        ? new AggregateError([primaryError, error], 'Test image cleanup failed after the isolated workflow.')
         : error;
     }
   }
@@ -449,7 +542,7 @@ try {
   cleanupStarted = false;
 }
 
-if (!primaryError && !browserEnabled) {
+if (!primaryError && !browserEnabled && !dashboardFocus) {
   try {
     console.log('\n> Production build (after disposable services are removed)');
     const buildEnv = createBuildIsolationEnvironment(

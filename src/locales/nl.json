@@ -599,5 +599,31 @@
     "forbidden": "Deze actie is niet toegestaan. Vernieuw de pagina en probeer opnieuw.",
     "invalidAction": "Deze actie is niet meer mogelijk. Controleer de vernieuwde aanwezigheidsstatus.",
     "actionError": "De actie kon niet worden bevestigd. Controleer de vernieuwde status voordat je opnieuw probeert."
+  },
+  "employeeDashboard": {
+    "welcome": "Je rooster, sollicitaties en geregistreerde uren op één plek.",
+    "pending": "Openstaande sollicitaties",
+    "pendingDescription": "Wachten op beoordeling",
+    "accepted": "Deze maand geaccepteerd",
+    "acceptedDescription": "Geaccepteerd op basis van de beoordelingsdatum",
+    "hours": "Geregistreerde uren deze maand",
+    "hoursDescription": "Afgeronde aanwezigheidsregistraties binnen de kalendermaand (Amsterdam)",
+    "recentApplications": "Recente sollicitaties",
+    "applicationsDescription": "De status van je drie nieuwste sollicitaties",
+    "emptyApplications": "Je hebt nog geen sollicitaties.",
+    "browse": "Diensten zoeken",
+    "browseDescription": "Vind een dienst en solliciteer",
+    "schedule": "Mijn rooster",
+    "scheduleDescription": "Bekijk je week- of maandrooster",
+    "applications": "Mijn sollicitaties",
+    "trackApplications": "Volg je sollicitaties",
+    "attendance": "In- en uitchecken",
+    "attendanceDescription": "Registreer je aanwezigheid",
+    "statuses": {
+      "pending": "In afwachting",
+      "accepted": "Geaccepteerd",
+      "rejected": "Afgewezen",
+      "cancelled": "Geannuleerd"
+    }
   }
 }

@@ -1,0 +1,38 @@
+# Host nginx, directly facing clients. Replace the domain and certificate paths.
+# Do not enable real_ip_header or append untrusted forwarding chains.
+server {
+    listen 80;
+    server_name workforce.example.invalid;
+    return 308 https://workforce.example.invalid$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name workforce.example.invalid;
+    ssl_certificate /etc/workforce/tls/fullchain.pem;
+    ssl_certificate_key /etc/workforce/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # Do not log request URLs/query strings, IPs, cookies or authorization data.
+    access_log off;
+    error_log /var/log/nginx/workforce-error.log warn;
+    client_max_body_size 1m;
+
+    location = /api/health { return 404; }
+    location = /api/live { return 404; }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host workforce.example.invalid;
+        proxy_set_header X-Forwarded-Host workforce.example.invalid;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Port 443;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Forwarded "";
+        proxy_set_header Connection "";
+        proxy_read_timeout 60s;
+    }
+}

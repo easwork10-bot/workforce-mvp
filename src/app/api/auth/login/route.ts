@@ -3,12 +3,11 @@ import { db } from '@/backend/db';
 import { profiles, userRoles } from '@/backend/db/schema';
 import { eq } from 'drizzle-orm';
 import { verifyPassword } from '@/backend/auth/passwords';
-import { createTokenPair } from '@/backend/auth/tokens';
-import { createSession } from '@/backend/auth/session';
+import { createTokenPair, decodeJwt } from '@/backend/auth/tokens';
+import { checkRateLimit, createSession } from '@/backend/auth/session';
 import { loginSchema } from '@/backend/validation/auth';
-import { checkRateLimit } from '@/backend/auth/session';
-import { decodeJwt } from '@/backend/auth/tokens';
 import { generateCsrfToken, setCsrfCookie } from '@/backend/security/csrf';
+import { getClientIp } from '@/backend/security/clientIp';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
@@ -111,12 +110,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
-
-function getClientIp(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || '127.0.0.1';
 }
 
 function setAuthCookies(

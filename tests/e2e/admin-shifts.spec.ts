@@ -86,27 +86,6 @@ for (const locale of ['nl', 'ar']) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     });
   }
-
-  for (const width of [1280, 390]) {
-    test(`${locale} admin dashboard shows live shift data at ${width}px`, async ({ page }) => {
-      await page.route('**/api/admin/shifts?*', async (route) => {
-        await route.fulfill({
-          contentType: 'application/json',
-          body: JSON.stringify({
-            shifts: [shift('open')],
-            pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
-            stats: { total: 1, draft: 0, open: 1, filled: 0, cancelled: 0, completed: 0 },
-          }),
-        });
-      });
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(locale === 'ar' ? '/ar/admin' : '/admin');
-      await expect(page.locator('html')).toHaveAttribute('lang', locale);
-      await expect(page.locator('h1')).toBeVisible();
-      await expect(page.getByText('Future traffic control')).toBeVisible();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-    });
-  }
 }
 
 for (const locale of ['nl', 'ar']) {

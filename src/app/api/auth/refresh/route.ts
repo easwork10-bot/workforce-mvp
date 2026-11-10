@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyTokenFromCookie } from '@/backend/auth/tokens';
-import { rotateRefreshToken, revokeAllUserSessions } from '@/backend/auth/session';
-import { checkRateLimit } from '@/backend/auth/session';
+import { checkRateLimit, rotateRefreshToken, revokeAllUserSessions } from '@/backend/auth/session';
 import { generateCsrfToken, setCsrfCookie } from '@/backend/security/csrf';
+import { getClientIp } from '@/backend/security/clientIp';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
@@ -75,12 +75,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
-
-function getClientIp(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || '127.0.0.1';
 }
 
 function setAuthCookies(

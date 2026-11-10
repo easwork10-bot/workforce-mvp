@@ -15,6 +15,8 @@ against the linked code; dated plans and the original handoff are historical rec
 - [Test configuration and current scope](./architecture.md#tests-and-isolated-database-workflow)
 - [Safe isolated integration and browser-test procedure](./testing/isolated-integration-tests.md)
 - [Operations and deployment limitations](./architecture.md#current-limitations-and-deployment-readiness)
+- [Production runtime and trusted HTTPS proxy](./operations/production-runtime.md)
+- [Database bootstrap, upgrade, backup and recovery](./operations/database-bootstrap-and-recovery.md)
 - [Root README](../README.md) — project entrypoint and quick start.
 - [Environment template](../.env.example) — active environment variable names and
   setup guidance; never put real values in tracked files.

@@ -16,6 +16,21 @@ npm run test:integration:safe -- --browser
 `npm run test:integration -- --browser` is an equivalent alias for the same
 guarded runner.
 
+For focused employee-dashboard verification, use:
+
+```sh
+npm run test:integration:safe -- --browser --focus=employee-dashboard
+```
+
+This runs the dashboard UI cases and the real publish/apply/approve/check-in/out
+workflow in Chromium and WebKit. It also runs the dashboard unit/integration tests,
+all unit security and test-isolation checks, typecheck, lint and frontend boundaries.
+The same disposable-service identity, migration, fixture-emptiness and cleanup
+guards remain enabled. This focus skips the complete historical suite; omit
+`--focus=employee-dashboard` for a full guarded delivery check. Without `--browser`,
+the focused run omits browser tests and, unless `--production` is supplied, the
+production build.
+
 For lightweight checks, run these commands sequentially:
 
 ```sh
@@ -24,6 +39,21 @@ npm run typecheck
 npm run lint
 npm run check:frontend-boundaries
 ```
+
+For deployment preparation without browser tests:
+
+```sh
+npm run test:integration:safe -- --focus=employee-dashboard --production --recovery
+```
+
+`--production` builds the existing Dockerfile `runner` target and smoke-tests it
+non-root/read-only on the internal test network with temporary keys and the
+disposable services. `--recovery` uses the ownership-checked PostgreSQL
+container's `pg_dump`/`pg_restore` tools to restore synthetic data into a
+separate, newly created database and compare data/schema/ledger. No persistent
+database, volume or public port is involved. Either option may be used alone.
+See the [production runtime](../operations/production-runtime.md) and
+[database recovery](../operations/database-bootstrap-and-recovery.md) runbooks.
 
 The employee account PATCH regression is an integration test and must be run via
 the guarded database workflow; do not invoke the integration Vitest config directly.
@@ -130,7 +160,7 @@ The integration configuration is
 [database safety guard](../../tests/support/database/testDatabaseSafety.ts) verifies
 the live endpoint before tests run.
 
-The workflow runs focused safety/auth/business tests and the complete unit plus
+By default, the workflow runs focused safety/auth/business tests and the complete unit plus
 integration suite using the guarded integration configuration, then typecheck,
 lint, and the frontend import-boundary check. It verifies the protected fixture tables
 are empty before and after each test pass, then removes only the unique Compose project

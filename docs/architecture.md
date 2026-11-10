@@ -108,11 +108,9 @@ The employee shift browser, application history and schedule use their APIs. The
 administrator dashboard, shift management, application review and assignment
 overview use their respective APIs. Login and registration use the self-hosted auth routes.
 The employee dashboard's schedule summary uses the schedule API; its application
-and hours summaries remain presentation prototypes backed by sample data. The
-attendance check-in/out page does not call the implemented attendance APIs, and
-GPS shown there is not a server-side geofence or location verification feature.
-Do not treat the remaining sample dashboard values or attendance UI controls as
-persisted workflows.
+counts, recent applications and worked hours use the employee dashboard API.
+The attendance check-in/out page uses employee-owned assignments and the attendance
+APIs. Location capture is not a server-side geofence or location verification feature.
 
 ## API responsibilities
 
@@ -126,6 +124,7 @@ Route handlers live in [`src/app/api/`](../src/app/api/); Zod input contracts ar
 | `/api/employee/applications` | Read the authenticated employee's applications |
 | `/api/employee/applications/:id/cancel` | Cancel an eligible pending application |
 | `/api/employee/schedule` | Read the authenticated employee's schedule |
+| `/api/employee/dashboard` | Read the authenticated employee's application summary and recorded monthly hours |
 | `/api/employee/attendance/*` | Employee check-in and check-out |
 | `/api/attendance/*` | Parallel attendance handlers retained for existing callers |
 | `/api/admin/shifts*` | Administrative shift listing, creation and publication |
@@ -135,6 +134,7 @@ Route handlers live in [`src/app/api/`](../src/app/api/); Zod input contracts ar
 | `/api/admin/attendance` and `/api/admin/audit` | Attendance and audit queries |
 | `/api/notifications*` | Read, create, mark read, and delete recipient notifications |
 | `/api/health` | Application dependency health endpoint |
+| `/api/live` | Dependency-independent application liveness |
 
 The employee schedule endpoint only reads assignments owned by the authenticated
 employee. It accepts assignment `status`, `shiftId`, inclusive local calendar
@@ -157,6 +157,16 @@ filtering; a location string or UI locale is not a timezone source.
 The employee dashboard's weekly summary reads every page for the current worksite
 week and counts active, not-yet-ended assignments on open or filled shifts; it
 does not present a partial count when a request fails.
+
+The employee dashboard endpoint ignores client ownership and reporting-clock
+parameters and returns private, non-cacheable data from a read-only repeatable-read
+snapshot. Pending applications include all pending rows; monthly acceptances use
+the application's review date. The reporting month is the half-open Amsterdam
+calendar month, independent of browser timezone or display language. Worked hours
+sum actual elapsed UTC time from checked-out attendance sessions, clipped to those
+month boundaries; open, missed and invalid sessions are excluded. The three newest
+applications are ordered by application time and ID. The Dutch/Arabic UI displays
+real zero values, loading/error/retry states and locale-preserving links.
 
 The two attendance route families remain in the API surface. Mutating business
 routes use CSRF and role wrappers where implemented; authentication endpoints use
@@ -239,13 +249,13 @@ journal, plus the historical
 These artifacts represent different historical schema tracks; their presence
 does not establish the state of any existing database.
 
-**Unresolved operational concern:** reconcile the current schema, deployed/local
-database migration ledgers, and both historical SQL tracks before deciding how to
-bootstrap or upgrade a database. No reviewed first-run development database
-initialization procedure is provided. Do not run Drizzle push/migration commands
-against an existing `workforce` database. The isolated test runner is the only
-documented workflow here that initializes a database, and it does so only after
-verifying its disposable target identity and empty state.
+The reviewed fresh-database bootstrap, existing-database compatibility,
+backup/rehearsal, and recovery procedure is documented in
+[`docs/operations/database-bootstrap-and-recovery.md`](./operations/database-bootstrap-and-recovery.md).
+It does not establish the state of any existing database. Do not run Drizzle
+push/migration commands against an existing `workforce` database or any
+unclassified database; use the documented read-only classification and
+disposable restore/rehearsal first.
 
 ## Attendance, applications, audit, and notifications
 
@@ -368,8 +378,9 @@ English message catalog in the active locale configuration.
 Use Node.js 24 as declared by [`.nvmrc`](../.nvmrc) and install the locked
 dependencies with `npm ci`. Copy [`.env.example`](../.env.example)
 to `.env.local`; configure `DATABASE_URL` for a disposable, separately provisioned
-local development database and `REDIS_URL` for a local Redis service. The repository
-does not provide a reviewed first-run development database bootstrap. Do not point
+local development database and `REDIS_URL` for a local Redis service. Follow the
+[database runbook](./operations/database-bootstrap-and-recovery.md) for a newly
+provisioned empty database. Do not point
 initial setup at a shared/existing `workforce` database or run schema push/migration
 commands against one.
 
@@ -436,11 +447,13 @@ against source and this document.
 
 ## Current limitations and deployment readiness
 
-This repository is an MVP codebase, not a production deployment runbook. Before a
-production launch:
+The runtime and database runbooks provide deployment preparation, not approval
+for an unidentified production environment. Before a production launch:
 
-1. Resolve the migration-history discrepancy and establish a reviewed database
-   bootstrap, upgrade, rollback, backup, and restore procedure.
+1. Classify the target database and rehearse its bootstrap/upgrade and recovery
+   using the [database runbook](./operations/database-bootstrap-and-recovery.md).
+   Disposable backup/restore is verified; unknown historical ledgers and
+   production-specific recovery remain unapproved.
 2. Design deployment-specific secret provisioning and rotation for the JWT key pair
    and `CSRF_SECRET`; never use sample or Compose development values.
 3. Treat the root `docker-compose.yml` as local development only: it publishes
@@ -451,16 +464,17 @@ production launch:
 5. Review handling, encryption, retention, and access control for sensitive
    employee data represented in the schema, including bank and government-ID
    fields, before storing real data.
-6. Decide how the in-process reminder job is operated in a multi-instance
-   deployment; idempotent inserts alone do not provide distributed scheduling.
+6. Keep the prepared runtime to one application instance; idempotent reminder
+   inserts alone do not provide distributed scheduling for multiple instances.
 7. Configure trusted reverse-proxy behavior for forwarded IP headers and deploy
    behind HTTPS so secure cookies and rate limits have the intended properties.
-8. Replace sample-backed pages and validate end-to-end UI flows before representing
-   them as implemented product workflows.
-9. Owner-review the seven root `test-*.ts` diagnostics. Previous static review
-   found credential-like literals whose validity is unknown; do not execute them
-   until reviewed. If any value is live, revoke or rotate it through its owner.
+8. Keep product claims scoped to verified workflows. The core staffing workflow
+   and dashboards have guarded end-to-end coverage; that does not establish
+   completeness of unrelated pages.
 
-No deployment topology, CI release workflow, or approved production migration
-procedure is defined in this repository. The Supabase migration is historical and
-must not be treated as an active deployment target.
+The [minimal production runtime](./operations/production-runtime.md) prepares a
+single-instance Docker setup behind a host HTTPS proxy with private external
+PostgreSQL and Redis. No hosting target or CI release workflow is configured.
+The database runbook does not approve an automatic upgrade for an unidentified
+existing database. The Supabase migration is historical and must not be treated
+as an active deployment target.

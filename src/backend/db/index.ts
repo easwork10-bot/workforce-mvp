@@ -27,12 +27,16 @@ export async function closePool(): Promise<void> {
 
 // Health check
 export async function checkDatabaseConnection(): Promise<boolean> {
+  let client;
   try {
-    const client = await pool.connect();
-    await client.query('SELECT 1');
-    client.release();
+    client = await pool.connect();
+    const probe = { text: 'SELECT 1', query_timeout: 3000 };
+    await client.query(probe);
     return true;
   } catch {
+    console.error('[Health Check] PostgreSQL probe failed.');
     return false;
+  } finally {
+    client?.release();
   }
 }

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const scheduler = vi.hoisted(() => ({
   start: vi.fn(),
@@ -26,7 +26,13 @@ const originalEnvironment = {
 };
 
 describe('Node instrumentation security configuration validation', () => {
+  beforeEach(() => {
+    vi.stubEnv('DATABASE_URL', 'postgresql://test@db:5432/workforce_test');
+    vi.stubEnv('REDIS_URL', 'redis://redis:6379');
+  });
+
   afterEach(() => {
+    vi.unstubAllEnvs();
     if (originalEnvironment.csrfSecret === undefined) delete process.env.CSRF_SECRET;
     else process.env.CSRF_SECRET = originalEnvironment.csrfSecret;
     if (originalEnvironment.nodeEnv === undefined) delete process.env.NODE_ENV;
@@ -105,8 +111,19 @@ describe('Node instrumentation security configuration validation', () => {
     process.env.NEXT_PHASE = 'phase-production-build';
     delete process.env.CSRF_SECRET;
     delete process.env.SHIFT_REMINDER_JOB_ENABLED;
+    vi.stubEnv('DATABASE_URL', '');
+    vi.stubEnv('REDIS_URL', '');
 
     await expect(register()).resolves.toBeUndefined();
     expect(jwtConfiguration.assert).not.toHaveBeenCalled();
+  });
+
+  it.each(['DATABASE_URL', 'REDIS_URL'])('refuses production startup without explicit %s', async name => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.NEXT_PHASE;
+    process.env.CSRF_SECRET = 'valid-production-secret-material-at-least-thirty-two-bytes';
+    vi.stubEnv(name, '');
+    await expect(register()).rejects.toThrow(name);
+    expect(scheduler.start).not.toHaveBeenCalled();
   });
 });

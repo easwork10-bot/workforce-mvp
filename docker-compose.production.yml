@@ -1,0 +1,39 @@
+# Use alone, never merge with the development Compose file.
+# A host HTTPS proxy is the only public entry point.
+services:
+  app:
+    image: ${WORKFORCE_IMAGE:?Set the reviewed production image tag or digest}
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+      PORT: "3000"
+      DATABASE_URL: ${DATABASE_URL:?Set the private production PostgreSQL URL}
+      REDIS_URL: ${REDIS_URL:?Set the private production Redis URL}
+      JWT_PRIVATE_KEY_B64: ${JWT_PRIVATE_KEY_B64:?Set the production RS256 private key}
+      JWT_PUBLIC_KEY_B64: ${JWT_PUBLIC_KEY_B64:?Set the matching production RS256 public key}
+      CSRF_SECRET: ${CSRF_SECRET:?Set a unique production CSRF signing secret}
+      SHIFT_REMINDER_JOB_ENABLED: "true"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,uid=1001,gid=1001
+      - /app/.next/cache:rw,noexec,nosuid,size=64m,uid=1001,gid=1001
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health', {signal: AbortSignal.timeout(12000)}).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 14s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"

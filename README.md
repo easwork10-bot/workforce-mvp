@@ -4,8 +4,9 @@ Workforce MVP is a localized workforce-scheduling application built with Next.js
 PostgreSQL, and Redis. It includes employee and administrator workflows for
 authentication, shift browsing and management, applications, and assignments.
 Administrator, employee, and attendance pages require a valid server-side session
-and the appropriate role. Employee schedules use real assignments; parts of the
-employee dashboard and the attendance screen still contain sample data. See the
+and the appropriate role. Employee schedules, dashboards, and attendance use real
+backend data. The core publish/apply/approve/schedule/check-in/out workflow has
+been verified in the guarded disposable environment. See the
 [current architecture](./docs/architecture.md) for the verified feature status.
 
 ## Requirements
@@ -32,8 +33,10 @@ npm run dev
 ```
 
 Do not run schema push or migration commands against an existing `workforce`
-database. The migration history is unresolved; see
-[database and migration state](./docs/architecture.md#postgresql-and-migration-state).
+database. For a newly provisioned empty database, follow the
+[database bootstrap and recovery runbook](./docs/operations/database-bootstrap-and-recovery.md).
+Existing databases require schema/ledger classification and a verified backup
+and restore rehearsal before migration.
 
 ## Safe checks
 
@@ -64,3 +67,11 @@ npm run test:integration:safe -- --browser
 See the [isolated integration-test guide](./docs/testing/isolated-integration-tests.md)
 for isolation details and the [documentation index](./docs/README.md) for the
 architecture, roadmap, and historical records.
+
+## Production preparation
+
+The [production runtime guide](./docs/operations/production-runtime.md) describes
+the single-instance production Compose template, host HTTPS proxy, external
+private PostgreSQL/Redis, and runtime secrets. Hosting, ingress/TLS, credentials,
+and target-database readiness still require operator decisions and verification;
+the templates are not a deployment or launch approval.

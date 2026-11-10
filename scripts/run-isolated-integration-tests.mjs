@@ -23,7 +23,17 @@ const protectedTables = [
   'shifts',
   'user_roles',
 ];
-const focusedTests = [
+const dashboardFocus = process.env.WORKFORCE_SAFE_TEST_FOCUS === 'employee-dashboard';
+if (process.env.WORKFORCE_SAFE_TEST_FOCUS && !dashboardFocus) throw new Error('Unknown isolated test focus.');
+const focusedTests = dashboardFocus ? [
+  'tests/unit/testing/',
+  'tests/unit/security/',
+  'tests/unit/api/employee-dashboard.test.ts',
+  'tests/unit/api/employee-dashboard-client.test.ts',
+  'tests/unit/api/health.test.ts',
+  'tests/unit/db/health-connection.test.ts',
+  'tests/integration/employee-dashboard.test.ts',
+] : [
   'tests/unit/testing/testDatabaseSafety.test.ts',
   'tests/unit/security/session-security.test.ts',
   'tests/unit/security/jwtKeys.test.ts',
@@ -283,18 +293,20 @@ try {
     await afterFocused.end();
   }
 
-  await runQualityCommand('Complete Vitest suite',
-    process.execPath, [
-      'node_modules/vitest/vitest.mjs',
-      'run',
-      '--config',
-      'vitest.integration.config.ts',
-    ]);
-  const afterFull = await waitForDatabase(databaseUrl);
-  try {
-    await assertFixturesEmpty(afterFull, 'after the full test suite');
-  } finally {
-    await afterFull.end();
+  if (!dashboardFocus) {
+    await runQualityCommand('Complete Vitest suite',
+      process.execPath, [
+        'node_modules/vitest/vitest.mjs',
+        'run',
+        '--config',
+        'vitest.integration.config.ts',
+      ]);
+    const afterFull = await waitForDatabase(databaseUrl);
+    try {
+      await assertFixturesEmpty(afterFull, 'after the full test suite');
+    } finally {
+      await afterFull.end();
+    }
   }
 
   await runQualityCommand('TypeScript typecheck', process.execPath,

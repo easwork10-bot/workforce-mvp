@@ -6,7 +6,6 @@ import { Link } from '@/shared/i18n-routing';
 import { Button } from '@/frontend/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/ui/card';
 import {
-  AdminShiftApiError,
   fetchAdminShifts,
   type AdminShiftPage,
 } from '@/frontend/features/admin-shifts/adminShiftsApi';
@@ -20,24 +19,28 @@ export default function AdminDashboard() {
   const [data, setData] = useState<AdminShiftPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
+    setData(null);
+    setError(null);
+    setLoading(true);
     void fetchAdminShifts({
       page: 1,
       limit: 5,
       sortBy: 'createdAt',
       sortOrder: 'desc',
-    }, controller.signal).then(setData).catch((requestError: unknown) => {
+    }, controller.signal).then((result) => {
+      if (!controller.signal.aborted) setData(result);
+    }).catch((requestError: unknown) => {
       if (requestError instanceof Error && requestError.name === 'AbortError') return;
-      setError(requestError instanceof AdminShiftApiError
-        ? requestError.message
-        : tManagement('loadError'));
+      if (!controller.signal.aborted) setError(tManagement('loadError'));
     }).finally(() => {
       if (!controller.signal.aborted) setLoading(false);
     });
     return () => controller.abort();
-  }, [tManagement]);
+  }, [reload, tManagement]);
 
   const dateFormatter = new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'nl-NL', {
     timeZone: 'Europe/Amsterdam',
@@ -46,10 +49,10 @@ export default function AdminDashboard() {
   });
   const stats = data?.stats;
   const cards = [
-    { label: tManagement('totalShifts'), value: stats?.total },
-    { label: tShifts('status.draft'), value: stats?.draft },
-    { label: tShifts('status.open'), value: stats?.open },
-    { label: tShifts('status.filled'), value: stats?.filled },
+    { id: 'total', label: tManagement('totalShifts'), value: stats?.total },
+    { id: 'draft', label: tShifts('status.draft'), value: stats?.draft },
+    { id: 'open', label: tShifts('status.open'), value: stats?.open },
+    { id: 'filled', label: tShifts('status.filled'), value: stats?.filled },
   ];
 
   return (
@@ -67,8 +70,8 @@ export default function AdminDashboard() {
               <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {loading ? '—' : error ? '—' : item.value ?? 0}
+              <div className="text-2xl font-bold" data-testid={`admin-dashboard-stat-${item.id}`}>
+                {loading || error ? '—' : new Intl.NumberFormat(locale === 'ar' ? 'ar' : 'nl-NL').format(item.value ?? 0)}
               </div>
             </CardContent>
           </Card>
@@ -83,7 +86,14 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {loading && <p className="py-4 text-muted-foreground" role="status">{tManagement('loading')}</p>}
-            {!loading && error && <p className="py-4 text-red-700 dark:text-red-300" role="alert">{error}</p>}
+            {!loading && error && (
+              <div className="space-y-3 py-4">
+                <p className="text-red-700 dark:text-red-300" role="alert">{error}</p>
+                <Button type="button" variant="outline" onClick={() => setReload(value => value + 1)}>
+                  {tManagement('retry')}
+                </Button>
+              </div>
+            )}
             {!loading && !error && data?.shifts.length === 0 && (
               <p className="py-4 text-muted-foreground">{tManagement('empty')}</p>
             )}

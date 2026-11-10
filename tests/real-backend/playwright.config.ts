@@ -9,10 +9,17 @@ setDefaultResultOrder('ipv4first');
 
 export default defineConfig({
   testDir: '../..',
-  testMatch: [
+  testMatch: process.env.WORKFORCE_SAFE_TEST_FOCUS === 'employee-dashboard' ? [
+    'tests/real-backend/employee-dashboard.spec.ts',
+    'tests/real-backend/employee-schedule.spec.ts',
+    'tests/real-backend/employee-attendance.spec.ts',
+    'tests/e2e/employee-dashboard.spec.ts',
+    'tests/e2e/admin-dashboard.spec.ts',
+  ] : [
     'tests/real-backend/admin-assignments.spec.ts',
     'tests/real-backend/employee-schedule.spec.ts',
     'tests/real-backend/employee-attendance.spec.ts',
+    'tests/real-backend/employee-dashboard.spec.ts',
     'tests/e2e/*.spec.ts',
   ],
   outputDir: '/workspace/tests/results/real-backend',

@@ -19,6 +19,11 @@
 /test-results/
 /tests/results/
 /.cache/
+*.log
+
+# Database backups can contain credentials and employee data
+*.dump
+*.sql.gz
 
 # Local tooling and generated files
 /.vercel/
